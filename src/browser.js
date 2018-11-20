@@ -32,14 +32,25 @@ react = async (result) => {
     result.payments = await Payment.findAll({
       order: [['id', 'desc']],
       //include: {all: true},
-      limit: 100
+      limit: 50
     })
 
     //l('Payments')
 
-    result.channels = await me.channels()
-    //l('Getting record')
+    // returns channels with supported hubs
+
+    result.channels = []
+
+    // now add all channels to used hubs
+    for (var m of K.hubs) {
+      let partnerId = fromHex(m.pubkey)
+      if (me.is_me(partnerId) || !PK.usedHubs.includes(m.id)) continue
+
+      result.channels.push(await Channel.get(partnerId))
+    }
+
     result.record = await getUserByIdOrKey(bin(me.id.publicKey))
+    //l('Getting record', result.record.id)
 
     result.events = await Event.findAll({
       order: [['id', 'desc']],

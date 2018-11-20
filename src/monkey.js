@@ -24,13 +24,10 @@ const payMonkey = async (on_server, counter = 1) => {
   if (on_server) {
     // replenish with testnet faucet once in a while
 
-    //if (ch.payable < 3000 && argv.monkey && !me.my_hub) {
-    //if (counter % 300 == 10) me.testnet({partner: 1, amount: 10000000})
-
     setTimeout(() => {
       payMonkey(on_server, counter + 1)
     }, Math.round(3500 + Math.random() * 3000))
-  } else if (counter < 2) {
+  } else if (counter < 20) {
     setTimeout(() => {
       payMonkey(on_server, counter + 1)
     }, 500)
@@ -39,9 +36,34 @@ const payMonkey = async (on_server, counter = 1) => {
 
 if (argv.monkey) {
   if (base_port > 8000) {
-    // add Europe hub by default
+    // add first hub by default and open limit
     PK.usedHubs.push(1)
+
+    require('./internal_rpc/with_channel')({
+      op: 'setLimits',
+      partnerId: K.hubs[0].pubkey,
+      asset: 1,
+      soft_limit: K.soft_limit,
+      hard_limit: K.hard_limit
+    })
   }
+
+  // only in monkey mode, not on end user node
+  if (base_port != 8008) {
+    Periodical.schedule('broadcast', K.blocktime * 1000)
+  }
+
+  let stubs = [
+    'Chase Bank',
+    'Bank of America',
+    'Barclays',
+    'BNP Paribas',
+    'Capital One',
+    'Citibank',
+    'Deutsche Bank',
+    'HSBC',
+    'UBS'
+  ]
 
   if (base_port > 8000 && base_port <= 8003) {
     let loc = on_server
@@ -49,7 +71,7 @@ if (argv.monkey) {
       : `ws://${localhost}:${base_port + 100}`
     require('./internal_rpc/create_hub')({
       fee_bps: 5,
-      handle: ['Asia', 'America', 'Mallory'][base_port - 8001],
+      handle: stubs[base_port - 8001],
       location: loc,
       box_pubkey: bin(me.box.publicKey),
       add_routes: '1,2,3,4'
@@ -60,7 +82,12 @@ if (argv.monkey) {
     monkeys.splice(monkeys.indexOf(me.getAddress()), 1) // *except our addr
 
     setTimeout(() => {
-      me.testnet({partner: 1, amount: 10000000})
+      me.sendJSON(K.hubs[0], 'testnet', {
+        action: 'faucet',
+        asset: 1,
+        amount: 10000000,
+        address: me.getAddress()
+      })
     }, K.blocktime * 1000)
 
     setTimeout(() => {
@@ -73,17 +100,12 @@ if (argv.monkey) {
         amount: 100,
         asset: 1
       })
-    }, 17000)
+    }, 27000)
   }
 
   // below go pre-registred users
   if (!me.record || me.record.id > 10) {
     return
-  }
-
-  // only in monkey mode, not on end user node
-  if (base_port != 8008) {
-    Periodical.schedule('broadcast', K.blocktime * 1000)
   }
 
   if (me.record.id == 1) {
@@ -102,9 +124,9 @@ if (argv.monkey) {
 
       let failed = []
 
-      if (me.metrics.settle.total < 50) failed.push('metrics.settled')
-      if (me.metrics.fail.total < 5) failed.push('metrics.failed')
-      if ((await Payment.count()) < 50) failed.push('payments')
+      if (me.metrics.settle.total == 0) failed.push('metrics.settled')
+      if (me.metrics.fail.total == 0) failed.push('metrics.failed')
+      if ((await Payment.count()) == 0) failed.push('payments')
 
       // was this entirely new user created since genesis?
       if (!monkey5) failed.push('monkey5')
@@ -113,7 +135,7 @@ if (argv.monkey) {
 
       if ((await Block.count()) < 2) failed.push('blocks')
       if ((await Order.count()) < 1) failed.push('orders')
-      if ((await Delta.count()) < 5) failed.push('deltas')
+      if ((await Channel.count()) < 5) failed.push('deltas')
       if ((await Asset.count()) < 4) failed.push('assets')
 
       let e2e = 'e2e: ' + (failed.length == 0 ? 'success' : failed.join(', '))
@@ -170,9 +192,9 @@ if (argv.monkey) {
 
   if (me.record.id == 2) {
     // withdraw 12.34 from hub and deposit 9.12 to 3@1
-    me.getChannel(K.hubs[0].pubkey, 1).then((ch) => {
+    Channel.get(K.hubs[0].pubkey).then((ch) => {
       require('./internal_rpc/with_channel')({
-        id: ch.d.id,
+        partnerId: toHex(ch.d.partnerId),
         op: 'withdraw',
         amount: 912
       })
@@ -181,7 +203,7 @@ if (argv.monkey) {
     require('./internal_rpc/external_deposit')({
       asset: 1,
       to: '3',
-      hub: 'Europe',
+      hub: 'Medici',
       depositAmount: 912,
       invoice: 'test'
     })

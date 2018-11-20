@@ -21,10 +21,9 @@ General recommendations:
 const withdraw = require('../offchain/withdraw')
 
 const rebalance = async function(asset) {
-  var deltas = await Delta.findAll({
+  var deltas = await Channel.findAll({
     where: {
-      myId: me.pubkey,
-      asset: asset
+      myId: me.pubkey
     }
   })
 
@@ -35,28 +34,35 @@ const rebalance = async function(asset) {
   let minRisk = 100 //K.risk
 
   for (let d of deltas) {
-    let ch = await me.getChannel(d.partnerId, d.asset)
+    let ch = await Channel.get(d.partnerId)
+    let derived = ch.derived[asset]
+    let subch = ch.d.subchannels.by('asset', asset)
+
+    if (!derived) {
+      l('No derived', ch)
+    }
 
     // finding who has uninsured balances AND
     // requests insurance OR gone beyond soft limit
     if (
-      ch.they_uninsured > 0 &&
-      (ch.d.they_requested_insurance ||
-        (ch.d.they_soft_limit > 0 && ch.they_uninsured >= ch.d.they_soft_limit))
+      derived.they_uninsured > 0 &&
+      (subch.they_requested_insurance ||
+        (subch.they_soft_limit > 0 &&
+          derived.they_uninsured >= subch.they_soft_limit))
     ) {
       //l('Adding output for our promise ', ch.d.partnerId)
       netReceivers.push(ch)
-    } else if (ch.insured >= minRisk) {
+    } else if (derived.insured >= minRisk) {
       if (me.users[ch.d.partnerId]) {
         // they either get added in this rebalance or next one
-
-        netSpenders.push(withdraw(ch, ch.insured))
-      } else if (ch.d.withdrawal_requested_at == null) {
+        //l('Request withdraw withdrawFrom: ', derived)
+        netSpenders.push(withdraw(ch, subch, derived.insured))
+      } else if (subch.withdrawal_requested_at == null) {
         l('Delayed pull')
-        ch.d.withdrawal_requested_at = ts()
-      } else if (ch.d.withdrawal_requested_at + 600 < ts()) {
+        subch.withdrawal_requested_at = ts()
+      } else if (subch.withdrawal_requested_at + 600 < ts()) {
         l('User is offline for too long, or tried to cheat')
-        me.batchAdd('disputeWith', [asset, await deltaGetDispute(ch.d)])
+        me.batchAdd('disputeWith', await startDispute(ch))
       }
     }
   }
@@ -69,17 +75,18 @@ const rebalance = async function(asset) {
 
   // 2. add all withdrawals we received
   for (let ch of netSpenders) {
-    if (ch.d.withdrawal_sig) {
-      weOwn += ch.d.withdrawal_amount
+    let subch = ch.derived[asset].subch
+    if (subch.withdrawal_sig) {
+      weOwn += subch.withdrawal_amount
       let user = await getUserByIdOrKey(ch.d.partnerId)
 
       me.batchAdd('withdrawFrom', [
-        ch.d.asset,
-        [ch.d.withdrawal_amount, user.id, ch.d.withdrawal_sig]
+        subch.asset,
+        [subch.withdrawal_amount, user.id, subch.withdrawal_sig]
       ])
     } else {
       // offline? dispute
-      ch.d.withdrawal_requested_at = ts()
+      subch.withdrawal_requested_at = ts()
     }
   }
 
@@ -90,26 +97,28 @@ const rebalance = async function(asset) {
   }
 
   // sort receivers, larger ones are given priority
-  netReceivers.sort((a, b) => b.they_uninsured - a.they_uninsured)
+  netReceivers.sort(
+    (a, b) => b.derived[asset].they_uninsured - a.derived[asset].they_uninsured
+  )
 
   // dont let our FRD onchain balance go lower than that
   let safety = asset == 1 ? K.hub_standalone_balance : 0
 
   // 4. now do our best to cover net receivers
   for (let ch of netReceivers) {
-    weOwn -= ch.they_uninsured
+    weOwn -= ch.derived[asset].they_uninsured
     if (weOwn >= safety) {
       me.batchAdd('depositTo', [
         asset,
-        [ch.they_uninsured, me.record.id, ch.d.partnerId, 0]
+        [ch.derived[asset].they_uninsured, me.record.id, ch.d.partnerId, 0]
       ])
 
       // nullify their insurance request
-      ch.d.they_requested_insurance = false
+      ch.derived[asset].subch.they_requested_insurance = false
     } else {
       l(
         `Run out of funds for asset ${asset}, own ${weOwn} need ${
-          ch.they_uninsured
+          ch.derived[asset].they_uninsured
         }`
       )
       break
@@ -120,9 +129,10 @@ const rebalance = async function(asset) {
 module.exports = () => {
   if (PK.pending_batch || me.batch.length > 0) return l('There are pending tx')
 
-  l('Starting rebalance')
+  //l('Starting rebalance')
   // we iterate over all assets in existance and rebalance each separately
-  for (let i = 1; i <= K.assets_created; i++) {
+  //K.assets_created
+  for (let i = 1; i <= 2; i++) {
     rebalance(i)
   }
 }

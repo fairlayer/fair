@@ -29,32 +29,84 @@ const defineModels = (sequelize) => {
   // TODO: seamlessly cloud backup it. If signatures are lost, money is lost
 
   // we name our things "value", and counterparty's "they_value"
-  const Delta = sequelize.define(
-    'delta',
+  const Channel = sequelize.define(
+    'channel',
     {
       // between who and who
       myId: Sequelize.BLOB,
       partnerId: Sequelize.BLOB,
 
       // higher nonce is valid
-      nonce: Sequelize.INTEGER,
-      status: Sequelize.ENUM(
-        'master',
-        'sent',
-        'merge',
-        'disputed',
-        'CHEAT_dontack'
-      ),
+      dispute_nonce: {
+        type: Sequelize.INTEGER,
+        defaultValue: 0
+      },
+
+      // used during rollbacks
+      rollback_nonce: {
+        type: Sequelize.INTEGER,
+        defaultValue: 0
+      },
+
+      status: {
+        type: Sequelize.ENUM(
+          'master',
+          'sent',
+          'merge',
+          'disputed',
+          'CHEAT_dontack'
+        ),
+        defaultValue: 'master'
+      },
 
       pending: Sequelize.BLOB,
 
-      // TODO: clone from Insurance table to Delta to avoid double querying both dbs
-      disbalance: Sequelize.INTEGER,
+      ack_requested_at: {
+        type: Sequelize.DATE,
+        defaultValue: null
+      },
 
-      offdelta: Sequelize.INTEGER,
+      last_online: Sequelize.DATE,
+      withdrawal_requested_at: Sequelize.DATE,
+
+      sig: Sequelize.BLOB,
+      signed_state: Sequelize.BLOB,
+
+      // All the safety Byzantine checks start with cheat_
+      CHEAT_profitable_state: Sequelize.BLOB,
+      CHEAT_profitable_sig: Sequelize.BLOB
+    },
+    {
+      indexes: [
+        {
+          fields: [
+            {
+              attribute: 'partnerId',
+              length: 32
+            }
+          ]
+        }
+      ]
+    }
+  )
+
+  // each separate offdelta per asset
+  const Subchannel = sequelize.define(
+    'subchannel',
+    {
       asset: {
         type: Sequelize.INTEGER,
         defaultValue: 1
+      },
+
+      offdelta: {
+        type: Sequelize.INTEGER,
+        defaultValue: 0
+      },
+
+      rollback_offdelta: {
+        type: Sequelize.INTEGER,
+        defaultValue: 0
       },
 
       // by default all limits set to 0
@@ -86,48 +138,22 @@ const defineModels = (sequelize) => {
         defaultValue: false
       },
 
-      they_fail_score: {
-        type: Sequelize.INTEGER,
-        defaultValue: 0
-      }, // how often they fail to route our payments
-
-      flush_requested_at: Sequelize.DATE,
-      ack_requested_at: {
-        type: Sequelize.DATE,
-        defaultValue: null
-      },
-
-      last_online: Sequelize.DATE,
-      withdrawal_requested_at: Sequelize.DATE,
-
       withdrawal_amount: {
         type: Sequelize.INTEGER,
         defaultValue: 0
       },
+
       withdrawal_sig: Sequelize.BLOB, // we store a withdrawal sig to use in next rebalance
+
       they_withdrawal_amount: {
         type: Sequelize.INTEGER,
         defaultValue: 0
-      },
-
-      sig: Sequelize.BLOB,
-      signed_state: Sequelize.BLOB,
-
-      signed_nonce: Sequelize.INTEGER,
-      signed_offdelta: Sequelize.INTEGER,
-
-      // All the safety Byzantine checks start with cheat_
-      CHEAT_profitable_state: Sequelize.BLOB,
-      CHEAT_profitable_sig: Sequelize.BLOB
+      }
     },
     {
       indexes: [
         {
           fields: [
-            {
-              attribute: 'partnerId',
-              length: 32
-            },
             {
               attribute: 'asset'
             }
@@ -141,8 +167,8 @@ const defineModels = (sequelize) => {
     'payment',
     {
       //todo: move to single field addnew, addsent ...
-      type: Sequelize.ENUM('add', 'del', 'addrisk', 'delrisk', 'onchain'),
-      status: Sequelize.ENUM('new', 'sent', 'ack'),
+      type: Sequelize.STRING, //ENUM('add', 'del', 'addrisk', 'delrisk', 'onchain'),
+      status: Sequelize.STRING, //ENUM('new', 'sent', 'ack'),
       is_inward: Sequelize.BOOLEAN,
 
       processed: {
@@ -166,7 +192,7 @@ const defineModels = (sequelize) => {
       },
 
       // secret or fail reason
-      outcome_type: Sequelize.INTEGER,
+      outcome_type: Sequelize.STRING,
       // payload of outcome
       outcome: Sequelize.BLOB,
 
@@ -251,14 +277,29 @@ const defineModels = (sequelize) => {
     buyAssetId: Sequelize.INTEGER
   })
 
-  Delta.hasMany(Payment)
-  Payment.belongsTo(Delta)
+  let nonull = {foreignKey: {allowNull: false}, onDelete: 'CASCADE'}
+
+  Channel.hasMany(Subchannel, nonull)
+  Subchannel.belongsTo(Channel, nonull)
+
+  Channel.hasMany(Payment, nonull)
+  Payment.belongsTo(Channel, nonull)
+
+  Channel.prototype.isLeft = function() {
+    return Buffer.compare(me.pubkey, this.partnerId) == -1
+  }
 
   return {
-    Delta: Delta,
+    // actual channel
+    Channel: Channel,
+    // subchannels (offdeltas for assets)
+    Subchannel: Subchannel,
+    // hashlocks for offdeltas
     Payment: Payment,
-    Block: Block,
+    // user-specific onchain events
     Event: Event,
+
+    Block: Block,
     OffOrder: OffOrder
   }
 }

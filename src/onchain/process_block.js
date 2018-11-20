@@ -153,11 +153,11 @@ module.exports = async (s, header, ordered_tx_body) => {
     all.push(
       Insurance.findAll({
         where: {dispute_delayed: {[Op.lte]: K.usable_blocks}},
-        include: {all: true}
+        include: [Subinsurance]
       }).then(async (insurances) => {
         for (let ins of insurances) {
           // take from cache instead
-          let str = stringify([ins.leftId, ins.rightId, ins.asset])
+          let str = stringify([ins.leftId, ins.rightId])
           if (cache.ins[str]) ins = cache.ins[str]
 
           s.meta.cron.push(['resolved', ins, await insuranceResolve(ins)])
@@ -204,6 +204,7 @@ module.exports = async (s, header, ordered_tx_body) => {
     )
   }
 
+  /*
   if (K.bet_maturity && K.ts > K.bet_maturity) {
     l('🎉 Maturity day! Copy all FRB balances to FRD')
     s.meta.cron.push(['maturity'])
@@ -219,6 +220,7 @@ module.exports = async (s, header, ordered_tx_body) => {
 
     K.bet_maturity = false
   }
+  */
 
   // saving current proposer and their fees earned
   all.push(s.meta.proposer.save())
@@ -241,7 +243,7 @@ module.exports = async (s, header, ordered_tx_body) => {
   if (me.my_validator || PK.explorer) {
     s.meta.missed_validators = s.missed_validators
 
-    l('Saving block ' + K.total_blocks)
+    //l('Saving block ' + K.total_blocks)
     await Block.create({
       id: K.total_blocks,
 

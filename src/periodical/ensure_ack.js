@@ -5,14 +5,14 @@ module.exports = async () => {
   //l('Checking who has not ack')
   if (PK.pending_batch) return l('Pending batch')
 
-  var deltas = await Delta.findAll({
+  var deltas = await Channel.findAll({
     where: {
       myId: me.pubkey
     }
   })
 
   for (let d of deltas) {
-    let ch = await me.getChannel(d.partnerId, d.asset)
+    let ch = await Channel.get(d.partnerId)
     //cache.ch[key]
     if (!ch) continue
 
@@ -51,7 +51,7 @@ module.exports = async () => {
         ) {
           to_reveal.push(inward.outcome)
         } else {
-          l('Already unlocked in ', ch.d.dataValues)
+          l('Already unlocked in ', ch.d)
         }
       }
     }
@@ -64,9 +64,7 @@ module.exports = async () => {
       )
 
       me.batchAdd('revealSecrets', to_reveal)
-      me.batchAdd('disputeWith', [ch.d.asset, await deltaGetDispute(ch.d)])
-      ch.d.status = 'disputed'
-      ch.d.ack_requested_at = null
+      me.batchAdd('disputeWith', await startDispute(ch))
     }
   }
 }

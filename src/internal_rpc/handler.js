@@ -60,21 +60,20 @@ module.exports = async (ws, json) => {
       await me.payChannel(json.params)
       break
 
+    case 'startDispute':
+      let ch = await Channel.get(json.params.partnerId)
+      me.batchAdd('disputeWith', await startDispute(ch))
+      react({confirm: 'OK'})
+
+      break
     case 'withChannel':
       require('./with_channel')(json.params)
       break
 
     case 'onchainFaucet':
-      me.send(
-        K.hubs[0],
-        'testnet',
-        r([
-          7,
-          json.params.asset ? json.params.asset : 1,
-          json.params.amount,
-          bin(me.pubkey)
-        ])
-      )
+      json.params.pubkey = me.pubkey.toString()
+      json.params.action = 'onchainFaucet'
+      me.sendJSON(K.hubs[0], 'testnet', json.params)
       react({confirm: 'Await onchain faucet'})
 
       break
@@ -85,7 +84,7 @@ module.exports = async (ws, json) => {
 
     case 'broadcast':
       Periodical.broadcast(json.params)
-      react({confirm: 'Now await inclusion in block', force: true})
+      react({force: true})
       return false
       break
 
@@ -129,21 +128,13 @@ module.exports = async (ws, json) => {
 
         let hub = K.hubs.find((h) => h.id == json.params.id)
 
-        let ch = await me.getChannel(hub.pubkey, 1)
-
-        ch.d.hard_limit = K.hard_limit
-        ch.d.soft_limit = K.soft_limit
-
-        me.send(
-          hub,
-          'setLimits',
-          me.envelope(
-            methodMap('setLimits'),
-            ch.d.asset,
-            ch.d.soft_limit,
-            ch.d.hard_limit
-          )
-        )
+        require('./with_channel')({
+          op: 'setLimits',
+          partnerId: hub.pubkey,
+          asset: 1,
+          soft_limit: K.soft_limit,
+          hard_limit: K.hard_limit
+        })
 
         result.confirm = 'Hub added'
       } else {
@@ -155,6 +146,24 @@ module.exports = async (ws, json) => {
       //
       react({force: true})
       //Periodical.updateCache()
+
+      break
+    case 'toggleAsset':
+      if ([1, 2].includes(json.params.id)) {
+        react({alert: 'This asset is required by the system'})
+        return
+      }
+      let assetIndex = PK.usedAssets.indexOf(json.params.id)
+      if (assetIndex == -1) {
+        PK.usedAssets.push(json.params.id)
+
+        result.confirm = 'Asset added'
+      } else {
+        PK.usedAssets.splice(assetIndex, 1)
+
+        result.confirm = 'Asset removed'
+      }
+      react({force: true})
 
       break
 
@@ -183,10 +192,6 @@ module.exports = async (ws, json) => {
       //security: ensure it's not RCE and put extra safeguards
       //eval(json.params.hardfork)
       result.confirm = 'Executed'
-      break
-
-    case 'setLimits':
-      result = await require('./set_limits')(json.params)
       break
 
     default:

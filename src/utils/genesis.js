@@ -10,11 +10,16 @@ const createValidator = async (username, pw, loc, website) => {
 
   const user = await User.create({
     pubkey: me.pubkey,
-    username: username,
-    nonce: 0,
-    balance1: 10000000000,
-    balance2: 10000000000,
-    balances: `{"3": 10000000000}`
+    username: username
+  })
+
+  await user.createBalance({
+    asset: 1,
+    balance: 10000000000
+  })
+  await user.createBalance({
+    asset: 2,
+    balance: 10000000000
   })
 
   const validator = {
@@ -112,7 +117,7 @@ module.exports = async (datadir) => {
     hubs: [],
     flush_timeout: 250,
 
-    cache_timeout: 60, //s, keep channel in memory since last use
+    cache_timeout: 90, //s, keep channel in memory since last use
     safe_sync_delay: 180, //s, after what time prohibit using wallet if unsynced
     sync_limit: 500, // how many blocks to share at once
 
@@ -176,23 +181,15 @@ module.exports = async (datadir) => {
 
     K.validators.push(validator)
 
-    // preload channel FRD and FRB
-    await Insurance.create({
+    let ins = await Insurance.create({
       leftId: left ? validator.id : 1,
-      rightId: left ? 1 : validator.id,
-      insurance: 1000000,
-      ondelta: left ? 1000000 : 0,
-      nonce: 0,
-      asset: 1
+      rightId: left ? 1 : validator.id
     })
 
-    await Insurance.create({
-      leftId: left ? validator.id : 1,
-      rightId: left ? 1 : validator.id,
-      insurance: 2000000,
-      ondelta: left ? 2000000 : 0,
-      nonce: 0,
-      asset: 2
+    ins.createSubinsurance({
+      asset: 1,
+      balance: 1000000,
+      ondelta: left ? 1000000 : 0
     })
   }
 
@@ -221,8 +218,8 @@ module.exports = async (datadir) => {
     fee_bps: 10,
     createdAt: ts(),
 
-    handle: 'Europe',
-    name: '@Europe'
+    handle: 'Medici',
+    name: '@Medici'
   })
 
   // similar to https://en.wikipedia.org/wiki/Nostro_and_vostro_accounts
@@ -287,19 +284,18 @@ module.exports = async (datadir) => {
   */
 
   await Asset.create({
-    ticker: 'FRD',
-    name: 'Fair Dollar',
-    desc:
-      'Fair Dollar is a fiat currency issued by Fair Foundation. It is collateralized and easy to sell for traditional fiat currencies at stable exchange rate.',
+    ticker: 'USD',
+    name: 'U.S. Dollar',
+    desc: 'USD',
     issuerId: 1,
     total_supply: 1000000000
   })
 
   await Asset.create({
-    ticker: 'FRB',
-    name: 'Fair Bet',
+    ticker: 'EUR',
+    name: 'Euro',
     desc:
-      'Fair Bet supply is capped at 100B FRB. FRB will be automatically converted into FRD 1-for-1 on 2030-08-19.',
+      'Capped at 100 billions, will be automatically converted into FRD 1-for-1 on 2030-08-19.',
     issuerId: 1,
     total_supply: 1000000000
   })
@@ -310,15 +306,16 @@ module.exports = async (datadir) => {
     name: '@us (America-based)'
   }
   */
-
+  // private config
   const PK = {
     username: 'root',
     seed: hubSeed.toString('hex'),
     auth_code: toHex(crypto.randomBytes(32)),
+
     pending_batch: null,
 
     usedHubs: [],
-    usedAssets: []
+    usedAssets: [1, 2]
   }
 
   await writeGenesisOnchainConfig(K, datadir)

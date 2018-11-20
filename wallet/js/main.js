@@ -3,12 +3,13 @@ import Vue from 'vue'
 import Trend from 'vuetrend'
 Vue.use(Trend)
 
-require('methods')
 import App from './App'
 
 window.jQuery = require('../assets/assets/js/vendor/jquery-slim.min.js')
 window.Popper = require('../assets/assets/js/vendor/popper.min.js')
 require('../assets/dist/js/bootstrap.min.js')
+
+window.Tour = require('./shepherd.min.js')
 
 window.l = console.log
 window.ts = () => Math.round(new Date() / 1000)
@@ -154,6 +155,10 @@ window.render = (r) => {
   let firstLoad = !app.pubkey
   if (r.alert) notyf.alert(r.alert)
   if (r.confirm) notyf.confirm(r.confirm)
+
+  // show step from tour
+  if (r.showStep) window.tour.show(r.showStep)
+
   if (r.reload) {
     clearInterval(window.app.interval)
 
@@ -186,27 +191,10 @@ window.render = (r) => {
     app.updateRoutes()
   }
 
-  // ensure all chActions are prefilled
-  if (r.channels)
-    r.channels.map((ch) => {
-      if (!app.chActions[ch.d.id]) {
-        app.chActions[ch.d.id] = {
-          depositAmount: '',
-          withdrawAmount: '',
-          hard_limit: app.commy(ch.d.hard_limit, true, false),
-          soft_limit: app.commy(ch.d.soft_limit, true, false)
-        }
-      }
-    })
-
   Object.assign(window.app, r)
   window.app.$forceUpdate()
 
-  if (
-    firstLoad &&
-    location.hostname == 'demo.fairlayer.com' &&
-    prefillUsername
-  ) {
+  if (firstLoad && location.hostname.startsWith('demo-') && prefillUsername) {
     prefillUsername()
   }
 
@@ -215,7 +203,7 @@ window.render = (r) => {
     firstLoad &&
     app.pubkey &&
     app.tab == 'wallet' &&
-    app.channelsForAsset().length == 0
+    app.channels.length == 0
   ) {
     //app.go('hubs')
   }

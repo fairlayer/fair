@@ -1,7 +1,7 @@
 // This method receives set of transitions by another party and applies it
 // hubs normally pass forward payments, end users normally decode payloads and unlock hashlocks
-module.exports = async (pubkey, asset, ackSig, transitions, debug) => {
-  let ch = await me.getChannel(pubkey, asset)
+module.exports = async (pubkey, ackSig, transitions, debug) => {
+  let ch = await Channel.get(pubkey)
   ch.last_used = ts()
 
   let all = []
@@ -23,23 +23,23 @@ module.exports = async (pubkey, asset, ackSig, transitions, debug) => {
     }
   }
 
-  let [theirInitialState, theirFinalState, theirSignedState] = debug
-
   let ourSignedState = r(ch.d.signed_state)
   prettyState(ourSignedState)
 
-  prettyState(theirInitialState)
-  prettyState(theirFinalState)
+  // decode from hex and unpack
+  let theirSignedState = debug[0] ? r(fromHex(debug[0])) : false
   prettyState(theirSignedState)
+
+  let theirState = debug[1] ? r(fromHex(debug[1])) : false
+  prettyState(theirState)
 
   let mismatch = (reason) => {
     logstates(
       reason,
       ch.state,
+      theirState,
       ourSignedState,
-      theirInitialState,
       theirSignedState,
-      theirFinalState,
       transitions
     )
   }
@@ -76,21 +76,28 @@ module.exports = async (pubkey, asset, ackSig, transitions, debug) => {
 
     Our job is to rollback to last known signed state, check ackSig against it, if true - apply
     partner's transitions, and then reapply the difference we made with OUR transitions
-    namely - nonce and offdelta diffs because hashlocks are already processed.
+    namely - dispute_nonce and offdelta diffs because hashlocks are already processed.
 
     We hope the partner does the same with our transitions so we both end up on equal states.
 
     */
 
-    if (ch.d.signed_state && deltaVerify(ch.d, ourSignedState, ackSig)) {
-      if (trace) l(`Start merge with ${trim(pubkey)}`)
+    if (ch.d.signed_state && ackSig.equals(ch.d.sig)) {
+      //if (trace)
 
-      ch.rollback = [
-        ch.d.nonce - ourSignedState[1][2], // nonce diff
-        ch.d.offdelta - ourSignedState[1][3] // offdelta diff
-      ]
-      ch.d.nonce = ourSignedState[1][2]
-      ch.d.offdelta = ourSignedState[1][3]
+      ch.d.rollback_nonce = ch.d.dispute_nonce - ourSignedState[1][2]
+      ch.d.dispute_nonce = ourSignedState[1][2]
+
+      // resetting offdeltas in subchannels back to last signed state
+      ch.d.subchannels.map((subch) => {
+        let signed_offdelta = ourSignedState[2].find(
+          (signed) => signed[0] == subch.asset
+        )[1]
+        subch.rollback_offdelta = subch.offdelta - signed_offdelta
+        subch.offdelta = signed_offdelta
+      })
+
+      l(`Start merge with ${trim(pubkey)}, rollback ${ch.d.rollback_nonce}`)
     } else {
       mismatch('Deadlock')
 
@@ -105,23 +112,30 @@ module.exports = async (pubkey, asset, ackSig, transitions, debug) => {
 
   // we apply a transition to canonical state, if sig is valid - execute the action
   for (let t of transitions) {
-    let m = methodMap(readInt(t[0]))
+    ackSig = fromHex(t[2])
 
-    if (m == 'add' || m == 'addrisk') {
-      let [amount, hash, exp, unlocker] = t[1]
-      ;[exp, amount] = [exp, amount].map(readInt)
+    if (t[0] == 'add' || t[0] == 'addrisk') {
+      let [asset, amount, hash, exp, unlocker] = t[1]
+      ;[hash, unlocker] = [hash, unlocker].map(fromHex)
+
+      var derived = ch.derived[asset]
+      if (!derived) {
+        l('no derived')
+        continue
+      }
       // every 'add' transition must pass an encrypted envelope (onion routing)
 
       let box_data = open_box_json(unlocker)
 
       // these things CANT happen, partner is malicious so just ignore and break
-      if (amount < K.min_amount || amount > ch.they_payable) {
+      if (amount < K.min_amount || amount > derived.they_payable) {
+        l('Bad amount: ', amount, derived.they_payable)
         break
       }
       if (hash.length != 32) {
         break
       }
-      if (ch.inwards.length >= K.max_hashlocks) {
+      if (derived.inwards.length >= K.max_hashlocks) {
         break
       }
 
@@ -138,17 +152,20 @@ module.exports = async (pubkey, asset, ackSig, transitions, debug) => {
 
         asset: asset,
 
-        deltumId: ch.d.id
+        channelId: ch.d.id
       })
 
       ch.payments.push(inward_hl)
 
       // check new state and sig, save
-      ch.d.nonce++
+      ch.d.dispute_nonce++
+      let nextState = refresh(ch)
 
-      if (!deltaVerify(ch.d, refresh(ch), t[2])) {
+      if (!deltaVerify(ch.d, nextState, ackSig)) {
         loff('error: Invalid state sig add')
-        mismatch('error: Invalid state sig add')
+        let theirState = r(fromHex(t[3]))
+        prettyState(theirState)
+        mismatch('error: Invalid state sig add', theirState)
 
         break
       }
@@ -187,7 +204,7 @@ module.exports = async (pubkey, asset, ackSig, transitions, debug) => {
         // go to next transition - we failed this hashlock already
         inward_hl.type = 'del'
         inward_hl.status = 'new'
-        inward_hl.outcome_type = methodMap('outcomeCapacity')
+        inward_hl.outcome_type = 'outcomeCapacity'
         inward_hl.outcome = bin(failure)
       } else if (box_data.secret) {
         // we are final destination, no unlocker to pass
@@ -203,10 +220,10 @@ module.exports = async (pubkey, asset, ackSig, transitions, debug) => {
 
         // secret doesn't fit?
         if (sha3(box_data.secret).equals(hash)) {
-          inward_hl.outcome_type = methodMap('outcomeSecret')
+          inward_hl.outcome_type = 'outcomeSecret'
           inward_hl.outcome = box_data.secret
         } else {
-          inward_hl.outcome_type = methodMap('outcomeCapacity')
+          inward_hl.outcome_type = 'outcomeCapacity'
           inward_hl.outcome = bin('BadSecret')
         }
 
@@ -228,26 +245,26 @@ module.exports = async (pubkey, asset, ackSig, transitions, debug) => {
         // ensure it's equal what they expect us to pay
         let nextHop = fromHex(box_data.nextHop)
 
-        let dest_ch = await me.getChannel(nextHop, asset)
+        let dest_ch = await Channel.get(nextHop)
 
         // is next hop online? Is payable?
         if (!me.users[nextHop]) {
-          inward_hl.outcome_type = methodMap('outcomeOffline')
+          inward_hl.outcome_type = 'outcomeOffline'
         }
 
-        if (dest_ch.status == 'disputed') {
-          inward_hl.outcome_type = methodMap('outcomeDisputed')
+        if (dest_ch.d.status == 'disputed') {
+          inward_hl.outcome_type = 'outcomeDisputed'
         }
 
-        if (dest_ch.payable < outward_amount) {
-          inward_hl.outcome_type = methodMap('outcomeCapacity')
+        if (dest_ch.derived[asset].payable < outward_amount) {
+          inward_hl.outcome_type = 'outcomeCapacity'
         }
 
         if (inward_hl.outcome_type) {
           l('Failed to mediate')
           inward_hl.outcome = bin(`id`)
           // fail right now
-          inward_hl.type = m == 'add' ? 'del' : 'delrisk'
+          inward_hl.type = t[0] == 'add' ? 'del' : 'delrisk'
           inward_hl.status = 'new'
 
           me.metrics.fail.current++
@@ -258,8 +275,8 @@ module.exports = async (pubkey, asset, ackSig, transitions, debug) => {
         // otherwise mediate
 
         var outward_hl = Payment.build({
-          deltumId: dest_ch.d.id,
-          type: m,
+          channelId: dest_ch.d.id,
+          type: t[0],
           status: 'new',
           is_inward: false,
 
@@ -284,20 +301,17 @@ module.exports = async (pubkey, asset, ackSig, transitions, debug) => {
       } else {
         inward_hl.type = 'del'
         inward_hl.status = 'new'
-        inward_hl.outcome_type = methodMap('outcomeCapacity')
+        inward_hl.outcome_type = 'outcomeCapacity'
         inward_hl.outcome = bin('UnknownError')
       }
 
       //if (argv.syncdb) all.push(inward_hl.save())
-    } else if (m == 'del' || m == 'delrisk') {
-      var [hash, outcome_type, outcome] = t[1]
-      outcome_type = readInt(outcome_type)
+    } else if (t[0] == 'del' || t[0] == 'delrisk') {
+      var [asset, hash, outcome_type, outcome] = t[1]
+      ;[hash, outcome] = [hash, outcome].map(fromHex)
 
       // try to parse outcome as secret and check its hash
-      if (
-        outcome_type == methodMap('outcomeSecret') &&
-        sha3(outcome).equals(hash)
-      ) {
+      if (outcome_type == 'outcomeSecret' && sha3(outcome).equals(hash)) {
         var valid = true
       } else {
         // otherwise it is a reason why mediation failed
@@ -307,29 +321,31 @@ module.exports = async (pubkey, asset, ackSig, transitions, debug) => {
       refresh(ch)
 
       // todo check expirations
-      var outward_hl = ch.outwards.find((hl) => hl.hash.equals(hash))
+      var outward_hl = ch.derived[asset].outwards.find((hl) =>
+        hl.hash.equals(hash)
+      )
       if (!outward_hl) {
         l('No such hashlock ', hash, ch.payments)
         continue
       }
-
-      if (valid && m == 'del') {
+      let subch = ch.d.subchannels.by('asset', asset)
+      if (valid && t[0] == 'del') {
         // secret was provided - remove & apply hashlock on offdelta
-        ch.d.offdelta += ch.left ? -outward_hl.amount : outward_hl.amount
-      } else if (!valid && m == 'delrisk') {
+        subch.offdelta += ch.d.isLeft() ? -outward_hl.amount : outward_hl.amount
+      } else if (!valid && t[0] == 'delrisk') {
         // delrisk fail is refund
-        ch.d.offdelta += ch.left ? outward_hl.amount : -outward_hl.amount
+        subch.offdelta += ch.d.isLeft() ? outward_hl.amount : -outward_hl.amount
       }
 
-      outward_hl.type = m
+      outward_hl.type = t[0]
       outward_hl.status = 'ack'
       // pass same outcome down the chain
       outward_hl.outcome_type = outcome_type
       outward_hl.outcome = outcome
 
-      ch.d.nonce++
-      if (!deltaVerify(ch.d, refresh(ch), t[2])) {
-        fatal('error: Invalid state sig at ' + m)
+      ch.d.dispute_nonce++
+      if (!deltaVerify(ch.d, refresh(ch), ackSig)) {
+        fatal('error: Invalid state sig at del')
         break
       }
 
@@ -339,16 +355,18 @@ module.exports = async (pubkey, asset, ackSig, transitions, debug) => {
 
       // if there's an inward channel for this, we are hub
       if (outward_hl.inward_pubkey) {
-        var inward = await me.getChannel(outward_hl.inward_pubkey, ch.d.asset)
+        var inward_ch = await Channel.get(outward_hl.inward_pubkey)
 
-        if (inward.d.status == 'disputed' && valid) {
+        if (inward_ch.d.status == 'disputed' && valid) {
           loff(
             'The inward channel is disputed (pointless to flush), which means we revealSecret - by the time of resultion hashlock will be unlocked'
           )
           me.batchAdd('revealSecrets', outcome)
         } else {
           // pulling the money after receiving secrets, down the chain of channels
-          var pull_hl = inward.inwards.find((hl) => hl.hash.equals(hash))
+          var pull_hl = inward_ch.derived[asset].inwards.find((hl) =>
+            hl.hash.equals(hash)
+          )
 
           if (!pull_hl) {
             l(
@@ -356,8 +374,8 @@ module.exports = async (pubkey, asset, ackSig, transitions, debug) => {
               trim(pubkey),
               toHex(hash),
               valid,
-              inward.rollback,
-              ascii_state(inward.state)
+              inward_ch.d.rollback_nonce,
+              ascii_state(inward_ch.state)
             )
             continue
             //fatal('Not found pull hl')
@@ -396,7 +414,7 @@ module.exports = async (pubkey, asset, ackSig, transitions, debug) => {
               payment_outcome: 'fail',
               alert:
                 'Payment failed, try another route: ' +
-                methodMap(outcome_type) +
+                outcome_type +
                 outcome.toString()
             },
             false
@@ -414,24 +432,22 @@ module.exports = async (pubkey, asset, ackSig, transitions, debug) => {
     }
   }
 
-  refresh(ch)
-
-  let ours = ascii_state(ch.state)
-  let theirs = ascii_state(theirFinalState)
-
-  if (ours != theirs) {
-    l(ours, theirs)
-    fatal('Unexpected final states after transitions ', transitions)
-  }
+  //refresh(ch)
 
   // since we applied partner's diffs, all we need is to add the diff of our own transitions
-  if (ch.rollback[0] > 0) {
+  if (ch.d.rollback_nonce > 0) {
     // merging and leaving rollback mode
-    ch.d.nonce += ch.rollback[0]
-    ch.d.offdelta += ch.rollback[1]
-    ch.rollback = [0, 0]
+    ch.d.dispute_nonce += ch.d.rollback_nonce
+    ch.d.rollback_nonce = 0
 
-    if (trace) l(`After merge our state is \n${ascii_state(refresh(ch))}`)
+    ch.d.subchannels.map((subch) => {
+      subch.offdelta += subch.rollback_offdelta
+      subch.rollback_offdelta = 0
+    })
+
+    refresh(ch)
+
+    if (trace) l(`After merge our state is \n${ascii_state(ch.state)}`)
 
     ch.d.status = 'merge'
   } else {
@@ -440,16 +456,21 @@ module.exports = async (pubkey, asset, ackSig, transitions, debug) => {
   }
 
   // CHEAT_: storing most profitable outcome for us
+  /*
   if (!ch.d.CHEAT_profitable_state) {
     ch.d.CHEAT_profitable_state = ch.d.signed_state
     ch.d.CHEAT_profitable_sig = ch.d.sig
   }
   let profitable = r(ch.d.CHEAT_profitable_state)
   let o = readInt(profitable[1][3])
-  if ((ch.left && ch.d.offdelta > o) || (!ch.left && ch.d.offdelta < o)) {
+  if (
+    (ch.d.isLeft() && ch.d.offdelta > o) ||
+    (!ch.d.isLeft() && ch.d.offdelta < o)
+  ) {
     ch.d.CHEAT_profitable_state = ch.d.signed_state
     ch.d.CHEAT_profitable_sig = ch.d.sig
   }
+  */
 
   //if (argv.syncdb) {
   //all.push(ch.d.save())

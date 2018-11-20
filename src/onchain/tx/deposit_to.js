@@ -46,7 +46,6 @@ module.exports = async (s, args) => {
             type: 'fee',
             amount: -K.account_creation_fee,
             asset: asset,
-            blockId: K.total_blocks,
 
             desc: `Paid account creation fee`
           })
@@ -118,14 +117,23 @@ module.exports = async (s, args) => {
       const compared = Buffer.compare(depositTo.pubkey, withPartner.pubkey)
       if (compared == 0) return
 
-      const ins = await getInsuranceBetween(depositTo, withPartner, asset)
+      const ins = await getInsuranceBetween(depositTo, withPartner)
 
-      ins.insurance += amount
-      if (depositTo.id == ins.leftId) ins.ondelta += amount
+      let subins = ins.subinsurances.by('asset', asset)
+      if (!subins) {
+        subins = Subinsurance.build({
+          insuranceId: ins.id,
+          asset: asset
+        })
+        ins.subinsurances.push(subins)
+      }
+
+      subins.balance += amount
+      if (depositTo.id == ins.leftId) subins.ondelta += amount
 
       // user is paying themselves for registration
       const regfees = original_amount - amount
-      ins.ondelta -= compared * regfees
+      subins.ondelta -= compared * regfees
 
       userAsset(s.signer, asset, -amount)
 
@@ -135,26 +143,26 @@ module.exports = async (s, args) => {
         // TODO: attack vector, the user may not endorsed this rebalance
         // reimbures to hub rebalance fees
         /*
-        ins.insurance -= reimburse_txfee
-        ins.ondelta -= compared * reimburse_txfee
+        subins.balance -= reimburse_txfee
+        subins.ondelta -= compared * reimburse_txfee
         userAsset(s.signer, 1, reimburse_txfee)
         */
         // todo take from onchain balance instead
       }
 
       await saveId(ins)
+      //await saveId(subins)
 
       if (me.is_me(depositTo.pubkey) || me.is_me(withPartner.pubkey)) {
         // hot reload
         // todo ensure it's in memory yet
-        const ch = await me.getChannel(
-          me.is_me(withPartner.pubkey) ? depositTo.pubkey : withPartner.pubkey,
-          asset
+        const ch = await Channel.get(
+          me.is_me(withPartner.pubkey) ? depositTo.pubkey : withPartner.pubkey
         )
         ch.ins = ins
 
         // rebalance happened, nullify
-        ch.d.requested_insurance = false
+        ch.d.subchannels.by('asset', asset).requested_insurance = false
       }
 
       // rebalance by hub for our account = reimburse hub fees
