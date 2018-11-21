@@ -211,12 +211,12 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
 
         // decode buffers from json
         box_data.secret = fromHex(box_data.secret)
-        box_data.invoice = fromHex(box_data.invoice)
+        box_data.private_invoice = fromHex(box_data.private_invoice)
 
         // optional refund address
         inward_hl.source_address = box_data.source_address
 
-        inward_hl.invoice = box_data.invoice
+        inward_hl.private_invoice = box_data.private_invoice
 
         // secret doesn't fit?
         if (sha3(box_data.secret).equals(hash)) {
@@ -474,6 +474,8 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
 
   //if (argv.syncdb) {
   //all.push(ch.d.save())
+
+  react({private: true}, false)
 
   //await syncdb() //Promise.all(all)
   //}

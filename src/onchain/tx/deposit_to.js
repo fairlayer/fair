@@ -179,7 +179,8 @@ module.exports = async (s, args) => {
     }
 
     // invoice is an arbitrary tag to identify the payer for merchant
-    const invoice = output[3] && output[3].length != 0 ? output[3] : false
+    const public_invoice =
+      output[3] && output[3].length != 0 ? output[3] : false
 
     // we sent onchain
     if (me.is_me(s.signer.pubkey)) {
@@ -189,7 +190,7 @@ module.exports = async (s, args) => {
         type: 'sent',
         amount: -amount,
         asset: asset,
-        invoice: invoice.toString(),
+        public_invoice: public_invoice.toString(),
         userId: depositTo.id,
 
         desc: `Sent to ${depositTo.id}`
@@ -205,7 +206,7 @@ module.exports = async (s, args) => {
         type: 'received',
         amount: amount,
         asset: asset,
-        invoice: invoice.toString(),
+        public_invoice: public_invoice.toString(),
         userId: s.signer.id,
 
         desc: `Received from ${s.signer.id}`
@@ -217,7 +218,7 @@ module.exports = async (s, args) => {
       amount,
       depositTo.id,
       withPartner ? withPartner.id : false,
-      invoice ? toHex(invoice) : false
+      public_invoice ? toHex(public_invoice) : false
     ])
 
     s.meta.outputs_volume += amount

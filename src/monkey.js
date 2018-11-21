@@ -39,13 +39,7 @@ if (argv.monkey) {
     // add first hub by default and open limit
     PK.usedHubs.push(1)
 
-    require('./internal_rpc/with_channel')({
-      op: 'setLimits',
-      partnerId: K.hubs[0].pubkey,
-      asset: 1,
-      soft_limit: K.soft_limit,
-      hard_limit: K.hard_limit
-    })
+    setTimeout(() => {}, 4000)
   }
 
   // only in monkey mode, not on end user node
@@ -82,10 +76,18 @@ if (argv.monkey) {
     monkeys.splice(monkeys.indexOf(me.getAddress()), 1) // *except our addr
 
     setTimeout(() => {
+      require('./internal_rpc/with_channel')({
+        op: 'setLimits',
+        partnerId: K.hubs[0].pubkey,
+        asset: 1,
+        soft_limit: K.soft_limit,
+        hard_limit: K.hard_limit
+      })
+
       me.sendJSON(K.hubs[0], 'testnet', {
         action: 'faucet',
         asset: 1,
-        amount: 10000000,
+        amount: 5000000,
         address: me.getAddress()
       })
     }, K.blocktime * 1000)
@@ -100,7 +102,7 @@ if (argv.monkey) {
         amount: 100,
         asset: 1
       })
-    }, 27000)
+    }, 20000)
   }
 
   // below go pre-registred users
@@ -202,10 +204,9 @@ if (argv.monkey) {
 
     require('./internal_rpc/external_deposit')({
       asset: 1,
-      to: '3',
+      userId: 3,
       hub: 'Medici',
-      depositAmount: 912,
-      invoice: 'test'
+      amount: 912
     })
   }
 }

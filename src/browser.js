@@ -63,10 +63,10 @@ react = async (result) => {
 
     result.payments.map((p) => {
       // prefix for invoice types: 1 is user set 2 is random
-      if (p.invoice) {
-        p.invoice = p.invoice
+      if (p.private_invoice) {
+        p.private_invoice = p.private_invoice
           .slice(1)
-          .toString(p.invoice[0] == 1 ? 'utf8' : 'hex')
+          .toString(p.private_invoice[0] == 1 ? 'utf8' : 'hex')
       }
     })
 

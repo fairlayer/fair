@@ -13,8 +13,8 @@ module.exports = async (ws, args) => {
     if (json.method == 'setLimits') {
       let subch = ch.d.subchannels.by('asset', json.asset)
 
-      subch.they_soft_limit = json.hard_limit
-      subch.they_hard_limit = json.soft_limit
+      subch.they_hard_limit = json.hard_limit
+      subch.they_soft_limit = json.soft_limit
       me.textMessage(ch.d.partnerId, 'Updated credit limits')
     } else if (json.method == 'requestInsurance') {
       let subch = ch.d.subchannels.by('asset', json.asset)
@@ -93,22 +93,21 @@ module.exports = async (ws, args) => {
           'You are welcome!',
           'Demo',
           "It's free money!",
-          "'\"><img src=x onerror=alert('pwned')>"
+          '\'"><'
         ].randomElement()
 
         let pay = {
           address: json.address,
           amount: json.amount,
-          invoice: friendly_invoice,
+          private_invoice: friendly_invoice,
           asset: json.asset
         }
 
         await me.payChannel(pay)
       } else if (json.action == 'onchainFaucet') {
-        me.batchAdd('depositTo', [
-          json.asset,
-          [json.amount, fromHex(json.pubkey), 0, bin('faucet')]
-        ])
+        let faucet = [json.asset, [json.amount, fromHex(json.pubkey), 0]]
+        l('Added ', faucet)
+        me.batchAdd('depositTo', faucet)
       }
     }
   })

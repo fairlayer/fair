@@ -200,7 +200,7 @@ const defineModels = (sequelize) => {
       unlocker: Sequelize.BLOB,
 
       // user-specified or randomly generated private message
-      invoice: Sequelize.BLOB,
+      private_invoice: Sequelize.BLOB,
 
       // stored on our node only. can help to identify the reason for payment
       // eg when a withdrawal has failed we credit funds back
@@ -266,7 +266,7 @@ const defineModels = (sequelize) => {
     asset: Sequelize.INTEGER,
     userId: Sequelize.INTEGER, // receiver/sender's id
     blockId: Sequelize.INTEGER, // when it happened
-    invoice: Sequelize.BLOB
+    public_invoice: Sequelize.BLOB
   })
 
   // offchain order for instant trustless exchange

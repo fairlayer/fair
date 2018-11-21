@@ -1,56 +1,33 @@
 module.exports = async (dep) => {
-  // split by @
-  if (dep.to.length > 0) {
-    let to = dep.to
-    let userId
+  if (dep.userId) {
+    var userId = dep.userId
+  } else if (dep.address && dep.address.length > 0) {
+    var addr = parseAddress(dep.address)
 
-    // looks like a pubkey
-    if (to.length == 64) {
-      userId = Buffer.from(to, 'hex')
-
-      // maybe this pubkey is already registred?
-      let u = await getUserByIdOrKey(userId)
-
-      if (u.id) {
-        userId = u.id
-      }
-    } else {
-      // looks like numerical ID
-      userId = parseInt(to)
-
-      let u = await getUserByIdOrKey(userId)
-
-      if (!u) {
-        return {alert: 'User with short ID ' + userId + " doesn't exist."}
-      }
-    }
-
-    let amount = parseInt(dep.depositAmount)
-
-    let withPartner = 0
-    // @onchain or @0 mean onchain balance
-    if (dep.hub && dep.hub != 'onchain') {
-      // find a hub by its handle or id
-      let h = K.hubs.find((h) => h.handle == dep.hub || h.id == dep.hub)
-      if (h) {
-        withPartner = h.id
-      } else {
-        react({alert: 'No such hub', force: true})
-        return
-      }
-    }
-
-    if (amount > 0) {
-      me.batchAdd('depositTo', [
-        dep.asset,
-        [
-          amount,
-          userId,
-          withPartner,
-          dep.invoice ? Buffer.from(dep.invoice, 'hex') : 0
-        ]
-      ])
-    }
+    let user = await User.findOne({where: {pubkey: addr.pubkey}})
+    var userId = user ? user.id : addr.pubkey
   }
+
+  let amount = parseInt(dep.amount)
+
+  if (amount > 0) {
+    let public_invoice = 0
+    if (addr && addr.invoice) {
+      public_invoice = bin(addr.invoice)
+    }
+    if (dep.public_invoice) {
+      public_invoice = Buffer.from(dep.public_invoice, 'hex')
+    }
+
+    let newDeposit = [
+      dep.asset,
+      [amount, userId, parseInt(dep.hub), public_invoice]
+    ]
+
+    l('Adding to queue a deposit ', newDeposit)
+
+    me.batchAdd('depositTo', newDeposit)
+  }
+
   return {}
 }

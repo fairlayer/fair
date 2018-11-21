@@ -71,7 +71,7 @@ module.exports = async (ws, json) => {
       break
 
     case 'onchainFaucet':
-      json.params.pubkey = me.pubkey.toString()
+      json.params.pubkey = toHex(me.pubkey)
       json.params.action = 'onchainFaucet'
       me.sendJSON(K.hubs[0], 'testnet', json.params)
       react({confirm: 'Await onchain faucet'})
@@ -110,10 +110,13 @@ module.exports = async (ws, json) => {
       break
 
     case 'getRoutes':
+      result.parsedAddress = parseAddress(json.params.address)
+
       result.bestRoutes = await Router.bestRoutes(
         json.params.address,
         json.params
       )
+
       break
 
     case 'clearBatch':

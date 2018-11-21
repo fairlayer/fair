@@ -71,11 +71,9 @@ class Me {
     await promise_writeFile(datadir + '/offchain/pk.json', JSON.stringify(PK))
   }
 
-  // returns current address for offchain payments
+  // returns current address
   getAddress() {
-    // if there are no hubs, no one can pay us
-    if (PK.usedHubs.length == 0) return false
-
+    // todo: replace with userId to make it shorter
     let encodable = [bin(this.box.publicKey), this.pubkey, PK.usedHubs]
     return base58.encode(r(encodable))
   }
@@ -268,8 +266,8 @@ class Me {
 
         let status = await me.payChannel({
           address: args.address,
-          amount: parseInt(args.amount ? args.amount : 1000),
-          asset: parseInt(args.asset ? args.asset : 1)
+          amount: parseInt(args.amount),
+          asset: parseInt(args.asset)
         })
         res.end(status)
       }
@@ -337,7 +335,7 @@ class Me {
         } else if (hub) {
           m = hub
         } else {
-          l(m, 'not online')
+          l('Not online: ', m)
           return false
         }
       }

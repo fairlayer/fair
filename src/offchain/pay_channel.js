@@ -30,13 +30,13 @@ module.exports = async (opts) => {
 
     // use user supplied private message, otherwise generate random tag
     // invoice inside the address takes priority
-    if (addr.invoice || opts.invoice) {
-      opts.invoice = concat(
+    if (addr.invoice || opts.private_invoice) {
+      opts.private_invoice = concat(
         Buffer.from([1]),
-        bin(addr.invoice ? addr.invoice : opts.invoice)
+        bin(addr.invoice ? addr.invoice : opts.private_invoice)
       )
     } else {
-      opts.invoice = concat(Buffer.from([2]), crypto.randomBytes(16))
+      opts.private_invoice = concat(Buffer.from([2]), crypto.randomBytes(16))
     }
 
     let amount = parseInt(opts.amount)
@@ -55,7 +55,7 @@ module.exports = async (opts) => {
           asset: asset
         })
         if (!best[0]) {
-          l('No route found:', best, addr.hubs)
+          //l('No route found:', best, addr.hubs)
           return 'No route found:'
         } else {
           // first is the cheapest
@@ -72,7 +72,7 @@ module.exports = async (opts) => {
 
         // buffers are in hex for JSON
         secret: toHex(secret),
-        invoice: toHex(opts.invoice),
+        private_invoice: toHex(opts.private_invoice),
 
         ts: ts(),
         source_address: opts.provideSource ? me.getAddress() : null
@@ -148,7 +148,7 @@ module.exports = async (opts) => {
 
       unlocker: onion,
       destination_address: addr.address,
-      invoice: opts.invoice
+      private_invoice: opts.private_invoice
     })
 
     if (argv.syncdb) {
