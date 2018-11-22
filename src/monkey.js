@@ -6,7 +6,7 @@ const payMonkey = async (on_server, counter = 1) => {
   // offchain payment
   await me.payChannel({
     address: address,
-    amount: 100 + Math.round(Math.random() * 20000),
+    amount: 100 + Math.round(Math.random() * 200),
     asset: 1
   })
 

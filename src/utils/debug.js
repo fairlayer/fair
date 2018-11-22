@@ -21,29 +21,6 @@ prettyState = (state) => {
   })
 }
 
-logstates = (reason, a, b, c, d, tr) => {
-  l(`
-=========${reason}
-
-  Current state 
-  ${ascii_state(a)}
-
-  Their current state
-  ${b ? ascii_state(b) : '-'}
-
-  Our signed state
-  ${ascii_state(c)}
-
-  Their signed state
-  ${ascii_state(d)}
-
-  Transitions
-  ${stringify(tr)}
-=================
-
-  `)
-}
-
 ascii_state = (state) => {
   if (!state[1]) return false
   let hash = toHex(sha3(r(state)))
@@ -69,4 +46,3 @@ ascii_state = (state) => {
 ${list}
 `
 }
-

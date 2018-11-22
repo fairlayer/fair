@@ -207,7 +207,7 @@
           </div>
           <div v-else>
             <h4 style="display:inline-block">
-              Not registered in {{onchain}} <span class="badge badge-success layer-faucet" @click="call('onchainFaucet', {amount: uncommy(prompt('How much you want to get?')), asset: 1 })">faucet</span>
+              {{onchain}}: not registered <span class="badge badge-success layer-faucet" @click="call('onchainFaucet', {amount: uncommy(prompt('How much you want to get?')), asset: 1 })">faucet</span>
             </h4>
           </div>
           <div class="alert alert-info" v-for="ch in channels">
@@ -226,7 +226,7 @@
               <span v-else-if="ch.d.status=='dispute'">
                   Wait until your dispute tx is broadcasted
                 </span>
-              <button v-else type="button" class="btn btn-danger" @click="call('startDispute', {partnerId: ch.d.partnerId})">Start a Dispute 🌐</button>
+              <button v-else type="button" class="btn btn-outline-danger" @click="call('startDispute', {partnerId: ch.d.partnerId})">Start a Dispute 🌐</button>
             </p>
           </div>
           <template v-if="channels.length == 0">
@@ -235,22 +235,22 @@
           <p style="word-wrap: break-word">Your Address: <b>{{address}}</b></p>
           <ul class="nav nav-pills nav-fill">
             <li class="nav-item">
-              <a @click="outward.type='offchain'" class="nav-link " v-bind:class="{active: outward.type=='offchain'}" href="javascript:void">Offchain</a>
+              <a @click="outward.type='offchain'" class="nav-link " v-bind:class="{active: outward.type=='offchain'}" href="javascript:void">Offchain ⚡️</a>
             </li>
             <li class="nav-item">
-              <a @click="outward.type='onchain'" class="nav-link " v-bind:class="{active: outward.type=='onchain'}" href="javascript:void">Onchain</a>
+              <a @click="outward.type='onchain'" class="nav-link " v-bind:class="{active: outward.type=='onchain'}" href="javascript:void">Onchain 🌐</a>
             </li>
           </ul>
           <p>
-            <div class="input-group" style="width:600px">
+            <div class="input-group" style="width:400px">
               <input type="text" class="form-control small-input" v-model="outward.address" :disabled="['none','amount'].includes(outward_editable)" placeholder="Address" aria-describedby="basic-addon2" @input="updateRoutes">
             </div>
           </p>
           <p>
-            <div class="input-group" style="width:600px">
+            <div class="input-group" style="width:400px">
               <input type="text" class="form-control small-input" v-model="outward.amount" :disabled="outward_editable=='none'" placeholder="Amount" aria-describedby="basic-addon2" @input="updateRoutes">
               <select @input="updateRoutes" style="display:inline-block" v-model="outward.asset" class="custom-select custom-select-lg mb-6">
-                <option disabled>Select asset</option>
+                <option disabled>Select asset:</option>
                 <option v-for="a in assets" :value="a.id">{{a.ticker}}</option>
               </select>
             </div>
@@ -270,7 +270,7 @@
               </template>
             </template>
             <p>
-              <button type="button" class="btn btn-outline-success" @click="call('sendOffchain', {address: outward.address, asset: outward.asset, amount: uncommy(outward.amount), addrisk: addrisk, lazy: lazy, chosenRoute: bestRoutes[chosenRoute][1]});resetOutward()">Pay Now → </button>
+              <button type="button" class="btn btn-outline-success" @click="call('sendOffchain', {address: outward.address, asset: outward.asset, amount: uncommy(outward.amount), addrisk: addrisk, lazy: lazy, chosenRoute: bestRoutes[chosenRoute][1]});resetOutward()">Pay Now ⚡️</button>
               <button v-if="dev_mode" type="button" class="btn btn-outline-danger" @click="stream()">Pay 100 times</button>
             </p>
             <table v-if="payments.length > 0" class="table">
@@ -469,9 +469,9 @@
       <div v-else-if="tab=='install'">
         <h4>Web Wallet (optimized for convenience)</h4>
         <p>If you are on mobile or want to store only small amounts you can use a <a href="https://web.fairlayer.com">custodian web wallet</a></p>
-        <h4>Instant Web Demo</h4>
+        <h4>Instant Full Node Demo</h4>
         <p><a href="/demoinstance">Try Fair Core for 1 hour without installing it on your computer.</a> Currently active sessions: {{busyPorts}}</p>
-        <h4>Fair Core (optimized for security)</h4>
+        <h4>Install a Full Node (optimized for security)</h4>
         <p>Install <a href="https://nodejs.org/en/download/">Node.js</a> (9.6.0+) and copy paste this snippet into your Terminal app and press Enter:</p>
         <div style="background-color: #FFFDDE; padding-left: 10px;">
           <Highlight :white="true" lang="bash" :code="install_snippet"></Highlight>
@@ -680,7 +680,7 @@
                   <h4>Information</h4>
                   <p>Payable: {{commy(derived.payable)}} <span class="badge badge-success bank-faucet" @click="call('withChannel', {partnerId: mod.ch.d.partnerId, op: 'testnet', action: 'faucet', asset: mod.subch.asset, amount: uncommy(prompt('How much you want to get?')) })">Use faucet</span></p>
                   <p>Receivable: {{commy(derived.they_payable)}}</p>
-                  <p>Insured: {{commy(derived.insured)}} <span class="badge badge-danger" @click="a=prompt(`How much to withdraw to onchain?`);if (a) {call('withChannel', {partnerId: mod.ch.d.partnerId, asset: mod.subch.asset, op: 'withdraw', amount: uncommy(a)})};">Withdraw to {{onchain}}</span>
+                  <p>Insured: {{commy(derived.insured)}} <span class="badge badge-danger" @click="a=prompt(`How much to withdraw to onchain?`);if (a) {call('withChannel', {partnerId: mod.ch.d.partnerId, asset: mod.subch.asset, op: 'withdraw', amount: uncommy(a)})};">Withdraw to {{onchain}}</span><span class="badge badge-danger" @click="mod.shown=false;outward.address=address;updateRoutes();outward.type='onchain';outward.asset=mod.subch.asset;outward.hub = mod.ch.partner;">Deposit from {{onchain}}</span>
                   </p>
                   <p>Uninsured: {{commy(derived.uninsured)}} <span class="badge badge-danger" @click="requestInsurance(mod.ch, mod.subch.asset)">Request Insurance</span>
                     <dotsloader v-if="derived.subch.requested_insurance"></dotsloader>
@@ -868,7 +868,7 @@ export default {
 
       outward: {
         address: (hashargs['address'] ? hashargs['address'] : ''),
-        amount: hashargs['amount'] ? hashargs['amount'] : 0,
+        amount: hashargs['amount'] ? hashargs['amount'] : '',
         private_invoice: hashargs['invoice'],
         public_invoice: hashargs['invoice'],
         asset: hashargs['asset'] ? parseInt(hashargs['asset']) : 1,
@@ -935,7 +935,7 @@ export default {
         let hub = app.K.hubs.find(h => h.id == hop);
         if (hub) {
           //(${app.bpsToPercent(hub.fee_bps)})
-          info += `@${app.to_user(hub.id)} → `;
+          info += `${app.to_user(hub.id)} → `;
         }
       }
 
@@ -1014,7 +1014,7 @@ export default {
     resetOutward: ()=>{
 
       // reset all formfields
-      app.outward = { address: '', amount: 0, asset: 1, type: app.outward.type}
+      app.outward = { address: '', amount: '', asset: 1, type: app.outward.type}
     },
 
 
@@ -1139,7 +1139,7 @@ export default {
 
     commy: (b, asset = 1) => {
       var dot = true
-      var withSymbol = '$'
+      var withSymbol = ''
 
       if (asset == 2) {
         withSymbol = '€'

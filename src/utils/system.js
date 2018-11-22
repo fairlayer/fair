@@ -142,7 +142,7 @@ fatal = async (reason) => {
     react({reload: true}) //reloads UI window
     //me.intervals.map(clearInterval)
 
-    await Periodical.syncChanges()
+    //await Periodical.syncChanges()
     //.then(async () => {
     //await sequelize.close()
     //await privSequelize.close()

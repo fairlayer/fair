@@ -88,7 +88,8 @@ refresh = function(ch) {
     let out = {
       inwards: [],
       outwards: [],
-      hashlock_hold: [0, 0],
+      inwards_hold: 0,
+      outwards_hold: 0,
       asset: subch.asset,
       subch: subch
     }
@@ -107,31 +108,38 @@ refresh = function(ch) {
       if (t.asset != subch.asset) continue
 
       var typestatus = t.type + t.status
+      let in_state = [
+        'addack',
+        'delnew',
+        ch.d.rollback_nonce > 0 ? 'delsent' : 'addsent'
+      ]
 
-      if (
-        [
-          'addack',
-          'delnew',
-          ch.d.rollback_nonce > 0 ? 'delsent' : 'addsent'
-        ].includes(typestatus)
-      ) {
-        out[t.is_inward ? 'inwards' : 'outwards'].push(t)
-        out.hashlock_hold[t.is_inward ? 0 : 1] += t.amount
+      if (in_state.includes(typestatus)) {
+        if (t.is_inward) {
+          out.inwards.push(t)
+          out.inwards_hold += t.amount
+        } else {
+          out.outwards.push(t)
+          out.outwards_hold += t.amount
+        }
       }
     }
 
-    // we must apply withdrawal proofs on state even before they hit blockchain
+    // we must "hold" withdrawal proofs on state even before they hit blockchain
+    // otherwise the attacker can get a huge withdrawal proof, then send money offchain,
+    // then steal the rest with withdrawal proof onchain, doubling their money
     // what we are about to withdraw and they are about to withdraw
-    let insurance =
-      subins.balance - subch.withdrawal_amount + subch.they_withdrawal_amount
+    let ins_balance =
+      subins.balance - (subch.withdrawal_amount + subch.they_withdrawal_amount)
+
     // TODO: is it correct?
-    //delta minus what Left one is about to withdraw
+    //delta minus what Left one is about to withdraw (it's either we or they)
     let delta =
       subins.ondelta +
       subch.offdelta -
       (ch.d.isLeft() ? subch.withdrawal_amount : subch.they_withdrawal_amount)
 
-    Object.assign(out, resolveChannel(insurance, delta, ch.d.isLeft()))
+    Object.assign(out, resolveChannel(ins_balance, delta, ch.d.isLeft()))
 
     // inputs are like bearer cheques and can be used any minute, so we deduct them
     out.payable =
@@ -139,14 +147,19 @@ refresh = function(ch) {
       out.uninsured +
       subch.they_hard_limit -
       out.they_uninsured -
-      out.hashlock_hold[1]
+      out.outwards_hold
 
     out.they_payable =
       out.they_insured +
       out.they_uninsured +
       subch.hard_limit -
       out.uninsured -
-      out.hashlock_hold[0]
+      out.inwards_hold
+
+    if (out.payable < 0 || out.they_payable < 0) {
+      l('Invalid', out, ch)
+      //fatal('invalid outs')
+    }
 
     // All stuff we show in the progress bar in the wallet
     out.bar =

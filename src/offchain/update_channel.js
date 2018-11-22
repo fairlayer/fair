@@ -34,14 +34,26 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
   prettyState(theirState)
 
   let mismatch = (reason) => {
-    logstates(
-      reason,
-      ch.state,
-      theirState,
-      ourSignedState,
-      theirSignedState,
-      transitions
-    )
+    l(`=========${reason}. Rollback ${ch.d.rollback_nonce}
+  Current state 
+  ${ascii_state(ch.state)}
+
+  Our signed state
+  ${ascii_state(ourSignedState)}
+
+  Their current state
+  ${theirState ? ascii_state(theirState) : '-'}
+
+  Their signed state
+  ${ascii_state(theirSignedState)}
+
+  Transitions
+  ${JSON.stringify(transitions, 2, 2)}
+
+  Pending
+  ${ch.d.pending}
+=================
+`)
   }
 
   if (deltaVerify(ch.d, refresh(ch), ackSig)) {

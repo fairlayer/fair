@@ -128,7 +128,7 @@ module.exports = async (pubkey, opportunistic) => {
               pull_hl.outcome = bin(reason)
               //if (argv.syncdb) all.push(pull_hl.save())
 
-              flushable.push(inward.d.partnerId)
+              flushable.push(inward_ch.d.partnerId)
             }
 
             continue
@@ -194,7 +194,7 @@ module.exports = async (pubkey, opportunistic) => {
       // if there were any transitions, we need an ack on top
       ch.d.ack_requested_at = new Date()
       //l('Set ack request ', ch.d.ack_requested_at, trim(pubkey))
-      //ch.d.pending = envelope
+      ch.d.pending = stringify(envelope)
       ch.d.status = 'sent'
       if (trace) l(`Flushing ${transitions.length} to ${trim(pubkey)}`)
     }

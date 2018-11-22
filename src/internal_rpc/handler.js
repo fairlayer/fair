@@ -139,7 +139,7 @@ module.exports = async (ws, json) => {
           hard_limit: K.hard_limit
         })
 
-        result.confirm = 'Hub added'
+        //result.confirm = 'Hub added'
       } else {
         // ensure no connection
         PK.usedHubs.splice(index, 1)

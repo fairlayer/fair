@@ -65,19 +65,19 @@ module.exports = async (opts = {}) => {
           all_payments.push(subch.save())
           //}
         }
-
+        // Ensure: payments must be garbage collected!
         for (let i = 0; i < ch.payments.length; i++) {
           let t = ch.payments[i]
           //t.channelId = ch.d.id
 
-          if (t.changed()) {
-            all_payments.push(t.save())
-          }
+          //if (t.changed()) {
+          all_payments.push(t.save())
+          //}
 
           // delacked payments are of no interest anymore
           if (t.type + t.status == 'delack') {
             //delete ch.payments[i]
-            ch.payments.splice(i, 1)
+            //ch.payments.splice(i, 1)
           }
         }
 
