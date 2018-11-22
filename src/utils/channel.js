@@ -129,15 +129,15 @@ refresh = function(ch) {
     // otherwise the attacker can get a huge withdrawal proof, then send money offchain,
     // then steal the rest with withdrawal proof onchain, doubling their money
     // what we are about to withdraw and they are about to withdraw
-    let ins_balance =
-      subins.balance - (subch.withdrawal_amount + subch.they_withdrawal_amount)
+    let ins_balance = subins.balance
+    ins_balance -= subch.withdrawal_amount + subch.they_withdrawal_amount
 
     // TODO: is it correct?
     //delta minus what Left one is about to withdraw (it's either we or they)
-    let delta =
-      subins.ondelta +
-      subch.offdelta -
-      (ch.d.isLeft() ? subch.withdrawal_amount : subch.they_withdrawal_amount)
+    let delta = subins.ondelta + subch.offdelta
+    delta -= ch.d.isLeft()
+      ? subch.withdrawal_amount
+      : subch.they_withdrawal_amount
 
     Object.assign(out, resolveChannel(ins_balance, delta, ch.d.isLeft()))
 
@@ -157,7 +157,7 @@ refresh = function(ch) {
       out.inwards_hold
 
     if (out.payable < 0 || out.they_payable < 0) {
-      l('Invalid', out, ch)
+      l('Invalid payables', out, ch)
       //fatal('invalid outs')
     }
 

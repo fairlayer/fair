@@ -26,7 +26,7 @@ const payMonkey = async (on_server, counter = 1) => {
 
     setTimeout(() => {
       payMonkey(on_server, counter + 1)
-    }, Math.round(3500 + Math.random() * 3000))
+    }, Math.round(9500 + Math.random() * 9000))
   } else if (counter < 20) {
     setTimeout(() => {
       payMonkey(on_server, counter + 1)
@@ -72,7 +72,7 @@ if (argv.monkey) {
     })
   }
 
-  if (base_port > 8003) {
+  if (base_port > 8003 && base_port < 8050) {
     monkeys.splice(monkeys.indexOf(me.getAddress()), 1) // *except our addr
 
     setTimeout(() => {

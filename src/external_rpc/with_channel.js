@@ -56,6 +56,10 @@ module.exports = async (ws, args) => {
         return l('CHEAT_dontwithdraw')
       }
 
+      if (ch.d.status != 'master') {
+        return l('only return withdrawal to master status')
+      }
+
       let subch = ch.d.subchannels.by('asset', json.asset)
       let amount = parseInt(json.amount)
       let asset = parseInt(json.asset)

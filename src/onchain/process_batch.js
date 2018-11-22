@@ -101,7 +101,11 @@ module.exports = async (s, batch) => {
       // Why only 1 tx/block? Two reasons:
       // * it's an extra hassle to ensure the account has money to cover subsequent w/o applying old ones. It would require fast rollbacks / reorganizations
       // * The system intends to work as a rarely used layer, so people should batch transactions in one to make them cheaper and smaller anyway
-      return {error: 'Only 1 tx per block per user allowed'}
+      return {
+        signer: s.signer,
+        batch_nonce: batch_nonce,
+        error: 'Only 1 tx per block per user allowed'
+      }
     } else {
       if (s.signer.batch_nonce != batch_nonce) {
         return {

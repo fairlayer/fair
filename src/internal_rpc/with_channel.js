@@ -14,6 +14,8 @@ module.exports = async (p) => {
     return false
   }
 
+  //todo: ensure not in a dispute!
+
   if (p.op == 'withdraw') {
     if (p.amount > ch.derived[p.asset].insured) {
       react({alert: 'More than you can withdraw from insured'})
