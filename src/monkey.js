@@ -75,7 +75,7 @@ if (argv.monkey) {
   if (base_port > 8003 && base_port < 8500) {
     monkeys.splice(monkeys.indexOf(me.getAddress()), 1) // *except our addr
 
-    setTimeout(() => {
+    setTimeout(async () => {
       require('./internal_rpc/with_channel')({
         op: 'setLimits',
         partnerId: K.hubs[0].pubkey,
@@ -84,12 +84,16 @@ if (argv.monkey) {
         hard_limit: K.hard_limit
       })
 
+      await sleep(3000)
+
       me.sendJSON(K.hubs[0], 'testnet', {
         action: 'faucet',
         asset: 1,
-        amount: 5000000,
+        amount: 500000,
         address: me.getAddress()
       })
+
+      l('Requesting faucet to ' + me.getAddress())
     }, K.blocktime * 1000)
 
     setTimeout(() => {

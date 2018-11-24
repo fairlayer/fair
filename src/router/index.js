@@ -70,7 +70,7 @@ const Router = {
       let hub = K.hubs.find((h) => h.id == candidate)
       let ch = await Channel.get(hub.pubkey)
 
-      if (!ch.derived[args.asset]) continue
+      if (!ch || !ch.derived[args.asset]) continue
 
       // account for potentially unpredictable fees?
       // 0 >= 0? return potential routes even for no amount

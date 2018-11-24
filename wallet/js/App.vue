@@ -236,6 +236,9 @@
                 </span>
               <button v-else type="button" class="btn btn-outline-danger" @click="call('startDispute', {partnerId: ch.d.partnerId})">Start a Dispute 🌐</button>
             </p>
+            <p>
+            Status: {{ch.d.status}}, nonce {{ch.d.dispute_nonce}}
+            </p>
           </div>
           <template v-if="channels.length == 0">
             <h3 class="alert alert-info"><a class="dotted" @click=go('hubs')>Add banks</a> to send & receive payments instantly.</h3>

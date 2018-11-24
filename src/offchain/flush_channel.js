@@ -113,6 +113,7 @@ module.exports = async (pubkey, opportunistic) => {
             t.type = 'del'
             t.status = 'ack'
             //if (argv.syncdb) all.push(t.save())
+            await t.save()
 
             if (t.inward_pubkey) {
               var inward_ch = await Channel.get(t.inward_pubkey)
@@ -127,6 +128,7 @@ module.exports = async (pubkey, opportunistic) => {
               pull_hl.outcome_type = 'outcomeCapacity'
               pull_hl.outcome = bin(reason)
               //if (argv.syncdb) all.push(pull_hl.save())
+              await pull_hl.save()
 
               flushable.push(inward_ch.d.partnerId)
             }
@@ -145,6 +147,7 @@ module.exports = async (pubkey, opportunistic) => {
 
         t.status = 'sent'
         //if (argv.syncdb) all.push(t.save())
+        await t.save()
 
         // increment nonce after each transition
         ch.d.dispute_nonce++

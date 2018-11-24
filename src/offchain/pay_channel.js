@@ -140,11 +140,11 @@ module.exports = async (opts) => {
       channelId: ch.d.id,
 
       type: opts.addrisk ? 'addrisk' : 'add',
-      lazy_until: opts.lazy ? +new Date() + 30000 : null,
-
       status: 'new',
       is_inward: false,
       asset: asset,
+
+      lazy_until: opts.lazy ? +new Date() + 30000 : null,
 
       amount: amount,
       hash: bin(hash),
@@ -154,9 +154,9 @@ module.exports = async (opts) => {
       private_invoice: opts.private_invoice
     })
 
-    if (argv.syncdb) {
-      await outward.save()
-    }
+    //if (argv.syncdb) {
+    await outward.save()
+    //}
 
     ch.payments.push(outward)
 

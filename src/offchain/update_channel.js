@@ -58,9 +58,12 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
 
   if (deltaVerify(ch.d, refresh(ch), ackSig)) {
     // our last known state has been ack.
-    ch.payments.map((t, ind) => {
-      if (t.status == 'sent') t.status = 'ack'
-    })
+    for (let t of ch.payments) {
+      if (t.status == 'sent') {
+        t.status = 'ack'
+        await t.save()
+      }
+    }
 
     ch.d.ack_requested_at = null
 
@@ -307,7 +310,8 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
 
         if (trace) l(`Mediating ${outward_amount} payment to ${trim(nextHop)}`)
 
-        //if (argv.syncdb) all.push(outward_hl.save())
+        //if (argv.syncdb)
+        await outward_hl.save()
 
         uniqAdd(dest_ch.d.partnerId)
       } else {
@@ -316,6 +320,7 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
         inward_hl.outcome_type = 'outcomeCapacity'
         inward_hl.outcome = bin('UnknownError')
       }
+      await inward_hl.save()
 
       //if (argv.syncdb) all.push(inward_hl.save())
     } else if (t[0] == 'del' || t[0] == 'delrisk') {
@@ -363,7 +368,9 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
 
       me.metrics[valid ? 'settle' : 'fail'].current++
 
+      l('Saved as delack', outward_hl)
       //if (argv.syncdb) all.push(outward_hl.save())
+      await outward_hl.save()
 
       // if there's an inward channel for this, we are hub
       if (outward_hl.inward_pubkey) {
@@ -398,7 +405,9 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
           pull_hl.outcome = outcome
           pull_hl.type = 'del'
           pull_hl.status = 'new'
+
           //if (argv.syncdb) all.push(pull_hl.save())
+          await pull_hl.save()
 
           if (trace)
             l(
@@ -486,6 +495,7 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
 
   //if (argv.syncdb) {
   //all.push(ch.d.save())
+  await ch.d.save()
 
   react({private: true}, false)
 

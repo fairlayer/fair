@@ -8,7 +8,7 @@ module.exports = async (a) => {
 
     if (err.name == 'SequelizeTimeoutError') {
       l(err)
-      return
+      //return
     }
     //flush changes to db
     //await syncdb()

@@ -175,6 +175,9 @@ refresh = function(ch) {
     ch.derived[subch.asset] = out
   }
 
+  // sort by assed Id
+  ch.state[2].sort((a, b) => a[0] - b[0])
+
   ch.ascii_states = ascii_state(ch.state)
   if (ch.d.signed_state) {
     let st = r(ch.d.signed_state)

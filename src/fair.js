@@ -81,6 +81,15 @@ startFairlayer = async () => {
   Object.assign(global, global.onchainDB.models)
   Object.assign(global, global.offchainDB.models)
 
+  let inspect = function() {
+    return JSON.stringify(this, null, 4)
+  }
+
+  User.prototype.inspect = inspect
+  Payment.prototype.inspect = inspect
+  Channel.prototype.inspect = inspect
+  Subchannel.prototype.inspect = inspect
+
   Me = require('./me')
 
   if (argv.genesis) {

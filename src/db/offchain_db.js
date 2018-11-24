@@ -166,6 +166,12 @@ const defineModels = (sequelize) => {
   const Payment = sequelize.define(
     'payment',
     {
+      id: {
+        type: Sequelize.INTEGER,
+        autoIncrement: true,
+        primaryKey: true
+      },
+
       //todo: move to single field addnew, addsent ...
       type: Sequelize.STRING, //ENUM('add', 'del', 'addrisk', 'delrisk', 'onchain'),
       status: Sequelize.STRING, //ENUM('new', 'sent', 'ack'),

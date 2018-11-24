@@ -37,6 +37,7 @@ class Me {
       fail: getMetric(),
       settle: getMetric(),
       fees: getMetric(),
+      syncChanges: getMetric(),
 
       //
       bandwidth: getMetric(),
@@ -62,6 +63,7 @@ class Me {
     this.box = nacl.box.keyPair.fromSecretKey(this.seed)
 
     this.last_react = new Date()
+    this.last_synced = ts()
 
     PK.username = username
     PK.seed = seed.toString('hex')
