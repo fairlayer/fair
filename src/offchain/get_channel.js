@@ -8,7 +8,7 @@ class WrappedChannel {
 }
 
 // TODO: periodically clone Insurance to Channel db to only deal with one db having all data
-module.exports = async (pubkey, delta = false) => {
+module.exports = async (pubkey, doRefresh = true) => {
   // this critical section protects from simultaneous getChannel and doublesaved db records
   return await section(['get', pubkey], async () => {
     if (!me.pubkey) {
@@ -21,9 +21,8 @@ module.exports = async (pubkey, delta = false) => {
 
     var key = stringify([pubkey])
     if (cache.ch[key]) {
-      ch = cache.ch[key]
-      refresh(ch)
-      return ch
+      if (doRefresh) refresh(cache.ch[key])
+      return cache.ch[key]
     }
 
     //l('Loading channel from db: ', key)
@@ -46,10 +45,7 @@ module.exports = async (pubkey, delta = false) => {
 
     ch.last_used = ts() // for eviction from memory
 
-    if (delta) {
-      ch.d = delta
-    } else {
-      /*
+    /*
       let defaults = {}
 
       if (me.my_hub) {
@@ -62,36 +58,35 @@ module.exports = async (pubkey, delta = false) => {
       }
       */
 
-      ch.d = await Channel.findOne({
-        where: {
+    ch.d = await Channel.findOne({
+      where: {
+        myId: me.pubkey,
+        partnerId: pubkey
+      },
+      include: [Subchannel]
+    })
+
+    if (!ch.d) {
+      loff(`Creating new channel ${trim(pubkey)}`)
+
+      ch.d = await Channel.create(
+        {
           myId: me.pubkey,
-          partnerId: pubkey
+          partnerId: pubkey,
+          subchannels: [
+            {
+              asset: 1
+            },
+            {
+              asset: 2
+            }
+          ]
         },
-        include: [Subchannel]
-      })
-
-      if (!ch.d) {
-        loff(`Creating new channel ${trim(pubkey)}`)
-
-        ch.d = await Channel.create(
-          {
-            myId: me.pubkey,
-            partnerId: pubkey,
-            subchannels: [
-              {
-                asset: 1
-              },
-              {
-                asset: 2
-              }
-            ]
-          },
-          {include: [Subchannel]}
-        )
-        //l('New one', ch.d.subchannels)
-      } else {
-        //l('Found old channel ', ch.d.subchannels)
-      }
+        {include: [Subchannel]}
+      )
+      //l('New one', ch.d.subchannels)
+    } else {
+      //l('Found old channel ', ch.d.subchannels)
     }
 
     let user = await getUserByIdOrKey(pubkey)
@@ -109,12 +104,12 @@ module.exports = async (pubkey, delta = false) => {
         // delack is archive
         [Op.or]: [{type: {[Op.ne]: 'del'}}, {status: {[Op.ne]: 'ack'}}]
       },
-      //limit: 1000,
+      limit: 3000,
       // explicit order because of postgres https://github.com/sequelize/sequelize/issues/9289
       order: [['id', 'ASC']]
     })
 
-    refresh(ch)
+    if (doRefresh) refresh(ch)
 
     cache.ch[key] = ch
     //l('Saved in cache ', key)

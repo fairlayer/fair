@@ -72,7 +72,7 @@ if (argv.monkey) {
     })
   }
 
-  if (base_port > 8003 && base_port < 8050) {
+  if (base_port > 8003 && base_port < 8500) {
     monkeys.splice(monkeys.indexOf(me.getAddress()), 1) // *except our addr
 
     setTimeout(() => {

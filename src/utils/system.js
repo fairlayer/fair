@@ -124,6 +124,7 @@ openBrowser = () => {
 trim = (buffer, len = 4) => toHex(buffer).substr(0, len)
 
 l = (...args) => {
+  //args = args.map(arg=>arg typeof String .stringify(obj, null, 4)
   console.log(...args)
 }
 

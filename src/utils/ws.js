@@ -4,7 +4,7 @@ var normalws = require('ws')
 
 function WebSocketClient() {
   this.number = 0 // Message number
-  this.autoReconnectInterval = 5 * 1000 // ms
+  this.autoReconnectInterval = 10 * 1000 // ms
 }
 WebSocketClient.prototype.open = function(url) {
   this.url = url

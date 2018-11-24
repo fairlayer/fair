@@ -33,7 +33,7 @@ const parseAddress = (address) => {
     ;[addr, invoice] = addr.split('#')
   }
   let parts = []
-  let hubs = [1]
+  let hubs = []
 
   try {
     parts = r(base58.decode(addr))
@@ -41,13 +41,7 @@ const parseAddress = (address) => {
   } catch (e) {}
 
   // both pubkeys and hub list must be present
-  if (
-    parts[0] &&
-    parts[0].length == 32 &&
-    parts[1] &&
-    parts[1].length == 32 &&
-    hubs.length > 0
-  ) {
+  if (parts[0] && parts[0].length == 32 && parts[1] && parts[1].length == 32) {
     return {
       box_pubkey: parts[0],
       pubkey: parts[1],

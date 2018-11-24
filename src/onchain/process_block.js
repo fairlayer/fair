@@ -148,7 +148,7 @@ module.exports = async (s, header, ordered_tx_body) => {
 
   if (is_usable && K.usable_blocks % 2 == 0) {
     // Auto resolving disputes that are due
-    await Periodical.syncChanges()
+    //await Periodical.syncChanges()
 
     all.push(
       Insurance.findAll({

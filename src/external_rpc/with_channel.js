@@ -16,6 +16,20 @@ module.exports = async (ws, args) => {
       subch.they_hard_limit = json.hard_limit
       subch.they_soft_limit = json.soft_limit
       me.textMessage(ch.d.partnerId, 'Updated credit limits')
+    } else if (json.method == 'requestCredit') {
+      let subch = ch.d.subchannels.by('asset', json.asset)
+
+      subch.hard_limit = 100000
+
+      me.sendJSON(ch.d.partnerId, 'setLimits', {
+        asset: json.asset,
+        hard_limit: subch.hard_limit
+      })
+
+      me.textMessage(
+        ch.d.partnerId,
+        'Congrats, we opened a credit line for you'
+      )
     } else if (json.method == 'requestInsurance') {
       let subch = ch.d.subchannels.by('asset', json.asset)
       subch.they_requested_insurance = true
@@ -24,6 +38,14 @@ module.exports = async (ws, args) => {
       let asset = parseInt(json.asset)
       let amount = parseInt(json.amount)
       let withdrawal_sig = fromHex(json.withdrawal_sig)
+
+      if (!ch.ins) {
+        me.textMessage(
+          ch.d.partnerId,
+          'Insurance must be created onchain first'
+        )
+        return
+      }
 
       let subch = ch.d.subchannels.by('asset', asset)
 
@@ -60,14 +82,32 @@ module.exports = async (ws, args) => {
         return l('only return withdrawal to master status')
       }
 
+      if (!ch.ins) {
+        me.textMessage(
+          ch.d.partnerId,
+          'Insurance must be created onchain first'
+        )
+        return
+      }
+
       let subch = ch.d.subchannels.by('asset', json.asset)
       let amount = parseInt(json.amount)
       let asset = parseInt(json.asset)
+      let available =
+        ch.derived[asset].they_insured + userAsset(me.record, asset)
 
-      if (amount == 0 || amount > ch.derived[asset].they_insured) {
+      if (amount > available) {
+        me.textMessage(
+          ch.d.partnerId,
+          `Sorry, you can only withdraw up to ${available}`
+        )
+        return false
+      }
+
+      if (amount == 0 || amount > ch.derived[asset].they_payable) {
         l(
           `Partner asks for ${amount} but owns ${
-            ch.derived[asset].they_insured
+            ch.derived[asset].they_payable
           }`
         )
         return false

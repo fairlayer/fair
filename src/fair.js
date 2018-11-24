@@ -54,6 +54,7 @@ const OffchainDB = require('./db/offchain_db')
 
 startFairlayer = async () => {
   setupDirectories(datadir)
+  let offchain_exists = fs.existsSync('./' + datadir + '/offchain/db.sqlite')
 
   if (argv.test) {
     child_process.execSync(`cp test/simple/onchain/* data/onchain;`)
@@ -94,9 +95,11 @@ startFairlayer = async () => {
 
   //ensure for sqlite: if (!fs.existsSync('./' + datadir)) {
 
+  // TODO: how to sync with force? sqlite vs postgres
+  // only on new install
   //if (K.total_blocks <= 3) {
   l('Syncing with force ' + K.total_blocks)
-  await offchainDB.db.sync({force: true})
+  await offchainDB.db.sync({force: K.total_blocks < 3})
   //}
 
   if (argv.generate_monkeys) {

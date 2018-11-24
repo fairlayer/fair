@@ -35,7 +35,7 @@ module.exports = async () => {
         ordered_tx.push(candidate)
         total_size += candidate.length
       } else {
-        l(`Bad tx in mempool`, result)
+        l(`Bad tx in mempool`, result, candidate)
         // punish submitter ip
       }
     }

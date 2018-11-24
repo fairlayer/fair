@@ -17,10 +17,11 @@ module.exports = async (p) => {
   //todo: ensure not in a dispute!
 
   if (p.op == 'withdraw') {
-    if (p.amount > ch.derived[p.asset].insured) {
-      react({alert: 'More than you can withdraw from insured'})
+    if (p.amount > ch.derived[p.asset].payable) {
+      react({alert: 'More than you can withdraw from payable'})
       return
     }
+
     await withdraw(ch, subch, p.amount)
     if (subch.withdrawal_sig == null) {
       react({
@@ -58,6 +59,11 @@ module.exports = async (p) => {
     })
 
     //react({confirm: 'OK'})
+  } else if (p.op == 'requestCredit') {
+    me.sendJSON(ch.d.partnerId, 'requestCredit', {
+      asset: p.asset,
+      amount: p.amount
+    })
   } else if (p.op == 'requestInsurance') {
     me.sendJSON(ch.d.partnerId, 'requestInsurance', {asset: p.asset})
 

@@ -115,7 +115,13 @@ module.exports = {
 
   resetOutward: () => {
     // reset all formfields
-    app.outward = {address: '', amount: '', asset: 1, type: app.outward.type}
+    app.outward = {
+      address: '',
+      amount: '',
+      asset: 1,
+      type: app.outward.type,
+      hub: -1
+    }
   },
 
   estimate: (f) => {

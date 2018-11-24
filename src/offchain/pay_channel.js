@@ -62,6 +62,9 @@ module.exports = async (opts) => {
           opts.chosenRoute = best[0][1]
         }
       }
+    } else {
+      // unpack from 1_2_3
+      opts.chosenRoute = opts.chosenRoute.split('_')
     }
 
     // 1. encrypt msg for destination that has final amount/asset etc and empty envelope

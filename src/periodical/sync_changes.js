@@ -71,9 +71,9 @@ module.exports = async (opts = {}) => {
           let t = ch.payments[i]
           //t.channelId = ch.d.id
 
-          if (t.changed()) {
-            all_payments.push(t.save())
-          }
+          //if (t.changed()) {
+          all_payments.push(t.save())
+          //}
 
           // delacked payments are of no interest anymore
           if (t.type + t.status != 'delack') {

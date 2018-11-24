@@ -6,7 +6,6 @@
       opacity:0.9;
       bottom:0px;
       width:100%;
-      height:100px;
       background-color: #FFFDDE; border:thin solid #EDDD00">
         <p v-if="PK.pending_batch" style='margin: 25px;text-align:center'>
           Wait for tx to be included in next block...
@@ -18,7 +17,7 @@
             <input style="width: 80px" type="number" v-model="gasprice">
      (gas price) * {{batch_estimate.size}} (gas) = fee {{commy(gasprice * batch_estimate.size)}}
             </span>
-          <!--<div class="slidecontainer" style="display:inline-block; width: 100px">
+          <!--<div class="slidecontainer" style="display:inline-block;">
               <input type="range" min="1" max="100" class="slider" v-model="gasprice">
             </div>-->
           <span v-if="getAsset(1) - gasprice * batch_estimate.size >= 100"><button type="button" class="btn btn-outline-danger" @click="call('broadcast', {gasprice: parseInt(gasprice)})">Sign & Broadcast</button> or <a class="dotted" @click="call('clearBatch')">clear batch</a></span>
@@ -205,9 +204,9 @@
               {{onchain}} balances
             </h2>
             <p>
-              <p v-for="a in PK.usedAssets">
-                <button class="btn btn-outline-secondary">{{to_ticker(a)}}: {{commy(getAsset(a))}} </button> &nbsp;
-                <span class="badge badge-success layer-faucet" @click="call('onchainFaucet', {amount: uncommy(prompt('How much you want to get?')), asset: a })">faucet</span>&nbsp;
+              <p v-for="a in record.balances">
+                <button class="btn btn-outline-secondary">{{to_ticker(a.asset)}}: {{commy(getAsset(a.asset))}} </button> &nbsp;
+                <span class="badge badge-success layer-faucet" @click="call('onchainFaucet', {amount: uncommy(prompt('How much you want to get?')), asset: a.asset })">faucet</span>&nbsp;
               </p>
               <br>
           </div>
@@ -244,10 +243,10 @@
           <p style="word-wrap: break-word">Your Address: <b>{{address}}</b></p>
           <ul class="nav nav-pills nav-fill">
             <li class="nav-item">
-              <a @click="outward.type='offchain'" class="nav-link " v-bind:class="{active: outward.type=='offchain'}" href="javascript:void()">Offchain ⚡️</a>
+              <a @click="outward.type='offchain'" class="nav-link " v-bind:class="{active: outward.type=='offchain'}" href="javascript:void(0)">Offchain ⚡️</a>
             </li>
             <li class="nav-item">
-              <a @click="outward.type='onchain'" class="nav-link " v-bind:class="{active: outward.type=='onchain'}" href="javascript:void()">Onchain 🌐</a>
+              <a @click="outward.type='onchain'" class="nav-link " v-bind:class="{active: outward.type=='onchain'}" href="javascript:void(0)">Onchain 🌐</a>
             </li>
           </ul>
           <p>
@@ -273,13 +272,13 @@
                 <h5>Choose route/fee:</h5>
                 <div class="radio" v-for="(r, index) in bestRoutes.slice(0, bestRoutesLimit)">
                   <label>
-                    <input type="radio" :value="index" v-model="chosenRoute"> {{commy(uncommy(outward.amount) * r[0], true, false)}} ({{bpsToPercent(r[0]*10000)}}) <b>You</b> → {{routeToText(r)}} <b>Destination</b></label>
+                    <input type="radio" :value="r[1].join('_')" v-model="chosenRoute"> {{commy(uncommy(outward.amount) * r[0], true, false)}} ({{bpsToPercent(r[0]*10000)}}) <b>You</b> → {{routeToText(r)}} <b>Destination</b></label>
                 </div>
                 <p v-if="bestRoutes.length > bestRoutesLimit"><a class="dotted" @click="bestRoutesLimit += 5">Show More Routes</a></p>
               </template>
             </template>
             <p>
-              <button type="button" class="btn btn-outline-success" @click="call('sendOffchain', {address: outward.address, asset: outward.asset, amount: uncommy(outward.amount), addrisk: addrisk, lazy: lazy, chosenRoute: bestRoutes[chosenRoute][1]});">Pay Now ⚡️</button>
+              <button type="button" class="btn btn-outline-success" @click="call('sendOffchain', {address: outward.address, asset: outward.asset, amount: uncommy(outward.amount), addrisk: addrisk, lazy: lazy, chosenRoute: chosenRoute});">Pay Now ⚡️</button>
               <button v-if="dev_mode" type="button" class="btn btn-outline-danger" @click="stream()">Pay 100 times</button>
             </p>
             <table v-if="payments.length > 0" class="table">
@@ -308,7 +307,10 @@
           </template>
           <template v-else>
             <div v-if="parsedAddress.hubs">
-              <h5>Choose bank:</h5>
+              <div class="radio">
+                <label>
+                  <input type="radio" :value="0" v-model="outward.hub"> Deposit to {{onchain}} balance</label>
+              </div>
               <div class="radio" v-for="id in parsedAddress.hubs">
                 <label>
                   <input type="radio" :value="id" v-model="outward.hub"> {{to_user(id)}}</label>
@@ -598,7 +600,7 @@
             <tr>
               <th scope="col">Icon</th>
               <th scope="col">ID</th>
-              <th scope="col">Name</th>
+
               <th scope="col">Pubkey</th>
               <th scope="col">Assets</th>
               <th scope="col">Batch Nonce</th>
@@ -611,9 +613,9 @@
                 <UserIcon :hash="u.pubkey" :size="30"></UserIcon>
               </th>
               <th scope="row">{{to_user(u.id)}}</th>
-              <td>{{u.username}}</td>
+
               <td><small>{{u.pubkey.substr(0,10)}}..</small></td>
-              <td><span v-for="b in u.balances">{{to_ticker(b.asset)}}: {{commy(b.balance)}}</span></td>
+              <td><span v-for="b in u.balances">{{to_ticker(b.asset)}}: {{commy(b.balance)}}&nbsp;</span></td>
               <td>{{u.batch_nonce}}</td>
               <td>{{u.debts.length}}</td>
             </tr>
@@ -694,9 +696,11 @@
                   <p>Uninsured: {{commy(derived.uninsured)}} <span class="badge badge-danger" @click="requestInsurance(mod.ch, mod.subch.asset)">Request Insurance</span>
                     <dotsloader v-if="derived.subch.requested_insurance"></dotsloader>
                   </p>
+                  <p><span class="badge badge-danger" @click="call('withChannel', {partnerId: mod.ch.d.partnerId, asset: mod.subch.asset, op: 'requestCredit', amount: 1})">Request Credit</span>
+                  </p>
                 </div>
                 <div class="col-md-6">
-                  <h4>Credit limits</h4>
+                  <h4>Set credit</h4>
                   <p>Maximum uninsured balance</p>
                   <p>
                     <input type="text" class="form-control" v-model="mod.hard_limit">
@@ -829,7 +833,7 @@ export default {
 
       bestRoutesLimit: 5,
 
-      chosenRoute: 0,
+      chosenRoute: '',
 
       gasprice: 1,
       events: [],
@@ -931,7 +935,7 @@ export default {
         asset: hashargs['asset'] ? parseInt(hashargs['asset']) : 1,
 
         type: 'offchain',
-        hub: 'onchain'
+        hub: -1
       },
       // which fields can be changed? all, amount, none
       outward_editable: hashargs['editable'] ? hashargs['editable'] : 'all',

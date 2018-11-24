@@ -19,11 +19,18 @@ module.exports = async (s, args) => {
     const compared = Buffer.compare(s.signer.pubkey, partner.pubkey)
     if (compared == 0) return
 
+    let available = userAsset(partner, asset)
+
     const ins = await getInsuranceBetween(s.signer, partner)
     let subins = ins.subinsurances.by('asset', asset)
+    if (subins) {
+      available += subins.balance
+    }
 
-    if (!ins || !ins.id || amount > subins.balance) {
-      l(`Invalid amount ${subins.balance} vs ${amount}`)
+    // todo, dont let to withdraw too much native asset
+
+    if (!ins || !ins.id || amount > available) {
+      l(`Invalid withdrawal: ${available} but requests ${amount}`)
       return
     }
 
@@ -48,15 +55,31 @@ module.exports = async (s, args) => {
       return
     }
 
-    // for blockchain explorer
-    s.parsed_tx.events.push(['withdrawFrom', amount, partner.id])
-    s.meta.inputs_volume += amount // todo: asset-specific
+    var take_from_insurance = amount
+    // not enough in insurance? take the rest from partner's onchain balance
+    if (!subins || amount > subins.balance) {
+      take_from_insurance = subins ? subins.balance : 0
+      let take_from_onchain = amount - take_from_insurance
 
-    subins.balance -= amount
-    // if signer is left and reduces insurance, move ondelta to the left too
-    // .====| reduce insurance .==--| reduce ondelta .==|
-    if (s.signer.id == ins.leftId) subins.ondelta -= amount
+      userAsset(partner, asset, -take_from_onchain)
 
+      // ondelta must also be modified to represent onchain deduction
+      if (partner.id == ins.leftId) {
+        subins.ondelta += take_from_onchain
+      } else {
+        subins.ondelta -= take_from_onchain
+      }
+    }
+
+    if (take_from_insurance > 0) {
+      subins.balance -= take_from_insurance
+      // if signer is left and reduces insurance, move ondelta to the left too
+      // .====| reduce insurance .==--| reduce ondelta .==|
+
+      if (s.signer.id == ins.leftId) subins.ondelta -= take_from_insurance
+    }
+
+    // giving signer amount to their onchain balance
     userAsset(s.signer, asset, amount)
 
     // preventing double spend with same withdrawal
@@ -64,12 +87,19 @@ module.exports = async (s, args) => {
 
     await saveId(ins)
 
+    // for blockchain explorer
+    s.parsed_tx.events.push(['withdrawFrom', amount, partner.id])
+    s.meta.inputs_volume += amount // todo: asset-specific
+
     // was this input related to us?
     if (me.record && [partner.id, s.signer.id].includes(me.record.id)) {
       const ch = await Channel.get(
-        me.record.id == partner.id ? s.signer.pubkey : partner.pubkey
+        me.record.id == partner.id ? s.signer.pubkey : partner.pubkey,
+        false
       )
       let subch = ch.d.subchannels.by('asset', asset)
+
+      l('Updating withdrawal amounts! ', subch)
       // they planned to withdraw and they did. Nullify hold amount
       subch.they_withdrawal_amount = 0
 

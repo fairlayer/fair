@@ -157,7 +157,7 @@ refresh = function(ch) {
       out.inwards_hold
 
     if (out.payable < 0 || out.they_payable < 0) {
-      l('Invalid payables', out, ch)
+      l('Invalid payables', JSON.stringify(out, null, 4))
       //fatal('invalid outs')
     }
 

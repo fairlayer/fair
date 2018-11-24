@@ -23,7 +23,7 @@ react = async (result) => {
   me.last_react = new Date()
 
   if (isHeadless()) {
-    l('headless')
+    //l('headless')
     return
   }
   //&& result.private
