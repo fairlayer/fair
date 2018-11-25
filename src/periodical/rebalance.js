@@ -34,37 +34,39 @@ const rebalance = async function(asset) {
   let minRisk = 100 //K.risk
 
   for (let d of deltas) {
-    let ch = await Channel.get(d.partnerId)
-    let derived = ch.derived[asset]
-    let subch = ch.d.subchannels.by('asset', asset)
+    await section(['use', d.partnerId], async () => {
+      let ch = await Channel.get(d.partnerId)
+      let derived = ch.derived[asset]
+      let subch = ch.d.subchannels.by('asset', asset)
 
-    if (!derived) {
-      l('No derived', ch)
-    }
-
-    // finding who has uninsured balances AND
-    // requests insurance OR gone beyond soft limit
-    if (
-      derived.they_uninsured > 0 &&
-      (subch.they_requested_insurance ||
-        (subch.they_soft_limit > 0 &&
-          derived.they_uninsured >= subch.they_soft_limit))
-    ) {
-      //l('Adding output for our promise ', ch.d.partnerId)
-      netReceivers.push(ch)
-    } else if (derived.insured >= minRisk) {
-      if (me.users[ch.d.partnerId]) {
-        // they either get added in this rebalance or next one
-        //l('Request withdraw withdrawFrom: ', derived)
-        netSpenders.push(withdraw(ch, subch, derived.insured))
-      } else if (subch.withdrawal_requested_at == null) {
-        l('Delayed pull')
-        subch.withdrawal_requested_at = ts()
-      } else if (subch.withdrawal_requested_at + 600 < ts()) {
-        l('User is offline for too long, or tried to cheat')
-        me.batchAdd('disputeWith', await startDispute(ch))
+      if (!derived) {
+        l('No derived', ch)
       }
-    }
+
+      // finding who has uninsured balances AND
+      // requests insurance OR gone beyond soft limit
+      if (
+        derived.they_uninsured > 0 &&
+        (subch.they_requested_insurance ||
+          (subch.they_soft_limit > 0 &&
+            derived.they_uninsured >= subch.they_soft_limit))
+      ) {
+        //l('Adding output for our promise ', ch.d.partnerId)
+        netReceivers.push(ch)
+      } else if (derived.insured >= minRisk) {
+        if (me.users[ch.d.partnerId]) {
+          // they either get added in this rebalance or next one
+          //l('Request withdraw withdrawFrom: ', derived)
+          netSpenders.push(withdraw(ch, subch, derived.insured))
+        } else if (subch.withdrawal_requested_at == null) {
+          l('Delayed pull')
+          subch.withdrawal_requested_at = ts()
+        } else if (subch.withdrawal_requested_at + 600 < ts()) {
+          l('User is offline for too long, or tried to cheat')
+          me.batchAdd('disputeWith', await startDispute(ch))
+        }
+      }
+    })
   }
 
   // checking on all withdrawals we expected to get, then rebalance

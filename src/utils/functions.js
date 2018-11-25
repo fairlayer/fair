@@ -24,7 +24,8 @@ const nextValidator = (skip = false) => {
   }
 }
 
-const parseAddress = (address) => {
+const parseAddress = async (address) => {
+  //l('Parse ', address)
   let addr = address.toString()
   let invoice = false
 
@@ -33,24 +34,31 @@ const parseAddress = (address) => {
     ;[addr, invoice] = addr.split('#')
   }
   let parts = []
-  let hubs = []
 
   try {
     parts = r(base58.decode(addr))
-    if (parts[2]) hubs = parts[2].map(readInt)
+    if (parts[2]) parts[2] = parts[2].map(readInt)
   } catch (e) {}
+
+  if (parts[0] && parts[0].length <= 6) {
+    // not pubkey? can be an id and we find out real pubkey
+    let u = await getUserByIdOrKey(readInt(parts[0]))
+    if (u) {
+      parts[0] = u.pubkey
+    }
+  }
 
   // both pubkeys and hub list must be present
   if (parts[0] && parts[0].length == 32 && parts[1] && parts[1].length == 32) {
     return {
-      box_pubkey: parts[0],
-      pubkey: parts[1],
-      hubs: hubs,
+      pubkey: parts[0],
+      box_pubkey: parts[1],
+      hubs: parts[2],
       invoice: invoice,
       address: addr
     }
   } else {
-    l('bad address: ', addr)
+    l('bad address: ', stringify(addr))
     return false
   }
 }

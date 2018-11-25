@@ -2,21 +2,29 @@
 // different nodes acting like "monkeys" and doing different overlapping scenarios
 
 const payMonkey = async (on_server, counter = 1) => {
-  const address = monkeys.randomElement()
+  var parsedAddress = false
+  while (!parsedAddress) {
+    parsedAddress = await parseAddress(monkeys.randomElement())
+    if (me.is_me(parsedAddress.pubkey)) parsedAddress = false
+  }
+
   // offchain payment
   await me.payChannel({
-    address: address,
+    address: parsedAddress.address,
     amount: 100 + Math.round(Math.random() * 200),
     asset: 1
   })
 
-  const [_, pubkey] = r(base58.decode(address))
-  const reg = await getUserByIdOrKey(pubkey)
+  const reg = await getUserByIdOrKey(parsedAddress.pubkey)
 
   // onchain payment (batched, not sent to validator yet)
   me.batchAdd('depositTo', [
     1,
-    [Math.round(Math.random() * 1000), reg.id ? reg.id : pubkey, 0]
+    [
+      Math.round(Math.random() * 1000),
+      reg.id ? reg.id : parsedAddress.pubkey,
+      0
+    ]
   ])
 
   // run on server infinitely and with longer delays
@@ -76,7 +84,9 @@ if (argv.monkey) {
     monkeys.splice(monkeys.indexOf(me.getAddress()), 1) // *except our addr
 
     setTimeout(async () => {
-      require('./internal_rpc/with_channel')({
+      await sleep(2000)
+
+      await require('./internal_rpc/with_channel')({
         op: 'setLimits',
         partnerId: K.hubs[0].pubkey,
         asset: 1,
@@ -84,7 +94,7 @@ if (argv.monkey) {
         hard_limit: K.hard_limit
       })
 
-      await sleep(3000)
+      await sleep(5000)
 
       me.sendJSON(K.hubs[0], 'testnet', {
         action: 'faucet',
@@ -102,11 +112,11 @@ if (argv.monkey) {
       // intended to fail
       me.payChannel({
         address:
-          'ZUp5PARsn4X2xs8fEjYSRtWSTQqgkMnVax7CaLsBmp9kR36Jqon7NbqCakQ5jQ9w1t5gtGo3zfhTtQ2123123123DJJjZ#DOOMEDTOFAIL',
+          'BummAd9FuuYvjGWemSNfnMKVbTCQcfq2ZymYLt9NxxbLELj5cunk4iyTGqr5ya5GsD31HvZysH5241VaKeeycaJzDZKT56fs#DOOMEDTOFAIL',
         amount: 100,
         asset: 1
       })
-    }, 20000)
+    }, 23000)
   }
 
   // below go pre-registred users
@@ -162,7 +172,8 @@ if (argv.monkey) {
 
     // adding onchain balances to monkeys
     for (var dest of monkeys) {
-      let [box_pubkey, pubkey] = r(base58.decode(dest))
+      let [pubkey, box_pubkey] = r(base58.decode(dest))
+      if (pubkey.length < 6) pubkey = readInt(pubkey)
       me.batchAdd('depositTo', [1, [1000000, pubkey, 0]])
     }
 
@@ -201,6 +212,7 @@ if (argv.monkey) {
     Channel.get(K.hubs[0].pubkey).then((ch) => {
       require('./internal_rpc/with_channel')({
         partnerId: toHex(ch.d.partnerId),
+        asset: 1,
         op: 'withdraw',
         amount: 912
       })
@@ -209,7 +221,7 @@ if (argv.monkey) {
     require('./internal_rpc/external_deposit')({
       asset: 1,
       userId: 3,
-      hub: 'Medici',
+      hub: 1,
       amount: 912
     })
   }

@@ -15,6 +15,8 @@ module.exports = async (ws, args) => {
 
       subch.they_hard_limit = json.hard_limit
       subch.they_soft_limit = json.soft_limit
+      await subch.save()
+
       me.textMessage(ch.d.partnerId, 'Updated credit limits')
     } else if (json.method == 'requestCredit') {
       let subch = ch.d.subchannels.by('asset', json.asset)
@@ -26,6 +28,8 @@ module.exports = async (ws, args) => {
         hard_limit: subch.hard_limit
       })
 
+      await subch.save()
+
       me.textMessage(
         ch.d.partnerId,
         'Congrats, we opened a credit line for you'
@@ -33,12 +37,15 @@ module.exports = async (ws, args) => {
     } else if (json.method == 'requestInsurance') {
       let subch = ch.d.subchannels.by('asset', json.asset)
       subch.they_requested_insurance = true
+      await subch.save()
+
       me.textMessage(ch.d.partnerId, 'Added to rebalance queue')
     } else if (json.method == 'giveWithdrawal') {
       let asset = parseInt(json.asset)
       let amount = parseInt(json.amount)
       let withdrawal_sig = fromHex(json.withdrawal_sig)
 
+      /*
       if (!ch.ins) {
         me.textMessage(
           ch.d.partnerId,
@@ -46,14 +53,19 @@ module.exports = async (ws, args) => {
         )
         return
       }
+      */
 
       let subch = ch.d.subchannels.by('asset', asset)
 
+      let they = await getUserByIdOrKey(ch.d.partnerId)
+      let pair = [they.id, me.record.id]
+      if (ch.d.isLeft()) pair.reverse()
+
       let withdrawal = [
         methodMap('withdrawFrom'),
-        ch.ins.leftId,
-        ch.ins.rightId,
-        ch.ins.withdrawal_nonce,
+        pair[0],
+        pair[1],
+        ch.ins ? ch.ins.withdrawal_nonce : 0,
         amount,
         asset
       ]
@@ -70,8 +82,7 @@ module.exports = async (ws, args) => {
       if (me.withdrawalRequests[subch.id]) {
         me.withdrawalRequests[subch.id](ch)
       }
-
-      if (argv.syncdb) ch.d.save()
+      await subch.save()
     } else if (json.method == 'requestWithdrawal') {
       if (me.CHEAT_dontwithdraw) {
         // if we dont give withdrawal or are offline for too long, the partner starts dispute
@@ -126,6 +137,9 @@ module.exports = async (ws, args) => {
         amount,
         asset
       ])
+
+      await subch.save()
+
       me.sendJSON(pubkey, 'giveWithdrawal', {
         withdrawal_sig: ec(withdrawal, me.id.secretKey),
         amount: amount,
@@ -186,7 +200,7 @@ module.exports = async (ws, args) => {
         if (!fl.equals(pubkey)) {
           flushed.push(me.flushChannel(fl, true))
         } else {
-          loff('Tried to flush twice')
+          //loff('Tried to flush twice')
         }
       }
     }

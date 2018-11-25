@@ -136,7 +136,7 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
       var derived = ch.derived[asset]
       if (!derived) {
         l('no derived')
-        continue
+        return
       }
       // every 'add' transition must pass an encrypted envelope (onion routing)
 
@@ -260,31 +260,37 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
         // ensure it's equal what they expect us to pay
         let nextHop = fromHex(box_data.nextHop)
 
+        //await section(['use', nextHop], async () => {
         let dest_ch = await Channel.get(nextHop)
 
         // is next hop online? Is payable?
-        if (!me.users[nextHop]) {
-          inward_hl.outcome_type = 'outcomeOffline'
-        }
 
         if (dest_ch.d.status == 'disputed') {
           inward_hl.outcome_type = 'outcomeDisputed'
         }
 
-        if (dest_ch.derived[asset].payable < outward_amount) {
-          inward_hl.outcome_type = 'outcomeCapacity'
-        }
+        /*
+          if (!me.users[nextHop]) {
+            inward_hl.outcome_type = 'outcomeOffline'
+          }
+
+
+          if (dest_ch.derived[asset].payable < outward_amount) {
+            inward_hl.outcome_type = 'outcomeCapacity'
+          }*/
 
         if (inward_hl.outcome_type) {
           l('Failed to mediate')
           inward_hl.outcome = bin(`id`)
           // fail right now
-          inward_hl.type = t[0] == 'add' ? 'del' : 'delrisk'
+          inward_hl.type = 'del'
+          //t[0] == 'add' ? 'del' : 'delrisk'
           inward_hl.status = 'new'
 
           me.metrics.fail.current++
 
-          continue
+          await inward_hl.save()
+          return
         }
 
         // otherwise mediate
@@ -314,15 +320,16 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
         await outward_hl.save()
 
         uniqAdd(dest_ch.d.partnerId)
+        //})
       } else {
         inward_hl.type = 'del'
         inward_hl.status = 'new'
         inward_hl.outcome_type = 'outcomeCapacity'
         inward_hl.outcome = bin('UnknownError')
       }
-      await inward_hl.save()
 
       //if (argv.syncdb) all.push(inward_hl.save())
+      await inward_hl.save()
     } else if (t[0] == 'del' || t[0] == 'delrisk') {
       var [asset, hash, outcome_type, outcome] = t[1]
       ;[hash, outcome] = [hash, outcome].map(fromHex)
@@ -343,7 +350,7 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
       )
       if (!outward_hl) {
         l('No such hashlock ', hash, ch.payments)
-        continue
+        return
       }
       let subch = ch.d.subchannels.by('asset', asset)
       if (valid && t[0] == 'del') {
@@ -368,12 +375,13 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
 
       me.metrics[valid ? 'settle' : 'fail'].current++
 
-      l('Saved as delack', outward_hl)
       //if (argv.syncdb) all.push(outward_hl.save())
       await outward_hl.save()
+      //l('Saved as delack', outward_hl)
 
       // if there's an inward channel for this, we are hub
       if (outward_hl.inward_pubkey) {
+        //await section(['use', outward_hl.inward_pubkey], async () => {
         var inward_ch = await Channel.get(outward_hl.inward_pubkey)
 
         if (inward_ch.d.status == 'disputed' && valid) {
@@ -396,7 +404,7 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
               inward_ch.d.rollback_nonce,
               ascii_state(inward_ch.state)
             )
-            continue
+            return
             //fatal('Not found pull hl')
           }
           // pass same outcome down the chain
@@ -422,6 +430,7 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
           // add to total volume
           me.metrics.volume.current += pull_hl.amount
         }
+        //})
       } else {
         if (valid) {
           react(
@@ -446,7 +455,7 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
       if (me.CHEAT_dontack) {
         l('CHEAT: not acking the secret, but pulling from inward')
         ch.d.status = 'CHEAT_dontack'
-        await ch.d.save()
+        //await ch.d.save()
         react({private: true}) // lazy react
         return
       }
@@ -495,7 +504,11 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
 
   //if (argv.syncdb) {
   //all.push(ch.d.save())
+
   await ch.d.save()
+  for (let subch of ch.d.subchannels) {
+    await subch.save()
+  }
 
   react({private: true}, false)
 

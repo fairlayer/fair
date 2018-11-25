@@ -52,7 +52,7 @@ const Router = {
 
   // returns sorted and filtered routes to some nodes for specific asset/amount
   bestRoutes: async function(address, args) {
-    let addr = parseAddress(address)
+    let addr = await parseAddress(address)
     if (!addr) return []
 
     let toArray = addr.hubs

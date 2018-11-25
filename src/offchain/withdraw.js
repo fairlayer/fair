@@ -17,7 +17,7 @@ module.exports = async function(ch, subch, amount) {
       // if the partner is offline
       delete me.withdrawalRequests[subch.id]
       resolve(ch)
-    }, 5000)
+    }, 6000)
     me.withdrawalRequests[subch.id] = (result) => {
       clearInterval(timeout)
       delete me.withdrawalRequests[subch.id]

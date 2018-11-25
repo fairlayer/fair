@@ -20,10 +20,11 @@ module.exports = async (pubkey, doRefresh = true) => {
     if (typeof pubkey == 'string') pubkey = fromHex(pubkey)
 
     var key = stringify([pubkey])
+    /*
     if (cache.ch[key]) {
       if (doRefresh) refresh(cache.ch[key])
       return cache.ch[key]
-    }
+    }*/
 
     //l('Loading channel from db: ', key)
 
@@ -111,7 +112,7 @@ module.exports = async (pubkey, doRefresh = true) => {
 
     if (doRefresh) refresh(ch)
 
-    cache.ch[key] = ch
+    //cache.ch[key] = ch
     //l('Saved in cache ', key)
     return ch
   })

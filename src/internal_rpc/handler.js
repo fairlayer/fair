@@ -110,7 +110,7 @@ module.exports = async (ws, json) => {
       break
 
     case 'getRoutes':
-      result.parsedAddress = parseAddress(json.params.address)
+      result.parsedAddress = await parseAddress(json.params.address)
 
       result.bestRoutes = await Router.bestRoutes(
         json.params.address,

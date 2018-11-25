@@ -29,7 +29,7 @@ module.exports = async (s, args) => {
 
     // todo, dont let to withdraw too much native asset
 
-    if (!ins || !ins.id || amount > available) {
+    if (!ins || amount > available) {
       l(`Invalid withdrawal: ${available} but requests ${amount}`)
       return
     }
@@ -86,6 +86,7 @@ module.exports = async (s, args) => {
     ins.withdrawal_nonce++
 
     await saveId(ins)
+    await ins.save()
 
     // for blockchain explorer
     s.parsed_tx.events.push(['withdrawFrom', amount, partner.id])
@@ -99,7 +100,7 @@ module.exports = async (s, args) => {
       )
       let subch = ch.d.subchannels.by('asset', asset)
 
-      l('Updating withdrawal amounts! ', subch)
+      //l('Updating withdrawal amounts! ', subch)
       // they planned to withdraw and they did. Nullify hold amount
       subch.they_withdrawal_amount = 0
 

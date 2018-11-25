@@ -52,6 +52,7 @@ module.exports = async (opts = {}) => {
       }
     }
 
+    /*
     for (let key in cache.ch) {
       //await section(['get', cache.ch[key].d.partnerId], async () => {
       await section(['use', cache.ch[key].d.partnerId], async () => {
@@ -76,33 +77,36 @@ module.exports = async (opts = {}) => {
           //}
         }
         // Ensure: payments must be garbage collected!
-        let left_payments = []
+        //let left_payments = []
         for (let i = 0; i < ch.payments.length; i++) {
           let t = ch.payments[i]
           //t.channelId = ch.d.id
           //await t.save()
 
-          if (t.changed()) {
-            //promises.push(t.save())
-          }
+          //if (t.changed()) {
+          promises.push(t.save())
+          l(`Saving ${t.type + t.status} ${trim(t.hash)}`)
+          //}
 
           // delacked payments are of no interest anymore
           if (t.type + t.status != 'delack') {
-            left_payments.push(t)
+            //left_payments.push(t)
             //delete ch.payments[i]
             //ch.payments.splice(i, 1)
+            //i -= 1
           }
         }
-        ch.payments = left_payments
+        //ch.payments = left_payments
 
-        let evict = ch.last_used < ts() - K.cache_timeout
+        let evict = ch.last_used < ts() - 2
+        //K.cache_timeout
 
         await Promise.all(promises)
 
         // the channel is only evicted after it is properly saved in db
         // Our job is to ensure after eviction channel in db has same structure
         if (evict) {
-          //delete cache.ch[key]
+          delete cache.ch[key]
           //promise = promise.then(() => {
           l('Evict idle ch: ' + trim(ch.d.partnerId))
           //})
@@ -112,6 +116,7 @@ module.exports = async (opts = {}) => {
       })
       //})
     }
+    */
 
     if (all.length > 0) {
       //l(`syncChanges done: ${all.length}`)

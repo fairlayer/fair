@@ -44,9 +44,6 @@ module.exports = async (p) => {
     subch.soft_limit = p.soft_limit
 
     // nothing happened
-    if (!subch.changed()) {
-      //return
-    }
 
     await subch.save()
 
@@ -65,10 +62,10 @@ module.exports = async (p) => {
       amount: p.amount
     })
   } else if (p.op == 'requestInsurance') {
-    me.sendJSON(ch.d.partnerId, 'requestInsurance', {asset: p.asset})
-
     subch.requested_insurance = true
+    await subch.save()
 
+    me.sendJSON(ch.d.partnerId, 'requestInsurance', {asset: p.asset})
     //react({confirm: 'Requested insurance, please wait'})
   } else if (p.op == 'testnet') {
     me.sendJSON(ch.d.partnerId, 'testnet', {
@@ -78,5 +75,6 @@ module.exports = async (p) => {
       address: me.getAddress()
     })
   }
+
   return {}
 }

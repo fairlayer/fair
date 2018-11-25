@@ -73,10 +73,13 @@ class Me {
     await promise_writeFile(datadir + '/offchain/pk.json', JSON.stringify(PK))
   }
 
-  // returns current address
+  // returns current address: pubkey, box_pubkey, hubs
   getAddress() {
-    // todo: replace with userId to make it shorter
-    let encodable = [bin(this.box.publicKey), this.pubkey, PK.usedHubs]
+    let encodable = [
+      me.record ? me.record.id : this.pubkey,
+      bin(this.box.publicKey),
+      PK.usedHubs
+    ]
     return base58.encode(r(encodable))
   }
 
@@ -136,9 +139,10 @@ class Me {
       return false
     }
 
-    me.record = await getUserByIdOrKey(bin(me.id.publicKey))
-    if (!me.record || !me.record.id) {
-      //l("You can't broadcast if you are not registred")
+    let record = await getUserByIdOrKey(bin(me.id.publicKey))
+    if (record && record.id) {
+      me.record = record
+    } else {
       return false
     }
 
@@ -196,9 +200,11 @@ class Me {
 
   async start() {
     // in json pubkeys are in hex
-    me.record = await getUserByIdOrKey(bin(me.id.publicKey))
+    let record = await getUserByIdOrKey(bin(me.id.publicKey))
 
-    if (me.record && me.record.id) {
+    if (record && record.id) {
+      me.record = record
+
       me.my_validator = Validators.find((m) => m.id == me.record.id)
       me.my_hub = K.hubs.find((m) => m.id == me.record.id)
     }

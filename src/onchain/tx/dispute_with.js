@@ -100,7 +100,7 @@ module.exports = async (s, args) => {
       //!me.CHEAT_dontack
       if (our_dispute_nonce > ins.dispute_nonce && !me.CHEAT_dontack) {
         l('Our last signed nonce is higher! ' + our_dispute_nonce)
-        me.addBatch('disputeWith', await startDispute(ch))
+        me.batchAdd('disputeWith', await startDispute(ch))
       }
     }
   }

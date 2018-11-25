@@ -48,10 +48,11 @@ module.exports = {
 
     if (app.skip_prev_date && str.startsWith(app.skip_prev_date)) {
       app.skip_prev_date = str.split(', ')[0]
-      return str.split(', ')[1]
+      return '' //str.split(', ')[1]
     } else {
       app.skip_prev_date = str.split(', ')[0]
-      return str.split(', ')[1] + ', <b>' + str.split(', ')[0] + '</b>'
+      //str.split(', ')[1] +
+      return '<b>' + str.split(', ')[0] + '</b>'
     }
   },
 
@@ -347,8 +348,8 @@ module.exports = {
   payment_status: (t) => {
     var s = ''
     if (t.type == 'del' || t.type == 'delrisk') {
-      //outcomeSecret
-      s = t.outcome_type == 'outcomeSecret' ? '✔' : '❌'
+      //outcomeSecret ✔
+      s = t.outcome_type == 'outcomeSecret' ? '' : '❌'
     }
     if (t.type == 'add' || t.type == 'addrisk') {
       s = '🔒'

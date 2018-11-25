@@ -116,13 +116,14 @@ module.exports = async (pubkey, opportunistic) => {
             await t.save()
 
             if (t.inward_pubkey) {
+              //await section(['use', t.inward_pubkey], async () => {
               var inward_ch = await Channel.get(t.inward_pubkey)
               var pull_hl = inward_ch.derived[t.asset].inwards.find((hl) =>
                 hl.hash.equals(t.hash)
               )
               pull_hl.type = 'del'
               pull_hl.status = 'new'
-              let reason = `${me.my_hub.id} to ${ch.d.partnerId}`
+              let reason = `${me.my_hub.id} to ${trim(ch.d.partnerId)}`
               l(reason)
 
               pull_hl.outcome_type = 'outcomeCapacity'
@@ -131,6 +132,7 @@ module.exports = async (pubkey, opportunistic) => {
               await pull_hl.save()
 
               flushable.push(inward_ch.d.partnerId)
+              //})
             }
 
             continue
@@ -141,13 +143,18 @@ module.exports = async (pubkey, opportunistic) => {
           }
 
           // set exp right before flushing to keep it fresh
-          ;(t.exp = K.usable_blocks + K.hashlock_exp),
-            (args = [t.asset, t.amount, t.hash, t.exp, t.unlocker])
+          t.exp = K.usable_blocks + K.hashlock_exp
+
+          args = [t.asset, t.amount, t.hash, t.exp, t.unlocker]
         }
 
         t.status = 'sent'
         //if (argv.syncdb) all.push(t.save())
         await t.save()
+
+        if (t.status != 'sent') {
+          fatal('Gotcha error! ', t)
+        }
 
         // increment nonce after each transition
         ch.d.dispute_nonce++
@@ -200,6 +207,10 @@ module.exports = async (pubkey, opportunistic) => {
       ch.d.pending = stringify(envelope)
       ch.d.status = 'sent'
       if (trace) l(`Flushing ${transitions.length} to ${trim(pubkey)}`)
+    }
+    await ch.d.save()
+    for (let subch of ch.d.subchannels) {
+      await subch.save()
     }
 
     me.sendJSON(ch.d.partnerId, 'update', envelope)

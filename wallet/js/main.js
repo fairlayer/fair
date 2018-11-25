@@ -162,6 +162,8 @@ window.render = (r) => {
   if (r.reload) {
     clearInterval(window.app.interval)
 
+    window.close()
+
     document.body.innerHTML = 'Reload requested'
     // only reload when the server is alive again
     setInterval(() => {

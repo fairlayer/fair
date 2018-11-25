@@ -285,22 +285,15 @@
               <button v-if="dev_mode" type="button" class="btn btn-outline-danger" @click="stream()">Pay 100 times</button>
             </p>
             <table v-if="payments.length > 0" class="table">
-              <thead>
-                <tr>
-                  <th width="5%">Status</th>
-                  <th width="10%">Amount</th>
-                  <th width="10%">Bank</th>
-                  <th width="65%">Details</th>
-                  <th width="20%">Date</th>
-                </tr>
-              </thead>
+
               <transition-group name="list" tag="tbody">
                 <tr v-bind:key="h.id" v-for="(h, index) in payments.slice(0, history_limit)">
-                  <td v-bind:title="h.id+h.type+h.status">{{payment_status(h)}}</td>
-                  <td>{{commy(h.is_inward ? h.amount : -h.amount)}}</td>
-                  <td>{{h.channelId}}</td>
-                  <td @click="outward.address=(h.is_inward ? h.source_address : h.destination_address)+'#'+h.private_invoice; outward.amount=commy(h.amount);"><u class="dotted">{{paymentToDetails(h)}}</u>: {{h.invoice}}</td>
-                  <td v-html="skipDate(h, index)"></td>
+                  <td width="10%" v-html="skipDate(h, index)"></td>
+
+                  <td @click="outward.address=(h.is_inward ? h.source_address : h.destination_address)+'#'+h.private_invoice; outward.amount=commy(h.amount);"><u class="dotted">{{paymentToDetails(h)}}</u>: {{h.invoice}} via {{h.channelId}}</td>
+
+                  <td width="15%">{{commy(h.is_inward ? h.amount : -h.amount)}} {{to_ticker(h.asset)}} {{payment_status(h)}}</td>
+
                 </tr>
               </transition-group>
               <tr v-if="payments.length > history_limit">
@@ -694,7 +687,7 @@
                   <h4>Information</h4>
                   <p>Payable: {{commy(derived.payable)}} <span class="badge badge-success bank-faucet" @click="call('withChannel', {partnerId: mod.ch.d.partnerId, op: 'testnet', action: 'faucet', asset: mod.subch.asset, amount: uncommy(prompt('How much you want to get?')) })">Use faucet</span></p>
                   <p>Receivable: {{commy(derived.they_payable)}}</p>
-                  <p>Insured: {{commy(derived.insured)}} <span class="badge badge-danger" @click="a=prompt(`How much to withdraw to onchain?`);if (a) {call('withChannel', {partnerId: mod.ch.d.partnerId, asset: mod.subch.asset, op: 'withdraw', amount: uncommy(a)})};">Withdraw to {{onchain}}</span><span class="badge badge-danger" @click="mod.shown=false;outward.address=address;updateRoutes();outward.type='onchain';outward.asset=mod.subch.asset;outward.hub = mod.ch.partner;">Deposit from {{onchain}}</span>
+                  <p>Insured: {{commy(derived.insured)}} <span class="badge badge-danger" @click="a=prompt(`How much to withdraw to onchain?`);if (a) {call('withChannel', {partnerId: mod.ch.d.partnerId, asset: mod.subch.asset, op: 'withdraw', amount: uncommy(a)})};">Withdraw</span>/<span class="badge badge-danger" @click="mod.shown=false;outward.address=address;updateRoutes();outward.type='onchain';outward.asset=mod.subch.asset;outward.hub = mod.ch.partner;">Deposit</span>
                   </p>
                   <p>Uninsured: {{commy(derived.uninsured)}} <span class="badge badge-danger" @click="requestInsurance(mod.ch, mod.subch.asset)">Request Insurance</span>
                     <dotsloader v-if="derived.subch.requested_insurance"></dotsloader>

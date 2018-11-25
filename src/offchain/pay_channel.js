@@ -13,7 +13,7 @@ module.exports = async (opts) => {
       return 'Error: No address'
     }
 
-    let addr = parseAddress(opts.address)
+    let addr = await parseAddress(opts.address)
 
     if (!addr) {
       l('Invalid address')
@@ -107,6 +107,7 @@ module.exports = async (opts) => {
     }
 
     // 3. now nextHop is equal our first hop, and amount includes all fees
+    //await section(['use', nextHop], async () => {
     let ch = await Channel.get(nextHop)
     if (!ch) {
       l('No channel to ', nextHop, asset)
@@ -129,11 +130,13 @@ module.exports = async (opts) => {
       }
       react({alert: `Not enough funds ${payable}`})
 
-      return
+      return 'No payable'
     } else if (amount > K.max_amount) {
-      return react({alert: `Maximum payment is $${commy(K.max_amount)}`})
+      react({alert: `Maximum payment is $${commy(K.max_amount)}`})
+      return 'out of range'
     } else if (amount < K.min_amount) {
-      return react({alert: `Minimum payment is $${commy(K.min_amount)}`})
+      react({alert: `Minimum payment is $${commy(K.min_amount)}`})
+      return 'out of range'
     }
 
     let outward = Payment.build({
@@ -163,7 +166,9 @@ module.exports = async (opts) => {
     //l('Paying to ', reversed)
 
     react({})
-    me.flushChannel(ch.d.partnerId, true)
+    //})
+
+    me.flushChannel(nextHop, true)
 
     return 'sent'
 

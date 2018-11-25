@@ -2,7 +2,7 @@ module.exports = async (dep) => {
   if (dep.userId) {
     var userId = dep.userId
   } else if (dep.address && dep.address.length > 0) {
-    var addr = parseAddress(dep.address)
+    var addr = await parseAddress(dep.address)
 
     let user = await User.findOne({where: {pubkey: addr.pubkey}})
     var userId = user ? user.id : addr.pubkey
