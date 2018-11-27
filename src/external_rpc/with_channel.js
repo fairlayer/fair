@@ -49,7 +49,7 @@ module.exports = async (ws, args) => {
       if (!ch.ins) {
         me.textMessage(
           ch.d.partnerId,
-          'Insurance must be created onchain first'
+          'You must be registered'
         )
         return
       }
@@ -78,11 +78,12 @@ module.exports = async (ws, args) => {
       l('Got withdrawal for ' + amount)
       subch.withdrawal_amount = amount
       subch.withdrawal_sig = withdrawal_sig
+      await subch.save()
 
       if (me.withdrawalRequests[subch.id]) {
+        // returning ch back to requesting function
         me.withdrawalRequests[subch.id](ch)
       }
-      await subch.save()
     } else if (json.method == 'requestWithdrawal') {
       if (me.CHEAT_dontwithdraw) {
         // if we dont give withdrawal or are offline for too long, the partner starts dispute
@@ -94,10 +95,7 @@ module.exports = async (ws, args) => {
       }
 
       if (!ch.ins) {
-        me.textMessage(
-          ch.d.partnerId,
-          'Insurance must be created onchain first'
-        )
+        me.textMessage(ch.d.partnerId, 'You must be registered')
         return
       }
 

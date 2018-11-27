@@ -88,8 +88,8 @@ refresh = function(ch) {
     let out = {
       inwards: [],
       outwards: [],
-      inwards_hold: 0,
-      outwards_hold: 0,
+      inwards_hold: subch.they_withdrawal_amount,
+      outwards_hold: subch.withdrawal_amount,
       asset: subch.asset,
       subch: subch
     }
@@ -130,14 +130,15 @@ refresh = function(ch) {
     // then steal the rest with withdrawal proof onchain, doubling their money
     // what we are about to withdraw and they are about to withdraw
     let ins_balance = subins.balance
-    ins_balance -= subch.withdrawal_amount + subch.they_withdrawal_amount
+    //ins_balance -= subch.withdrawal_amount + subch.they_withdrawal_amount
 
     // TODO: is it correct?
     //delta minus what Left one is about to withdraw (it's either we or they)
     let delta = subins.ondelta + subch.offdelta
+    /*
     delta -= ch.d.isLeft()
       ? subch.withdrawal_amount
-      : subch.they_withdrawal_amount
+      : subch.they_withdrawal_amount*/
 
     Object.assign(out, resolveChannel(ins_balance, delta, ch.d.isLeft()))
 
@@ -193,9 +194,9 @@ refresh = function(ch) {
 
 saveId = async function(obj) {
   // only save if it has no id now
-  if (!obj.id) {
-    await obj.save()
-  }
+  //if (!obj.id) {
+  await obj.save()
+  //}
 
   if (obj.balances) {
     for (let b of obj.balances) {

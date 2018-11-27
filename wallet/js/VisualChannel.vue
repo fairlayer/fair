@@ -1,5 +1,5 @@
 <template>
-  <div v-if="derived.bar > 0" class="progress" style="width:90%; display:inline-flex">
+  <div v-if="derived.bar > 0" class="progress" style="float:right; width:70%;  left: 300px">
 
     <div v-bind:style="{ width: Math.round(derived.they_uninsured*100/derived.bar)+'%', 'background-color':'#0000FF'}" class="progress-bar" role="progressbar">
       {{commy(derived.they_uninsured, true, false)}} (they_uninsured)

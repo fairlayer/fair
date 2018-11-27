@@ -275,6 +275,10 @@ WebSocketClient.prototype.reconnect = function(e) {
   // console.log(`WebSocketClient: retry in ${this.autoReconnectInterval}ms`);
   //this.instance.removeAllListeners()
   app.online = false
+
+  // temporary, only for debug
+  window.close()
+
   var that = this
   setTimeout(function() {
     that.open(that.url)

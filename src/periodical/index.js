@@ -36,7 +36,7 @@ Periodical.schedule = function schedule(task, timeout) {
 Periodical.startValidator = () => {
   l('Starting validator ', me.my_validator)
   me.startExternalRPC(me.my_validator.location)
-  Periodical.schedule('consensus', 200)
+  Periodical.schedule('consensus', 300)
 }
 
 Periodical.startHub = () => {

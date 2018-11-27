@@ -225,10 +225,6 @@ class Me {
           me.send(m, 'auth', me.envelope(methodMap('auth')))
         }
       }
-
-      // only validators need to run consensus
-      l('Starting consensus reactor engine')
-      me.consensus()
     } else {
       // keep connection to all hubs
       Validators.map((m) => {
@@ -247,7 +243,7 @@ class Me {
       snapshotHash()
     } else {
       // initial run? go monkey e2e test
-      require('./monkey')
+      require('../test/monkey')
     }
 
     Periodical.scheduleAll()

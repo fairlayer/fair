@@ -21,20 +21,27 @@ module.exports = async (p) => {
       react({alert: 'More than you can withdraw from payable'})
       return
     }
+    // meanwhile ch has been updated
+    ch = await withdraw(ch, subch, p.amount)
+    if (!ch) return l('No channel w')
 
-    await withdraw(ch, subch, p.amount)
-    if (subch.withdrawal_sig == null) {
+    subch = ch.d.subchannels.by('asset', p.asset)
+
+    if (subch.withdrawal_amount == 0) {
       react({
         alert: 'Failed to get withdrawal. Try later or start a dispute.'
       })
       return
     }
+    let withdrawal = [subch.withdrawal_amount, ch.partner, subch.withdrawal_sig]
 
-    me.batchAdd('withdrawFrom', [
-      p.asset,
-      [subch.withdrawal_amount, ch.partner, subch.withdrawal_sig]
-    ])
+    l('Adding withdrawal ', withdrawal)
+
+    me.batchAdd('withdrawFrom', [p.asset, withdrawal])
+    await subch.save()
+
     react({confirm: 'OK'})
+    return withdrawal
   } else if (p.op == 'deposit') {
     // not used
     me.batchAdd('depositTo', [p.asset, [p.amount, me.record.id, ch.partner, 0]])

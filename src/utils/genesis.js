@@ -54,8 +54,8 @@ module.exports = async (datadir) => {
     network_name: 'testnet',
     blocksize: 20000,
     blocktime: 10,
-    step_latency: 2, // how long is each consensus step: propose, prevote, precommit, await is the rest
-    gossip_delay: 300, // anti clock skew, give others time to change state
+    step_latency: 3, // how long is each consensus step: propose, prevote, precommit, await is the rest
+    gossip_delay: 700, // anti clock skew, give others time to change state
 
     //Time.at(1913370000) => 2030-08-19 20:40:00 +0900
 

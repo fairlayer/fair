@@ -4,15 +4,17 @@ module.exports = async (inputType, args) => {
   let m = Validators.find((f) => f.block_pubkey.equals(pubkey))
 
   if (me.status != inputType || !m) {
-    return //l(`${me.status} not ${inputType}`)
+    l(`${me.status} not ${inputType}`)
+    return //
   }
 
   if (header.length < 5) {
-    return //l(`${m.id} voted nil`)
+    l(`${m.id} voted nil`)
+    return //
   }
 
   if (!me.proposed_block.header) {
-    //l('We have no block')
+    l('We have no block')
     return
   }
 

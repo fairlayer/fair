@@ -279,16 +279,22 @@ module.exports = async (s, header, ordered_tx_body) => {
   }
 
   // only validators do snapshots, as they require extra computations
-  if (me.my_validator && K.blocks_since_last_snapshot == 0) {
+  if (
+    me.my_validator &&
+    me.my_validator.id == 1 &&
+    K.blocks_since_last_snapshot == 0
+  ) {
     //await promise_writeFile(datadir + '/onchain/k.json', stringify(K))
 
+    /*
     if (me.my_validator.id != 1) {
       // in dev mode only to prevent race for /data
-      await sleep(K.blocktime * 1000)
+      //await sleep(K.blocktime * 1000)
     } else {
       // it's important to flush current K to disk before snapshot
-      await Periodical.syncChanges()
     }
+    */
+    await Periodical.syncChanges()
 
     const path_filter = (path, stat) => {
       // must be deterministic

@@ -22,7 +22,11 @@ module.exports = () => {
   if (shares < K.majority) {
     if (!me.proposed_block.locked) me.proposed_block = {}
 
-    l(`Failed to commit #${K.total_blocks}, ${shares}/${K.majority}`)
+    l(
+      `Failed to commit #${K.total_blocks}, ${shares}/${K.majority}`,
+      Validators,
+      K.total_blocks
+    )
 
     // go sync immediately, went out of sync?
     Periodical.syncChain()

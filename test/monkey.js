@@ -35,14 +35,16 @@ const payMonkey = async (on_server, counter = 1) => {
     setTimeout(() => {
       payMonkey(on_server, counter + 1)
     }, Math.round(9500 + Math.random() * 9000))
-  } else if (counter < 20) {
+  } else if (counter < 6) {
     setTimeout(() => {
       payMonkey(on_server, counter + 1)
-    }, 500)
+    }, 300)
   }
 }
 
-if (argv.monkey) {
+let run = async () => {
+  await sleep(5000)
+
   if (base_port > 8000) {
     // add first hub by default and open limit
     PK.usedHubs.push(1)
@@ -71,7 +73,7 @@ if (argv.monkey) {
     let loc = on_server
       ? `wss://fairlayer.com:${base_port + 100}`
       : `ws://${localhost}:${base_port + 100}`
-    require('./internal_rpc/create_hub')({
+    require('../src/internal_rpc/create_hub')({
       fee_bps: 5,
       handle: stubs[base_port - 8001],
       location: loc,
@@ -86,7 +88,7 @@ if (argv.monkey) {
     setTimeout(async () => {
       await sleep(2000)
 
-      await require('./internal_rpc/with_channel')({
+      await require('../src/internal_rpc/with_channel')({
         op: 'setLimits',
         partnerId: K.hubs[0].pubkey,
         asset: 1,
@@ -208,21 +210,26 @@ if (argv.monkey) {
   }
 
   if (me.record.id == 2) {
-    // withdraw 12.34 from hub and deposit 9.12 to 3@1
-    Channel.get(K.hubs[0].pubkey).then((ch) => {
-      require('./internal_rpc/with_channel')({
-        partnerId: toHex(ch.d.partnerId),
-        asset: 1,
-        op: 'withdraw',
-        amount: 912
-      })
-    })
+    // withdraw 12.34 from hub and deposit 9.12 to 3 @ 1
+    let ch = await Channel.get(K.hubs[0].pubkey)
 
-    require('./internal_rpc/external_deposit')({
+    let withdrawn = await require('../src/internal_rpc/with_channel')({
+      partnerId: toHex(ch.d.partnerId),
+      asset: 1,
+      op: 'withdraw',
+      amount: 1234
+    })
+    l('Withdrawn ', withdrawn)
+
+    require('../src/internal_rpc/external_deposit')({
       asset: 1,
       userId: 3,
       hub: 1,
       amount: 912
     })
   }
+}
+
+if (argv.monkey) {
+  run()
 }

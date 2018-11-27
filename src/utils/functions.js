@@ -178,10 +178,9 @@ const getInsuranceBetween = async function(user1, user2) {
   }
   const str = stringify([wh.leftId, wh.rightId])
 
-  let ins = cache.ins[str]
-  if (ins) return ins
+  if (cache.ins[str]) return cache.ins[str]
 
-  ins = (await Insurance.findOrBuild({
+  let ins = (await Insurance.findOrBuild({
     where: wh,
     defaults: {subinsurances: []}, //needed to get [] attr
     include: [Subinsurance]

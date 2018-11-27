@@ -112,14 +112,18 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
         subch.offdelta = signed_offdelta
       })
 
-      l(`Start merge with ${trim(pubkey)}, rollback ${ch.d.rollback_nonce}`)
+      l(
+        `Start merge with ${trim(pubkey)}, rollback ${ch.d.rollback_nonce} to ${
+          ch.d.dispute_nonce
+        }`
+      )
     } else {
       mismatch('Deadlock')
 
       l('Deadlock')
 
       fatal('Deadlock?!')
-      //await me.flushChannel(ch)
+      //await me.flushChannel(ch, true)
 
       return
     }
@@ -350,6 +354,7 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
       )
       if (!outward_hl) {
         l('No such hashlock ', hash, ch.payments)
+        fatal('no such hashlock')
         return
       }
       let subch = ch.d.subchannels.by('asset', asset)
@@ -477,7 +482,8 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
 
     refresh(ch)
 
-    if (trace) l(`After merge our state is \n${ascii_state(ch.state)}`)
+    //if (trace)
+    l(`After merge our state is \n${ascii_state(ch.state)}`)
 
     ch.d.status = 'merge'
   } else {

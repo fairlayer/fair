@@ -62,6 +62,8 @@
               <li><a class="nav-link" @click="go('asset_manager')">{{t('asset_manager')}}</a></li>
               <li><a class="nav-link" @click="go('updates')">{{t('smart_updates')}}</a></li>
 
+              <li><a class="nav-link" @click="go('demochannel')">Payment Channel Explainer</a></li>
+
               <li>
                 <a class="nav-link" @click="go('exchange')">{{t('onchain_exchange')}}</a>
               </li>
@@ -177,15 +179,60 @@
         <p>Total bytes: {{K.total_bytes}}</p>
         <p>Smart updates created: {{K.proposals_created}}</p>
       </div>
+      <div v-else-if="tab=='demochannel'">
+        <h3>Payment channel explainer</h3>
+        <p><b>Deposit X into a channel (onchain)</b>: increase <b>insurance balance</b> by this amount and also increase <b>ondelta</b> if you deposit to the Left user.</p>
+        <p><b>Withdraw X from a channel (onchain)</b>: decrease insurance by this amount and also decrease <b>ondelta</b> if you withdraw from the Left user.</p>
+        <p><b>Make instant payment (offchain)</b>: move the <b>offdelta slider towards sender</b> - to the left if you are Left user and to the right if you're Right.</p>
+        <p><b>Extend capacity with credit (offchain):</b> Extended Lightning allows opening a credit line in either direction. This will increase <b>payable</b> of another party, i.e. your receivability, and <a href="https://medium.com/fairlayer/xln-extended-lightning-network-80fa7acf80f3">solves the inward capacity problem.</a></p>
+
+        <div class="alert alert-secondary" v-for="democh in demochannels">
+          Insurance balance (onchain): <input style="width:50px" v-model="democh.ins_balance">
+           / Ondelta (onchain) <input style="width:50px" v-model="democh.ins_ondelta"> / Offdelta: <b>{{democh.offdelta}} (min {{resolveDemo(democh).min_offdelta}} max {{resolveDemo(democh).max_offdelta}})</b>
+
+
+          <div style="position:relative;">
+          <br>
+
+
+            <div v-if="democh.ins_balance>0" class="slider"  style="display:inline-flex;background-color:green; pointer-events: none;position:absolute;" :style="{width: (democh.ins_balance*5)+'px', left: (democh.they_hard_limit*5)+'px'}">&nbsp;</div>
+
+            <input type="range" :style="{width: resolveDemo(democh).width+'px'}" :min="resolveDemo(democh).min_offdelta" :max="resolveDemo(democh).max_offdelta" value="0" class="slider" v-model="democh.offdelta"> 
+
+            
+
+          </div>
+
+
+
+
+          <div>
+
+          <b>(Left)</b> Credit: <input style="width:50px"   v-model="democh.hard_limit"> / Payable: {{resolveDemo(democh).payable}} / Insured: {{resolveDemo(democh).insured}} / Uninsured: {{resolveDemo(democh).uninsured}}
+
+
+          <span style="float:right"><b>(Right)</b> Credit: <input  style="width:50px" v-model="democh.they_hard_limit"> / Payable: {{resolveDemo(democh).they_payable}} / Insured: {{resolveDemo(democh).they_insured}} / Uninsured: {{resolveDemo(democh).they_uninsured}}</span>
+
+          </div>
+
+
+        </div>
+        <button class="btn btn-success" @click="demochannels.push({ins_balance: '0', ins_ondelta:'0', offdelta: '0', hard_limit:'0', they_hard_limit:'0'})">Add Demo Channel</button>
+
+
+
+
+      </div>
       <div v-else-if="tab=='settings'">
         <pre>Auth link: {{getAuthLink()}}</pre>
         <p>
-          <button class="btn btn-dark" @click="dev_mode=!dev_mode">Toggle Devmode</button>
+          <button class="btn btn-dark" @click="devmode=!devmode">Toggle Devmode</button>
         </p>
         <p>
           <button type="button" class="btn btn-outline-danger" @click="call('logout')">Graceful Shutdown
           </button>
         </p>
+
         <h2>Manual Hard Fork</h2>
         <p>If validators vote for things you don't agree with, find like minded people and replace them.</p>
         <div class="form-group">
@@ -199,6 +246,7 @@
       <div v-else-if="tab=='wallet'">
         <template v-if="pubkey">
           <h4 class="alert alert-primary" v-if="my_hub">This node is a bank: {{my_hub.handle}}</h4>
+          <h4 class="alert alert-primary" v-if="my_validator">This node is a validator: {{my_validator.username}}</h4>
           <div v-if="record">
             <h2>
               {{onchain}} balances
@@ -215,9 +263,12 @@
               {{onchain}}: not registered <span class="badge badge-success layer-faucet" @click="call('onchainFaucet', {amount: uncommy(prompt('How much you want to get?')), asset: 1 })">faucet</span>
             </h4>
           </div>
+
+          <hr/>
+          
           <div class="alert alert-info" v-for="ch in channels">
             <h2>
-                {{K.hubs.find(h=>h.pubkey==ch.d.partnerId).handle }}
+                {{pubkeyToUser(ch.d.partnerId)}}
               </h2>
             <p>
               <p v-for="subch in ch.d.subchannels">
@@ -228,7 +279,7 @@
               </p>
             </p>
             <p v-if="record">
-              <span v-if="ch.ins.dispute_delayed">
+              <span v-if="ch.ins && ch.ins.dispute_delayed">
                   <b>{{ch.ins.dispute_delayed - K.usable_blocks}} usable blocks</b> left until dispute resolution <dotsloader></dotsloader>
                 </span>
               <span v-else-if="ch.d.status=='dispute'">
@@ -236,8 +287,9 @@
                 </span>
               <button v-else type="button" class="btn btn-outline-danger" @click="call('startDispute', {partnerId: ch.d.partnerId})">Start a Dispute 🌐</button>
             </p>
-            <p>
+            <p v-if="devmode">
             Status: {{ch.d.status}}, nonce {{ch.d.dispute_nonce}}
+            <pre v-html="ch.ascii_states"></pre>
             </p>
           </div>
           <template v-if="channels.length == 0">
@@ -282,7 +334,7 @@
             </template>
             <p>
               <button type="button" class="btn btn-outline-success" @click="call('sendOffchain', {address: outward.address, asset: outward.asset, amount: uncommy(outward.amount), addrisk: addrisk, lazy: lazy, chosenRoute: chosenRoute});">Pay Now ⚡️</button>
-              <button v-if="dev_mode" type="button" class="btn btn-outline-danger" @click="stream()">Pay 100 times</button>
+              <button v-if="devmode" type="button" class="btn btn-outline-danger" @click="stream()">Pay 100 times</button>
             </p>
             <table v-if="payments.length > 0" class="table">
 
@@ -313,7 +365,8 @@
               </div>
             </div>
             <p>
-              <button type="button" class="btn btn-outline-success" @click="addExternalDeposit">Transfer 🌐</button>
+              <button v-if="record" type="button" class="btn btn-outline-success" @click="addExternalDeposit">Transfer 🌐</button>
+              <small v-else>You are not registered in the {{onchain}}</small>
             </p>
             <table v-if="events.length > 0" class="table">
               <thead>
@@ -689,6 +742,10 @@
                   <p>Receivable: {{commy(derived.they_payable)}}</p>
                   <p>Insured: {{commy(derived.insured)}} <span class="badge badge-danger" @click="a=prompt(`How much to withdraw to onchain?`);if (a) {call('withChannel', {partnerId: mod.ch.d.partnerId, asset: mod.subch.asset, op: 'withdraw', amount: uncommy(a)})};">Withdraw</span>/<span class="badge badge-danger" @click="mod.shown=false;outward.address=address;updateRoutes();outward.type='onchain';outward.asset=mod.subch.asset;outward.hub = mod.ch.partner;">Deposit</span>
                   </p>
+
+                  <p v-if="mod.subch.withdrawal_amount > 0">Pending withdrawal from you: {{commy(mod.subch.withdrawal_amount)}}</p>
+                  <p v-if="mod.subch.they_withdrawal_amount > 0">Pending withdrawal from them: {{commy(mod.subch.they_withdrawal_amount)}}</p>
+
                   <p>Uninsured: {{commy(derived.uninsured)}} <span class="badge badge-danger" @click="requestInsurance(mod.ch, mod.subch.asset)">Request Insurance</span>
                     <dotsloader v-if="derived.subch.requested_insurance"></dotsloader>
                   </p>
@@ -812,147 +869,7 @@ export default {
   },
 
   data() {
-    return {
-      onchain: 'Layer',
-
-      online: true,
-
-      lang: 'en',
-
-
-      onServer: location.hostname == 'fairlayer.com',
-      auth_code: localStorage.auth_code,
-
-
-      bestRoutes: [],
-
-
-      bestRoutesLimit: 5,
-
-      chosenRoute: '',
-
-      gasprice: 1,
-      events: [],
-
-      assets: [],
-      orders: [],
-      channels: [],
-      payments: [],
-      insurances: [],
-
-      batch: [],
-      busyPorts: 0,
-
-
-      new_validator: {
-        handle: "Name",
-        location: `ws://${location.hostname}:${parseInt(location.port)+100}`
-      },
-
-
-
-      new_asset: {
-        name: 'Yen ¥',
-        ticker: 'YEN',
-        amount: 100000000000,
-        desc: 'This asset represents Japanese Yen and is backed by the Bank of Japan.'
-      },
-
-
-      new_hub: {
-        handle: "BestBank",
-        location: `ws://${location.hostname}:${parseInt(location.port)+100}`,
-        fee_bps: 10,
-        add_routes: '1',
-        remove_routes: ''
-      },
-
-
-      pubkey: false,
-      K: false,
-      PK: false,
-
-      my_validator: false,
-
-      pw: '',
-      username: '',
-
-      record: false,
-
-      tab: '',
-
-      install_snippet: false,
-
-
-      mod: {
-        shown: false,
-        subch: {},
-        ch: {},
-        soft_limit: '',
-        hard_limit: ''
-      },
-
-      expandedChannel: -1,
-
-
-      off_to: '',
-      off_amount: '',
-
-      my_hub: false,
-
-
-      metrics: {},
-
-      history_limit: 10,
-
-      blocks: [],
-      users: [],
-
-      history: [],
-
-      proposal: [
-        'Increase Blocksize After Client Optimization',
-        `K.blocksize += 1000000;`,
-        ''
-      ],
-
-      proposals: [],
-      set_name: '',
-
-      parsedAddress: {},
-
-      settings: !localStorage.settings,
-
-      outward: {
-        address: (hashargs['address'] ? hashargs['address'] : ''),
-        amount: hashargs['amount'] ? hashargs['amount'] : '',
-        private_invoice: hashargs['invoice'],
-        public_invoice: hashargs['invoice'],
-        asset: hashargs['asset'] ? parseInt(hashargs['asset']) : 1,
-
-        type: 'offchain',
-        hub: -1
-      },
-      // which fields can be changed? all, amount, none
-      outward_editable: hashargs['editable'] ? hashargs['editable'] : 'all',
-
-      addrisk: false,
-      lazy: false,
-      visibleGraph: false,
-
-      order: {
-        amount: '',
-        rate: '',
-        buyAssetId: 2
-      },
-
-      hardfork: '',
-
-
-      // useful for visual debugging
-      dev_mode: false,
-      sync_started_at: false
-    }
+    return require('./data')
   },
   computed: {
     derived: function() {

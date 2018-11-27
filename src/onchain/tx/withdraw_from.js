@@ -25,6 +25,12 @@ module.exports = async (s, args) => {
     let subins = ins.subinsurances.by('asset', asset)
     if (subins) {
       available += subins.balance
+    } else {
+      subins = Subinsurance.build({
+        insuranceId: ins.id,
+        asset: asset
+      })
+      ins.subinsurances.push(subins)
     }
 
     // todo, dont let to withdraw too much native asset
@@ -57,8 +63,8 @@ module.exports = async (s, args) => {
 
     var take_from_insurance = amount
     // not enough in insurance? take the rest from partner's onchain balance
-    if (!subins || amount > subins.balance) {
-      take_from_insurance = subins ? subins.balance : 0
+    if (amount > subins.balance) {
+      take_from_insurance = subins.balance
       let take_from_onchain = amount - take_from_insurance
 
       userAsset(partner, asset, -take_from_onchain)
@@ -109,6 +115,7 @@ module.exports = async (s, args) => {
       subch.withdrawal_sig = null
 
       ch.ins = ins
+      await subch.save()
 
       //if (argv.syncdb) ch.d.save()
     }

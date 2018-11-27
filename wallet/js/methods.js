@@ -8,6 +8,83 @@ module.exports = {
     pay()
   },
 
+  pubkeyToUser: (pubkey) => {
+    let h = app.K.hubs.find((h) => h.pubkey == pubkey)
+    return h ? h.handle : app.trim(pubkey)
+  },
+
+  resolveDemo: (democh) => {
+    // normalize
+    for (let arg of [
+      'ins_ondelta',
+      'ins_balance',
+      'offdelta',
+      'hard_limit',
+      'they_hard_limit'
+    ]) {
+      if (Number.isInteger(parseInt(democh[arg]))) {
+        democh[arg] = parseInt(democh[arg])
+      } else {
+        l(arg)
+        return false
+      }
+    }
+
+    let delta = democh.offdelta + democh.ins_ondelta
+    let insurance = democh.ins_balance
+
+    var parts = {
+      // left user promises only with negative delta, scenario 3
+      they_uninsured: delta < 0 ? -delta : 0,
+      insured: delta > insurance ? insurance : delta > 0 ? delta : 0,
+      they_insured:
+        delta > insurance ? 0 : delta > 0 ? insurance - delta : insurance,
+      // right user promises when delta > insurance, scenario 1
+      uninsured: delta > insurance ? delta - insurance : 0
+    }
+
+    var total =
+      parts.they_uninsured +
+      parts.uninsured +
+      parts.they_insured +
+      parts.insured
+
+    if (total < 100) total = 100
+
+    var bar = (amount, symbol) => {
+      if (amount > 0) {
+        return Array(1 + Math.ceil((amount * 100) / total)).join(symbol)
+      } else {
+        return ''
+      }
+    }
+
+    // visual representations of state in ascii and text
+    if (delta < 0) {
+      parts.ascii_channel =
+        '|' + bar(parts.they_uninsured, '-') + bar(parts.they_insured, '=')
+    } else if (delta < insurance) {
+      parts.ascii_channel =
+        bar(parts.insured, '=') + '|' + bar(parts.they_insured, '=')
+    } else {
+      parts.ascii_channel =
+        bar(parts.insured, '=') + bar(parts.uninsured, '-') + '|'
+    }
+
+    parts.payable = delta + democh.they_hard_limit
+
+    parts.they_payable = insurance + democh.hard_limit - delta
+
+    parts.min_offdelta = -democh.ins_ondelta - democh.they_hard_limit
+
+    parts.max_offdelta =
+      -democh.ins_ondelta + democh.ins_balance + democh.hard_limit
+
+    parts.width = (parts.max_offdelta - parts.min_offdelta) * 5
+
+    return parts
+  },
+
   ivoted: (voters) => {
     return voters.find((v) => v.id == app.record.id)
   },

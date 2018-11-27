@@ -151,6 +151,8 @@ module.exports = async (s, args) => {
       }
 
       await saveId(ins)
+      //await ins.save()
+
       //await saveId(subins)
 
       if (me.is_me(depositTo.pubkey) || me.is_me(withPartner.pubkey)) {
