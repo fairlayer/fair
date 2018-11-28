@@ -4,10 +4,12 @@ module.exports = async () => {
   //l('Next round', nextValidator().id)
   if (me.my_validator != nextValidator()) {
     return
+  } else {
+    l('Our turn to propose')
   }
 
   //l(`it's our turn to propose, gossip new block`)
-  if (K.ts < ts() - K.blocktime - 5000) {
+  if (K.ts < ts() - K.blocktime * 3) {
     l('Danger: No previous block exists')
   }
 
@@ -44,21 +46,22 @@ module.exports = async () => {
     me.mempool = []
 
     // Propose no blocks if mempool is empty
-    if (ordered_tx.length > 0 || K.ts < ts() - K.skip_empty_blocks) {
-      ordered_tx_body = r(ordered_tx)
-      header = r([
-        methodMap('propose'),
-        me.record.id,
-        K.total_blocks,
-        Buffer.from(K.prev_hash, 'hex'),
-        ts(),
-        sha3(ordered_tx_body),
-        current_db_hash()
-      ])
-    }
+    //if (ordered_tx.length > 0 || K.ts < ts() - K.skip_empty_blocks) {
+    ordered_tx_body = r(ordered_tx)
+    header = r([
+      methodMap('propose'),
+      me.record.id,
+      K.total_blocks,
+      Buffer.from(K.prev_hash, 'hex'),
+      ts(),
+      sha3(ordered_tx_body),
+      current_db_hash()
+    ])
+    //}
   }
 
   if (!header) {
+    l('No header to propose')
     return
   }
 

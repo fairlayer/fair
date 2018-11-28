@@ -54,7 +54,7 @@ let run = async () => {
 
   // only in monkey mode, not on end user node
   if (base_port != 8008) {
-    Periodical.schedule('broadcast', K.blocktime * 1000)
+    Periodical.schedule('broadcast', K.blocktime * 1500)
   }
 
   let stubs = [

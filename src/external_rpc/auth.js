@@ -11,6 +11,8 @@ module.exports = async (ws, args) => {
       me.users[pubkey] = new WebSocketClient()
       me.users[pubkey].instance = ws
     }
+
+    if (trace) l('New peer: ', pubkey)
   } else {
     l('Invalid auth attempt')
     return false

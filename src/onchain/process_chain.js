@@ -143,7 +143,7 @@ module.exports = async (args) => {
     // Ensure our last broadcasted batch was added
     if (PK.pending_batch) {
       const raw = fromHex(PK.pending_batch)
-      l('Rebroadcasting pending tx ', raw.length)
+      if (trace) l('Rebroadcasting pending tx ', raw.length)
       react({
         alert: "Transaction wasn't included, rebroadcasting...",
         force: true

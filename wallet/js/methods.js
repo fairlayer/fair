@@ -101,17 +101,17 @@ module.exports = {
   },
 
   routeToText: (r) => {
-    let info = ''
+    let info = []
 
     for (let hop of r[1]) {
       let hub = app.K.hubs.find((h) => h.id == hop)
       if (hub) {
         //(${app.bpsToPercent(hub.fee_bps)})
-        info += `${app.to_user(hub.id)} → `
+        info.push(`${app.to_user(hub.id)}`)
       }
     }
 
-    return info
+    return info.join(' → ')
   },
 
   bpsToPercent: (p) => {
@@ -123,14 +123,14 @@ module.exports = {
     var str = new Date(h.createdAt).toLocaleString()
     if (index == 0) app.skip_prev_date = false
 
-    if (app.skip_prev_date && str.startsWith(app.skip_prev_date)) {
+    /*if (app.skip_prev_date && str.startsWith(app.skip_prev_date)) {
       app.skip_prev_date = str.split(', ')[0]
       return '' //str.split(', ')[1]
-    } else {
-      app.skip_prev_date = str.split(', ')[0]
-      //str.split(', ')[1] +
-      return '<b>' + str.split(', ')[0] + '</b>'
-    }
+    } else {*/
+    app.skip_prev_date = str.split(', ')[0]
+    //str.split(', ')[1] +
+    return '<b>' + str.split(', ')[0] + '</b>'
+    //}
   },
 
   toHexString: (byteArray) => {

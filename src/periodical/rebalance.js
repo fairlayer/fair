@@ -129,7 +129,9 @@ const rebalance = async function(asset) {
 }
 
 module.exports = () => {
-  if (PK.pending_batch || me.batch.length > 0) return l('There are pending tx')
+  if (PK.pending_batch || me.batch.length > 0) {
+    return //l('There are pending tx')
+  }
 
   //l('Starting rebalance')
   // we iterate over all assets in existance and rebalance each separately

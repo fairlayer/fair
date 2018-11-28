@@ -24,7 +24,6 @@ module.exports = () => {
 
     l(
       `Failed to commit #${K.total_blocks}, ${shares}/${K.majority}`,
-      Validators,
       K.total_blocks
     )
 

@@ -22,7 +22,17 @@ module.exports = async (pubkey, opportunistic) => {
     let ch = await Channel.get(pubkey)
     ch.last_used = ts()
 
-    let flushable = []
+    // an array of partners we need to ack or flush changes at the end of processing
+    var flushable = []
+
+    // indexOf doesn't work with Buffers
+    let uniqFlushable = (add) => {
+      if (flushable.find((f) => f.equals(add))) {
+        //loff('Already scheduled for flush')
+      } else {
+        flushable.push(add)
+      }
+    }
     let all = []
 
     if (ch.d.status == 'sent') {
@@ -38,6 +48,7 @@ module.exports = async (pubkey, opportunistic) => {
       return
     }
 
+    // todo move this logic into the iteration
     if (ch.d.status == 'disputed') {
       return
     }
@@ -93,11 +104,12 @@ module.exports = async (pubkey, opportunistic) => {
             t.amount > derived.payable ||
             derived.outwards.length >= K.max_hashlocks
           ) {
-            loff(
-              `error cannot transit ${t.amount}/${derived.payable}. Locks ${
-                derived.outwards.length
-              }.`
-            )
+            if (trace)
+              loff(
+                `error cannot transit ${t.amount}/${derived.payable}. Locks ${
+                  derived.outwards.length
+                }.`
+              )
 
             if (me.my_hub && t.amount > derived.payable) {
               me.textMessage(
@@ -124,14 +136,13 @@ module.exports = async (pubkey, opportunistic) => {
               pull_hl.type = 'del'
               pull_hl.status = 'new'
               let reason = `${me.my_hub.id} to ${trim(ch.d.partnerId)}`
-              l(reason)
 
               pull_hl.outcome_type = 'outcomeCapacity'
               pull_hl.outcome = bin(reason)
               //if (argv.syncdb) all.push(pull_hl.save())
               await pull_hl.save()
 
-              flushable.push(inward_ch.d.partnerId)
+              uniqFlushable(inward_ch.d.partnerId)
               //})
             }
 

@@ -4,17 +4,17 @@ module.exports = async (inputType, args) => {
   let m = Validators.find((f) => f.block_pubkey.equals(pubkey))
 
   if (me.status != inputType || !m) {
-    l(`${me.status} not ${inputType}`)
+    l(`${m.id}:${inputType}. in ${me.status}`)
     return //
   }
 
   if (header.length < 5) {
-    l(`${m.id} voted nil`)
+    l(`${m.id}:${inputType} nil `)
     return //
   }
 
   if (!me.proposed_block.header) {
-    l('We have no block')
+    l(`${m.id}:${inputType}. We have no block`)
     return
   }
 
@@ -25,7 +25,7 @@ module.exports = async (inputType, args) => {
     //l(`Received ${inputType} from ${m.id}`)
   } else {
     l(
-      `This ${inputType} by ${m.id} doesn't work for our block ${toHex(
+      `${m.id}:${inputType} doesn't work for our block ${toHex(
         me.proposed_block.header
       )}`
     )

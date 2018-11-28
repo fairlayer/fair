@@ -327,7 +327,7 @@
                 <h5>Choose route/fee:</h5>
                 <div class="radio" v-for="(r, index) in bestRoutes.slice(0, bestRoutesLimit)">
                   <label>
-                    <input type="radio" :value="r[1].join('_')" v-model="chosenRoute"> {{commy(uncommy(outward.amount) * r[0], true, false)}} ({{bpsToPercent(r[0]*10000)}}) <b>You</b> → {{routeToText(r)}} <b>Destination</b></label>
+                    <input type="radio" :value="r[1].join('_')" v-model="chosenRoute"> {{routeToText(r)}} (<b>{{r[0]}}</b>) </label>
                 </div>
                 <p v-if="bestRoutes.length > bestRoutesLimit"><a class="dotted" @click="bestRoutesLimit += 5">Show More Routes</a></p>
               </template>
@@ -342,7 +342,7 @@
                 <tr v-bind:key="h.id" v-for="(h, index) in payments.slice(0, history_limit)">
                   <td width="10%" v-html="skipDate(h, index)"></td>
 
-                  <td @click="outward.address=(h.is_inward ? h.source_address : h.destination_address)+'#'+h.private_invoice; outward.amount=commy(h.amount);"><u class="dotted">{{paymentToDetails(h)}}</u>: {{h.invoice}} via {{h.channelId}}</td>
+                  <td @click="outward.address=(h.is_inward ? h.source_address : h.destination_address)+'#'+h.private_invoice; outward.amount=commy(h.amount);"><u class="dotted">{{paymentToDetails(h)}}</u>: {{h.invoice}} via {{to_user(channels.find(ch=>ch.d.id==h.channelId).partner)}}</td>
 
                   <td width="15%">{{commy(h.is_inward ? h.amount : -h.amount)}} {{to_ticker(h.asset)}} {{payment_status(h)}}</td>
 

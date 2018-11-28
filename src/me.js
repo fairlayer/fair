@@ -230,6 +230,8 @@ class Me {
       Validators.map((m) => {
         if (me.my_validator != m) {
           me.send(m, 'auth', me.envelope(methodMap('auth')))
+
+          l('Connected to ', m)
         }
       })
     }
@@ -339,7 +341,7 @@ class Me {
         } else if (hub) {
           m = hub
         } else {
-          l('Not online: ', m)
+          //l('Not online: ', m)
           return false
         }
       }

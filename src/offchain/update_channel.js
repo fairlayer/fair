@@ -15,7 +15,7 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
   var flushable = []
 
   // indexOf doesn't work with Buffers
-  let uniqAdd = (add) => {
+  let uniqFlushable = (add) => {
     if (flushable.find((f) => f.equals(add))) {
       //loff('Already scheduled for flush')
     } else {
@@ -112,11 +112,12 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
         subch.offdelta = signed_offdelta
       })
 
-      l(
-        `Start merge with ${trim(pubkey)}, rollback ${ch.d.rollback_nonce} to ${
-          ch.d.dispute_nonce
-        }`
-      )
+      if (trace)
+        l(
+          `Start merge with ${trim(pubkey)}, rollback ${
+            ch.d.rollback_nonce
+          } to ${ch.d.dispute_nonce}`
+        )
     } else {
       mismatch('Deadlock')
 
@@ -131,6 +132,7 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
 
   // we apply a transition to canonical state, if sig is valid - execute the action
   for (let t of transitions) {
+    // t is [method, args, ackSig]
     ackSig = fromHex(t[2])
 
     if (t[0] == 'add' || t[0] == 'addrisk') {
@@ -273,16 +275,6 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
           inward_hl.outcome_type = 'outcomeDisputed'
         }
 
-        /*
-          if (!me.users[nextHop]) {
-            inward_hl.outcome_type = 'outcomeOffline'
-          }
-
-
-          if (dest_ch.derived[asset].payable < outward_amount) {
-            inward_hl.outcome_type = 'outcomeCapacity'
-          }*/
-
         if (inward_hl.outcome_type) {
           l('Failed to mediate')
           inward_hl.outcome = bin(`id`)
@@ -323,7 +315,7 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
         //if (argv.syncdb)
         await outward_hl.save()
 
-        uniqAdd(dest_ch.d.partnerId)
+        uniqFlushable(dest_ch.d.partnerId)
         //})
       } else {
         inward_hl.type = 'del'
@@ -428,7 +420,7 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
                 pubkey
               )}, acking and pulling inward payment`
             )
-          uniqAdd(outward_hl.inward_pubkey)
+          uniqFlushable(outward_hl.inward_pubkey)
 
           // how much fee we just made by mediating the transfer?
           me.metrics.fees.current += pull_hl.amount - outward_hl.amount
@@ -482,8 +474,7 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
 
     refresh(ch)
 
-    //if (trace)
-    l(`After merge our state is \n${ascii_state(ch.state)}`)
+    if (trace) l(`After merge our state is \n${ascii_state(ch.state)}`)
 
     ch.d.status = 'merge'
   } else {

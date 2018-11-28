@@ -10,7 +10,7 @@ const rebroadcast = (signed_batch) => {
 module.exports = async function(opts) {
   section('broadcast', async () => {
     if (PK.pending_batch) {
-      l('Have pending_batch, only 1 tx is supported')
+      if (trace) l('Have pending_batch, only 1 tx is supported')
 
       return
     }
@@ -20,7 +20,7 @@ module.exports = async function(opts) {
 
     if (!estimated) return
 
-    l('Broadcasting now with batch_nonce ', estimated.batch_nonce)
+    if (trace) l('Broadcasting now with batch_nonce ', estimated.batch_nonce)
     // saving locally to ensure it is added, and rebroadcast if needed
     PK.pending_batch = toHex(estimated.signed_batch)
 
