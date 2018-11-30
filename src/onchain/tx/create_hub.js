@@ -1,6 +1,9 @@
 const Router = require('../../router')
 
 module.exports = async (s, args) => {
+  // not enabled yet
+  return
+
   let json = parse(args.toString())
 
   if (!json.handle) return false

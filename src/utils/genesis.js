@@ -218,8 +218,7 @@ module.exports = async (datadir) => {
     fee_bps: 10,
     createdAt: ts(),
 
-    handle: 'Medici',
-    name: '@Medici'
+    handle: 'Temp'
   })
 
   // similar to https://en.wikipedia.org/wiki/Nostro_and_vostro_accounts
@@ -237,7 +236,7 @@ module.exports = async (datadir) => {
     let addHub = (data) => {
       data.id = K.hubs.length + 1000
       data.fee_bps = Math.round(Math.random() * 500)
-      data.name = data.handle
+
       data.pubkey = crypto.randomBytes(32)
       data.createdAt = ts()
       data.location = 'ws://127.0.0.1:8100'
@@ -271,41 +270,23 @@ module.exports = async (datadir) => {
     }
   }
 
-  /*
-  K.hubs.push({
-    id: K.validators[3].id,
-    location: K.validators[3].location,
-    pubkey: K.validators[3].pubkey,
-
-
-    handle: 'second',
-    name: '@second (Second)'
-  })
-  */
-
   await Asset.create({
-    ticker: 'USD',
-    name: 'U.S. Dollar',
-    desc: 'USD',
+    ticker: 'FRD',
+    name: 'Fair dollar',
+    desc: 'FRD',
     issuerId: 1,
     total_supply: 1000000000
   })
 
   await Asset.create({
-    ticker: 'EUR',
-    name: 'Euro',
+    ticker: 'FRB',
+    name: 'Fair bet',
     desc:
       'Capped at 100 billions, will be automatically converted into FRD 1-for-1 on 2030-08-19.',
     issuerId: 1,
     total_supply: 1000000000
   })
 
-  /*
-  K.validators[2].hub = {
-    handle: 'us',
-    name: '@us (America-based)'
-  }
-  */
   // private config
   const PK = {
     username: 'root',

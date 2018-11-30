@@ -58,15 +58,17 @@
               <li><a class="nav-link" @click="go('account_explorer')">{{t('accounts')}}</a></li>
               <li><a class="nav-link" @click="go('channel_explorer')">{{t('insurances')}}</a></li>
               <li><a class="nav-link" @click="go('validators')">{{t('validators')}}</a></li>
+
+              <!--
               <li><a class="nav-link" @click="go('bank_manager')">{{t('bank_manager')}}</a></li>
               <li><a class="nav-link" @click="go('asset_manager')">{{t('asset_manager')}}</a></li>
+
+              -->
+
               <li><a class="nav-link" @click="go('updates')">{{t('smart_updates')}}</a></li>
 
               <li><a class="nav-link" @click="go('demochannel')">Payment Channel Explainer</a></li>
 
-              <li>
-                <a class="nav-link" @click="go('exchange')">{{t('onchain_exchange')}}</a>
-              </li>
 
 
               <li><a class="nav-link" @click="go('help')">{{t('network_info')}}</a></li>
@@ -83,7 +85,7 @@
         <span v-if="K.ts < ts() - K.safe_sync_delay" @click="call('sync')" v-bind:class='["badge", "badge-danger"]'>#{{K.total_blocks}}/{{K.total_blocks + Math.round((ts() - K.ts)/K.blocktime)}}, {{timeAgo(K.ts)}}</span>
         <span v-else-if="K.total_blocks" class="navbar-text">Block #{{K.total_blocks}}</span> &nbsp;
         <a v-if="onServer" href="/demoinstance">
-          <button class="btn btn-success">Try Demo</button>
+          <button class="btn btn-success">Try Full Node Demo</button>
         </a>
       </div>
     </nav>
@@ -333,7 +335,7 @@
               </template>
             </template>
             <p>
-              <button type="button" class="btn btn-outline-success" @click="call('sendOffchain', {address: outward.address, asset: outward.asset, amount: uncommy(outward.amount), addrisk: addrisk, lazy: lazy, chosenRoute: chosenRoute});">Pay Now ⚡️</button>
+              <button type="button" class="btn btn-outline-success pay-now" @click="call('sendOffchain', {address: outward.address, asset: outward.asset, amount: uncommy(outward.amount), addrisk: addrisk, lazy: lazy, chosenRoute: chosenRoute});">Pay Now ⚡️</button>
               <button v-if="devmode" type="button" class="btn btn-outline-danger" @click="stream()">Pay 100 times</button>
             </p>
             <table v-if="payments.length > 0" class="table">
@@ -468,63 +470,6 @@
           <div class="alert alert-primary">After execution this account will be marked as a bank. Do not use this account for any other purposes.</div>
         </div>
         <svg width="800" height="600" id="hubgraph"></svg>
-      </div>
-      <div v-else-if="tab=='exchange'">
-        <h3>Trustless {{onchain}} Exchange</h3>
-        <p>{{onchain}} exchange is best suitable for large atomic swaps between two assets - it always incurs an expensive fees but is free of any counterparty risk. If you're looking to trade frequently or small amounts, try any traditional exchange that supports Fair assets.</p>
-        <p>Amount of {{to_ticker(asset)}} you want to sell (you have {{commy(getAsset(asset))}}):</p>
-        <p>
-          <input style="width:300px" class="form-control small-input" v-model="order.amount" placeholder="Amount to sell" @input="estimate(false)">
-        </p>
-        <p>Asset you are buying (you have {{commy(getAsset(order.buyAssetId))}}):</p>
-        <p>
-          <select v-model="order.buyAssetId" class="custom-select custom-select-lg lg-3">
-            <option v-for="(a,index) in assets" v-if="a.id!=asset" :value="a.id">{{a.name}} ({{a.ticker}})</option>
-          </select>
-        </p>
-        <p>Rate {{[asset, order.buyAssetId].sort().reverse().map(to_ticker).join('/')}}:</p>
-        <p>
-          <input style="width:300px" class="form-control small-input" v-model="order.rate" placeholder="Rate" @input="estimate(false)">
-        </p>
-        <p>{{to_ticker(order.buyAssetId)}} you will get:</p>
-        <p>
-          <input style="width:300px" class="form-control small-input" v-model="order.buyAmount" @input="estimate(true)">
-        </p>
-        <div v-if="![asset, order.buyAssetId].includes(1)" class="alert alert-danger">You are trading pair without FRD, beware of small orderbook and lower liquidity in direct pairs.</div>
-        <p v-if="pubkey && record && getAsset(1) > 200">
-          <button type="button" class="btn btn-warning" @click="call('createOrder', {order: order})">Create Order 🌐</button>
-        </p>
-        <p v-else>In order to trade you must have a registered account with FRD in {{onchain}}.</p>
-        <table v-if="orders.length>0" class="table">
-          <thead class="thead-dark">
-            <tr>
-              <th scope="col">#</th>
-              <th scope="col">Seller ID</th>
-              <th scope="col">Sell Asset </th>
-              <th scope="col">Pair</th>
-              <th scope="col">Amount</th>
-              <th scope="col">Rate</th>
-              <th scope="col">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            <template v-for="b in orders">
-              <tr>
-                <td>{{b.id}}</td>
-                <td>{{to_user(b.userId)}}</td>
-                <td>{{to_ticker(b.assetId)}}</td>
-                <td>{{[b.assetId, b.buyAssetId].sort().reverse().map(to_ticker).join('/')}}</td>
-                <td>{{commy(b.amount)}}</td>
-                <td>{{b.rate.toFixed(6)}}</td>
-                <td v-if="record && record.id == b.userId">
-                  <button @click="call('cancelOrder', {id: b.id})" class="btn btn-outline-success">Cancel</button>
-                </td>
-                <td v-else>
-                  <button class="btn btn-outline-success" @click="order.amount = buyAmount(b); order.rate = b.rate; order.buyAssetId=b.assetId; asset = b.buyAssetId; estimate(false)">Fulfill</td>
-              </tr>
-            </template>
-          </tbody>
-        </table>
       </div>
       <div v-else-if="tab=='install'">
         <h4>Web Wallet (optimized for convenience)</h4>
@@ -677,9 +622,9 @@
         <table class="table table-striped">
           <thead class="thead-dark">
             <tr>
-              <th scope="col">Left ID</th>
-              <th scope="col">Right ID</th>
-              <th scope="col">Insurances</th>
+              <th width="10%" scope="col">Left ID</th>
+              <th width="10%" scope="col">Right ID</th>
+              <th width="60%" scope="col">Insurances</th>
               <th scope="col">Withdrawal Nonce</th>
               <th scope="col">Dispute</th>
             </tr>

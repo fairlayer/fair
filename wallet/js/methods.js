@@ -2,7 +2,7 @@ module.exports = {
   stream: () => {
     var n = 0
     var pay = () => {
-      document.querySelector('.btn-success').click()
+      document.querySelector('.pay-now').click()
       if (n++ < 100) setTimeout(pay, 100)
     }
     pay()
@@ -426,7 +426,7 @@ module.exports = {
     var s = ''
     if (t.type == 'del' || t.type == 'delrisk') {
       //outcomeSecret ✔
-      s = t.outcome_type == 'outcomeSecret' ? '' : '❌'
+      s = t.outcome_type == 'outcomeSecret' ? '' : '❌ '
     }
     if (t.type == 'add' || t.type == 'addrisk') {
       s = '🔒'

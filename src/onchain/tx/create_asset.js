@@ -1,4 +1,7 @@
 module.exports = async (s, args) => {
+  // not enabled yet
+  return
+
   const [raw_ticker, raw_amount, raw_name, raw_desc] = args
   let amount = readInt(raw_amount)
   const ticker = raw_ticker.toString().replace(/[^a-zA-Z0-9]/g, '') // from buffer to unicode, sanitize

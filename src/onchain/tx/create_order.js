@@ -1,4 +1,7 @@
 module.exports = async (s, args) => {
+  // not enabled yet
+  return
+
   // onchain exchange to sell an asset for another one.
   let [assetId, amount, buyAssetId, raw_rate] = args.map(readInt)
   const round = Math.round
