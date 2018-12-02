@@ -21,11 +21,7 @@ General recommendations:
 const withdraw = require('../offchain/withdraw')
 
 const rebalance = async function(asset) {
-  var deltas = await Channel.findAll({
-    where: {
-      myId: me.pubkey
-    }
-  })
+  var deltas = await Channel.findAll()
 
   // we request withdrawals and check in few seconds for them
   let netSpenders = []
@@ -34,8 +30,8 @@ const rebalance = async function(asset) {
   let minRisk = 100 //K.risk
 
   for (let d of deltas) {
-    await section(['use', d.partnerId], async () => {
-      let ch = await Channel.get(d.partnerId)
+    await section(['use', d.they_pubkey], async () => {
+      let ch = await Channel.get(d.they_pubkey)
       let derived = ch.derived[asset]
       let subch = ch.d.subchannels.by('asset', asset)
 
@@ -48,22 +44,22 @@ const rebalance = async function(asset) {
       if (
         derived.they_uninsured > 0 &&
         (subch.they_requested_insurance ||
-          (subch.they_soft_limit > 0 &&
-            derived.they_uninsured >= subch.they_soft_limit))
+          (subch.they_rebalance > 0 &&
+            derived.they_uninsured >= subch.they_rebalance))
       ) {
-        //l('Adding output for our promise ', ch.d.partnerId)
+        //l('Adding output for our promise ', ch.d.they_pubkey)
         netReceivers.push(ch)
       } else if (derived.insured >= minRisk) {
-        if (me.users[ch.d.partnerId]) {
+        if (me.users[ch.d.they_pubkey]) {
           // they either get added in this rebalance or next one
-          //l('Request withdraw withdrawFrom: ', derived)
+          //l('Request withdraw withdraw: ', derived)
           netSpenders.push(withdraw(ch, subch, derived.insured))
         } else if (subch.withdrawal_requested_at == null) {
           l('Delayed pull')
           subch.withdrawal_requested_at = ts()
         } else if (subch.withdrawal_requested_at + 600 < ts()) {
           l('User is offline for too long, or tried to cheat')
-          me.batchAdd('disputeWith', await startDispute(ch))
+          me.batchAdd('dispute', await startDispute(ch))
         }
       }
     })
@@ -80,9 +76,9 @@ const rebalance = async function(asset) {
     let subch = ch.derived[asset].subch
     if (subch.withdrawal_sig) {
       weOwn += subch.withdrawal_amount
-      let user = await getUserByIdOrKey(ch.d.partnerId)
+      let user = await getUserByIdOrKey(ch.d.they_pubkey)
 
-      me.batchAdd('withdrawFrom', [
+      me.batchAdd('withdraw', [
         subch.asset,
         [subch.withdrawal_amount, user.id, subch.withdrawal_sig]
       ])
@@ -110,9 +106,9 @@ const rebalance = async function(asset) {
   for (let ch of netReceivers) {
     weOwn -= ch.derived[asset].they_uninsured
     if (weOwn >= safety) {
-      me.batchAdd('depositTo', [
+      me.batchAdd('deposit', [
         asset,
-        [ch.derived[asset].they_uninsured, me.record.id, ch.d.partnerId, 0]
+        [ch.derived[asset].they_uninsured, me.record.id, ch.d.they_pubkey, 0]
       ])
 
       // nullify their insurance request

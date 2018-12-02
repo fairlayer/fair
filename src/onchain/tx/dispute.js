@@ -29,7 +29,7 @@ module.exports = async (s, args) => {
     var [methodId, [leftId, rightId, new_dispute_nonce], subchannels] = r(state)
 
     if (
-      methodMap(readInt(methodId)) != 'disputeWith' ||
+      methodMap(readInt(methodId)) != 'dispute' ||
       !leftId.equals(compared == -1 ? s.signer.pubkey : partner.pubkey) ||
       !rightId.equals(compared == -1 ? partner.pubkey : s.signer.pubkey)
     ) {
@@ -59,13 +59,7 @@ module.exports = async (s, args) => {
       let output = await insuranceResolve(ins)
       l('Resolved with counter proof')
 
-      s.parsed_tx.events.push([
-        'disputeWith',
-        partner.id,
-        'disputed',
-        ins,
-        output
-      ])
+      s.parsed_tx.events.push(['dispute', partner.id, 'disputed', ins, output])
     } else {
       l('Old dispute_nonce or same counterparty')
     }
@@ -82,7 +76,7 @@ module.exports = async (s, args) => {
       : K.dispute_delay_for_users
     ins.dispute_delayed = K.usable_blocks + delay
 
-    s.parsed_tx.events.push(['disputeWith', partner.id, 'started', ins])
+    s.parsed_tx.events.push(['dispute', partner.id, 'started', ins])
 
     await saveId(ins)
 
@@ -100,7 +94,7 @@ module.exports = async (s, args) => {
       //!me.CHEAT_dontack
       if (our_dispute_nonce > ins.dispute_nonce && !me.CHEAT_dontack) {
         l('Our last signed nonce is higher! ' + our_dispute_nonce)
-        me.batchAdd('disputeWith', await startDispute(ch))
+        me.batchAdd('dispute', await startDispute(ch))
       }
     }
   }

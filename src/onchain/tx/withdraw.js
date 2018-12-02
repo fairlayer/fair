@@ -6,11 +6,11 @@ module.exports = async (s, args) => {
 
   for (const withdrawal of args[1]) {
     // how much? with who? their signature
-    let [amount, partnerId, withdrawal_sig] = withdrawal
+    let [amount, they_pubkey, withdrawal_sig] = withdrawal
 
     amount = readInt(amount)
 
-    const partner = await getUserByIdOrKey(partnerId)
+    const partner = await getUserByIdOrKey(they_pubkey)
     if (!partner || !partner.id) {
       l('Cant withdraw from nonexistent partner')
       return
@@ -41,7 +41,7 @@ module.exports = async (s, args) => {
     }
 
     const body = r([
-      methodMap('withdrawFrom'),
+      methodMap('withdraw'),
       ins.leftId,
       ins.rightId,
       ins.withdrawal_nonce,
@@ -95,7 +95,7 @@ module.exports = async (s, args) => {
     await ins.save()
 
     // for blockchain explorer
-    s.parsed_tx.events.push(['withdrawFrom', amount, partner.id])
+    s.parsed_tx.events.push(['withdraw', amount, partner.id])
     s.meta.inputs_volume += amount // todo: asset-specific
 
     // was this input related to us?
@@ -116,8 +116,6 @@ module.exports = async (s, args) => {
 
       ch.ins = ins
       await subch.save()
-
-      //if (argv.syncdb) ch.d.save()
     }
   }
 }

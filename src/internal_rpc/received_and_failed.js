@@ -1,8 +1,5 @@
 module.exports = async (ws) => {
-  //l('receivedAndFailed')
-  //await Periodical.syncChanges()
-  //return false
-
+  // todo: return onchain ones too
   let result = {}
 
   let filters = [

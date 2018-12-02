@@ -5,15 +5,11 @@ module.exports = async () => {
   //l('Checking who has not ack')
   if (PK.pending_batch) return l('Pending batch')
 
-  var deltas = await Channel.findAll({
-    where: {
-      myId: me.pubkey
-    }
-  })
+  var deltas = await Channel.findAll()
 
   for (let d of deltas) {
-    await section(['use', d.partnerId], async () => {
-      let ch = await Channel.get(d.partnerId)
+    await section(['use', d.they_pubkey], async () => {
+      let ch = await Channel.get(d.they_pubkey)
       //cache.ch[key]
       if (!ch) {
         return
@@ -61,13 +57,13 @@ module.exports = async () => {
 
       if (to_reveal.length > 0) {
         l(
-          `No ack dispute with ${trim(ch.d.partnerId)} secrets ${
+          `No ack dispute with ${trim(ch.d.they_pubkey)} secrets ${
             to_reveal.length
           } missed ${missed_ack} with ${ch.d.ack_requested_at}`
         )
 
         me.batchAdd('revealSecrets', to_reveal)
-        me.batchAdd('disputeWith', await startDispute(ch))
+        me.batchAdd('dispute', await startDispute(ch))
       }
     })
   }

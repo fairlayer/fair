@@ -231,7 +231,7 @@ current_db_hash = () => {
 }
 
 onchain_state = async () => {
-  await Periodical.syncChanges()
+  //await Periodical.syncChanges()
   //TODO: fix. may cause race condition and lock db for reading breaking other operations
 
   var out = child_process

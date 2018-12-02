@@ -122,7 +122,7 @@ module.exports = async (opts) => {
       if (me.my_hub) {
         // ask to increase credit
         me.textMessage(
-          ch.d.partnerId,
+          ch.d.they_pubkey,
           `Cannot send ${commy(amount)} when payable is ${commy(
             payable
           )}, extend credit`
@@ -157,24 +157,14 @@ module.exports = async (opts) => {
       private_invoice: opts.private_invoice
     })
 
-    //if (argv.syncdb) {
     await outward.save()
-    //}
 
     ch.payments.push(outward)
 
-    //l('Paying to ', reversed)
-
     react({})
-    //})
 
     me.flushChannel(nextHop, true)
 
     return 'sent'
-
-    if (argv.syncdb) {
-      //all.push(ch.d.save())
-      //await Periodical.syncChanges() //Promise.all(all)
-    }
   })
 }

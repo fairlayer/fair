@@ -3,11 +3,11 @@ module.exports = async (args) => {
   let m = Validators.find((f) => f.block_pubkey.equals(pubkey))
 
   if (me.status != 'propose' || !m) {
-    return //l(`${me.status} not propose`)
+    return l(`${me.status} not propose`)
   }
 
   if (header.length < 5) {
-    return //l(`${m.id} voted nil`)
+    return l(`${m.id} voted nil`)
   }
 
   // ensure the proposer is the current one
@@ -33,7 +33,7 @@ module.exports = async (args) => {
   }
 
   // consensus operations are in-memory for now
-  //l("Saving proposed block")
+  //l('Saving proposed block')
   me.proposed_block = {
     proposer: pubkey,
     sig: sig,

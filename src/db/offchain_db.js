@@ -33,8 +33,7 @@ const defineModels = (sequelize) => {
     'channel',
     {
       // between who and who
-      myId: Sequelize.BLOB,
-      partnerId: Sequelize.BLOB,
+      they_pubkey: Sequelize.BLOB,
 
       // higher nonce is valid
       dispute_nonce: {
@@ -55,8 +54,7 @@ const defineModels = (sequelize) => {
           'merge',
           'disputed',
           'CHEAT_dontack'
-        ),
-        defaultValue: 'master'
+        )
       },
 
       pending: Sequelize.BLOB,
@@ -81,7 +79,7 @@ const defineModels = (sequelize) => {
         {
           fields: [
             {
-              attribute: 'partnerId',
+              attribute: 'they_pubkey',
               length: 32
             }
           ]
@@ -110,20 +108,20 @@ const defineModels = (sequelize) => {
       },
 
       // by default all limits set to 0
-      soft_limit: {
+      rebalance: {
         type: Sequelize.INTEGER,
         defaultValue: 0
       },
-      hard_limit: {
+      credit: {
         type: Sequelize.INTEGER,
         defaultValue: 0
       }, // we trust up to
 
-      they_soft_limit: {
+      they_rebalance: {
         type: Sequelize.INTEGER,
         defaultValue: 0
       },
-      they_hard_limit: {
+      they_credit: {
         type: Sequelize.INTEGER,
         defaultValue: 0
       }, // they trust us
@@ -292,7 +290,7 @@ const defineModels = (sequelize) => {
   Payment.belongsTo(Channel, nonull)
 
   Channel.prototype.isLeft = function() {
-    return Buffer.compare(me.pubkey, this.partnerId) == -1
+    return Buffer.compare(me.pubkey, this.they_pubkey) == -1
   }
 
   return {

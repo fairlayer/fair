@@ -43,7 +43,7 @@ Periodical.startHub = () => {
   //if (!me.external_wss_server){
   l('Starting hub ', me.my_hub)
   me.startExternalRPC(me.my_hub.location)
-  //Periodical.schedule('syncChanges', K.blocktime * 4000)
+
   Periodical.schedule('rebalance', K.blocktime * 2000)
 
   // hubs have to force react regularly
@@ -52,10 +52,10 @@ Periodical.startHub = () => {
 }
 
 Periodical.scheduleAll = function() {
-  Periodical.schedule('syncChanges', K.blocktime * 2000)
-
   Periodical.schedule('updateMetrics', 1000)
   Periodical.schedule('updateCache', K.blocktime * 1000)
+
+  Periodical.schedule('syncChanges', K.blocktime * 1000)
 
   //Periodical.schedule('ensureAck', K.blocktime * 2000)
 }

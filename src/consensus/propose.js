@@ -5,7 +5,7 @@ module.exports = async () => {
   if (me.my_validator != nextValidator()) {
     return
   } else {
-    l('Our turn to propose')
+    //l('Our turn to propose')
   }
 
   //l(`it's our turn to propose, gossip new block`)
@@ -37,7 +37,7 @@ module.exports = async () => {
         ordered_tx.push(candidate)
         total_size += candidate.length
       } else {
-        l(`Bad tx in mempool`, result, candidate)
+        //l(`Bad tx in mempool`, result, candidate)
         // punish submitter ip
       }
     }
@@ -76,7 +76,8 @@ module.exports = async () => {
     l('CHEAT_dontpropose')
     return
   }
-  //l('Broadcast header ', toHex(header))
+
+  //l('Gossiping header ', toHex(header))
 
   setTimeout(() => {
     me.gossip('propose', propose)

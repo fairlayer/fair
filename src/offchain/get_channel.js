@@ -50,19 +50,18 @@ module.exports = async (pubkey, doRefresh = true) => {
       let defaults = {}
 
       if (me.my_hub) {
-        defaults.they_soft_limit = K.soft_limit
-        defaults.they_hard_limit = K.hard_limit
+        defaults.they_rebalance = K.rebalance
+        defaults.they_credit = K.credit
       }
       if (my_hub(pubkey)) {
-        defaults.soft_limit = K.soft_limit
-        defaults.hard_limit = K.hard_limit
+        defaults.rebalance = K.rebalance
+        defaults.credit = K.credit
       }
       */
 
     ch.d = await Channel.findOne({
       where: {
-        myId: me.pubkey,
-        partnerId: pubkey
+        they_pubkey: pubkey
       },
       include: [Subchannel]
     })
@@ -72,8 +71,8 @@ module.exports = async (pubkey, doRefresh = true) => {
 
       ch.d = await Channel.create(
         {
-          myId: me.pubkey,
-          partnerId: pubkey,
+          they_pubkey: pubkey,
+          status: 'merge', // wait for initial ack
           subchannels: [
             {
               asset: 1

@@ -39,7 +39,7 @@ module.exports = async (pubkey, opportunistic) => {
       if (trace) l(`End flush ${trim(pubkey)}, in sent`)
 
       if (ch.d.ack_requested_at < new Date() - 4000) {
-        //me.send(ch.d.partnerId, 'update', ch.d.pending)
+        //me.send(ch.d.they_pubkey, 'update', ch.d.pending)
       }
       return
     }
@@ -113,7 +113,7 @@ module.exports = async (pubkey, opportunistic) => {
 
             if (me.my_hub && t.amount > derived.payable) {
               me.textMessage(
-                ch.d.partnerId,
+                ch.d.they_pubkey,
                 `Cant send ${t.amount} payable ${
                   derived.payable
                 }, extend credit`
@@ -124,7 +124,7 @@ module.exports = async (pubkey, opportunistic) => {
 
             t.type = 'del'
             t.status = 'ack'
-            //if (argv.syncdb) all.push(t.save())
+
             await t.save()
 
             if (t.inward_pubkey) {
@@ -135,14 +135,14 @@ module.exports = async (pubkey, opportunistic) => {
               )
               pull_hl.type = 'del'
               pull_hl.status = 'new'
-              let reason = `${me.my_hub.id} to ${trim(ch.d.partnerId)}`
+              let reason = `${me.my_hub.id} to ${trim(ch.d.they_pubkey)}`
 
               pull_hl.outcome_type = 'outcomeCapacity'
               pull_hl.outcome = bin(reason)
-              //if (argv.syncdb) all.push(pull_hl.save())
+
               await pull_hl.save()
 
-              uniqFlushable(inward_ch.d.partnerId)
+              uniqFlushable(inward_ch.d.they_pubkey)
               //})
             }
 
@@ -160,7 +160,7 @@ module.exports = async (pubkey, opportunistic) => {
         }
 
         t.status = 'sent'
-        //if (argv.syncdb) all.push(t.save())
+
         await t.save()
 
         if (t.status != 'sent') {
@@ -224,7 +224,7 @@ module.exports = async (pubkey, opportunistic) => {
       await subch.save()
     }
 
-    me.sendJSON(ch.d.partnerId, 'update', envelope)
+    me.sendJSON(ch.d.they_pubkey, 'update', envelope)
 
     return Promise.all(flushable.map((fl) => me.flushChannel(fl, true)))
   })

@@ -21,7 +21,6 @@ argv = require('minimist')(process.argv.slice(2), {
 datadir = argv.datadir ? argv.datadir : 'data'
 base_port = argv.p ? parseInt(argv.p) : 8001
 trace = !!argv.trace
-argv.syncdb = argv.syncdb != 'off'
 node_started_at = ts()
 
 process.title = 'Fair ' + base_port
@@ -170,7 +169,14 @@ startFairlayer = async () => {
 
   // start syncing as soon as the node is started
   //Periodical.syncChain()
-  Periodical.schedule('syncChain', K.blocktime * 2000)
+  setInterval(() => {
+    // propose step means last block was just finalized K.step_latency * 3
+    if (ts() % K.blocktime == 0) {
+      Periodical.syncChain()
+    }
+  }, 200)
+
+  //Periodical.schedule('syncChain', K.blocktime * 2000)
 
   l(`\n${note('Welcome to Fair REPL!')}`)
   repl = require('repl').start(note(''))

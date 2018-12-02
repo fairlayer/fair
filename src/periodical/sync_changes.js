@@ -4,10 +4,10 @@
 module.exports = async (opts = {}) => {
   me.metrics.syncChanges.current++
 
-  if (ts() - me.last_synced < 10) {
+  if (ts() - me.last_sync_changes < 10) {
     return
   }
-  me.last_synced = ts()
+  me.last_sync_changes = ts()
 
   return await section('syncChanges', async () => {
     var all = []
@@ -34,6 +34,8 @@ module.exports = async (opts = {}) => {
     // saving all deltas and corresponding payment objects to db
     // it only saves changed() records, so call save() on everything
 
+    /*
+
     for (var key in cache.users) {
       var u = cache.users[key]
 
@@ -52,10 +54,9 @@ module.exports = async (opts = {}) => {
       }
     }
 
-    /*
     for (let key in cache.ch) {
-      //await section(['get', cache.ch[key].d.partnerId], async () => {
-      await section(['use', cache.ch[key].d.partnerId], async () => {
+      //await section(['get', cache.ch[key].d.they_pubkey], async () => {
+      await section(['use', cache.ch[key].d.they_pubkey], async () => {
         let ch = cache.ch[key]
 
         // sync all Channel, Subchannel, Payments
@@ -108,7 +109,7 @@ module.exports = async (opts = {}) => {
         if (evict) {
           delete cache.ch[key]
           //promise = promise.then(() => {
-          l('Evict idle ch: ' + trim(ch.d.partnerId))
+          l('Evict idle ch: ' + trim(ch.d.they_pubkey))
           //})
         }
 
@@ -118,9 +119,9 @@ module.exports = async (opts = {}) => {
     }
     */
 
-    if (all.length > 0) {
-      //l(`syncChanges done: ${all.length}`)
-    }
+    //if (all.length > 0) {
+    //l(`syncChanges done: ${all.length}`)
+    //}
 
     return await Promise.all(all)
   })

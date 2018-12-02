@@ -26,7 +26,7 @@ module.exports = async (dep) => {
 
     l('Adding to queue a deposit ', newDeposit)
 
-    me.batchAdd('depositTo', newDeposit)
+    me.batchAdd('deposit', newDeposit)
   }
 
   return {}

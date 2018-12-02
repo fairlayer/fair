@@ -178,7 +178,7 @@ const getInsuranceBetween = async function(user1, user2) {
   }
   const str = stringify([wh.leftId, wh.rightId])
 
-  if (cache.ins[str]) return cache.ins[str]
+  //if (cache.ins[str]) return cache.ins[str]
 
   let ins = (await Insurance.findOrBuild({
     where: wh,
@@ -186,9 +186,11 @@ const getInsuranceBetween = async function(user1, user2) {
     include: [Subinsurance]
   }))[0]
 
+  /*
+
   if (ins.id) {
     cache.ins[str] = ins
-  }
+  }*/
 
   return ins
 }
@@ -217,7 +219,7 @@ const getUserByIdOrKey = async function(id) {
   let u = false
 
   // if integer, iterate over obj, if pubkey return by key
-  if (typeof id == 'number') {
+  /*if (typeof id == 'number') {
     for (var key in cache.users) {
       if (cache.users[key].id == id) {
         u = cache.users[key]
@@ -227,8 +229,9 @@ const getUserByIdOrKey = async function(id) {
   } else {
     u = cache.users[id]
   }
-
   if (u) return u
+
+  */
 
   if (typeof id == 'number') {
     u = await User.findById(id, {include: [Balance]})
@@ -242,9 +245,10 @@ const getUserByIdOrKey = async function(id) {
     }))[0]
   }
 
+  /*
   if (u) {
     cache.users[u.pubkey] = u
-  }
+  }*/
 
   return u
 }
@@ -419,10 +423,10 @@ const insuranceResolve = async (ins) => {
     // nullify offdeltas
     for (let subch of ch.d.subchannels) {
       subch.offdelta = 0
-      subch.soft_limit = 0
-      subch.hard_limit = 0
-      subch.they_soft_limit = 0
-      subch.they_hard_limit = 0
+      subch.rebalance = 0
+      subch.credit = 0
+      subch.they_rebalance = 0
+      subch.they_credit = 0
     }
 
     // reset disputed status and ack timestamp
@@ -463,7 +467,7 @@ const proposalExecute = async (proposal) => {
 
 const startDispute = async (ch) => {
   // post last sig if any
-  let id = ch.partner ? ch.partner : ch.d.partnerId
+  let id = ch.partner ? ch.partner : ch.d.they_pubkey
   ch.d.status = 'disputed'
   ch.d.ack_requested_at = null
   await ch.d.save()
@@ -476,7 +480,7 @@ const startDispute = async (ch) => {
 const deltaVerify = (delta, state, ackSig) => {
   // canonical state representation
   const canonical = r(state)
-  if (ec.verify(canonical, ackSig, delta.partnerId)) {
+  if (ec.verify(canonical, ackSig, delta.they_pubkey)) {
     if (trace)
       l(`Successfully verified sig against state\n${ascii_state(state)}`)
 

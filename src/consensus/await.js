@@ -20,7 +20,9 @@ module.exports = () => {
   })
 
   if (shares < K.majority) {
-    if (!me.proposed_block.locked) me.proposed_block = {}
+    if (!me.proposed_block.locked) {
+      me.proposed_block = {}
+    }
 
     l(
       `Failed to commit #${K.total_blocks}, ${shares}/${K.majority}`,
@@ -28,7 +30,7 @@ module.exports = () => {
     )
 
     // go sync immediately, went out of sync?
-    Periodical.syncChain()
+    //Periodical.syncChain()
   } else if (me.proposed_block.header) {
     // adding to our external queue to avoid race conditions
     // we don't call processBlock directly to avoid races

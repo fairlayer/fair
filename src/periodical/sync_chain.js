@@ -24,13 +24,14 @@ module.exports = () => {
     )
   }
 
-  if (me.my_validator) {
+  //if (me.my_validator) {
+  //  return sendSync()
+  //}
+
+  if (me.last_sync_chain < ts() - K.blocktime / 2) {
+    me.last_sync_chain = ts()
     return sendSync()
   }
 
-  if (K.ts < ts() - K.blocktime / 2) {
-    return sendSync()
-  }
-
-  return l('No need to sync, K.ts is recent')
+  //l('No need to sync, K.ts is recent')
 }

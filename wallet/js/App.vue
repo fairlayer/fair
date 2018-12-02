@@ -83,7 +83,7 @@
           </li>
         </ul>
         <span v-if="K.ts < ts() - K.safe_sync_delay" @click="call('sync')" v-bind:class='["badge", "badge-danger"]'>#{{K.total_blocks}}/{{K.total_blocks + Math.round((ts() - K.ts)/K.blocktime)}}, {{timeAgo(K.ts)}}</span>
-        <span v-else-if="K.total_blocks" class="navbar-text">Block #{{K.total_blocks}}</span> &nbsp;
+        <span v-else-if="K.total_blocks" class="navbar-text">Block #{{K.total_blocks}}, {{timeAgo(K.ts)}}</span> &nbsp;
         <a v-if="onServer" href="/demoinstance">
           <button class="btn btn-success">Try Full Node Demo</button>
         </a>
@@ -166,7 +166,7 @@
         <p>Average broadcast fee: {{commy(K.min_gasprice * 83)}} (to short ID) – {{commy(K.min_gasprice * 115)}} (to pubkey)</p>
         <h2>Banks & topology</h2>
         <p>Risk limit: {{commy(K.risk)}}</p>
-        <p>Hard risk limit: {{commy(K.hard_limit)}}</p>
+        <p>Credit : {{commy(K.credit)}}</p>
         <h2>Snapshots</h2>
         <p>Make snapshot at blocks: {{K.snapshot_after_blocks}}</p>
         <p>Last snapshot at block # : {{K.last_snapshot_height}}</p>
@@ -197,7 +197,7 @@
           <br>
 
 
-            <div v-if="democh.ins_balance>0" class="slider"  style="display:inline-flex;background-color:green; pointer-events: none;position:absolute;" :style="{width: (democh.ins_balance*5)+'px', left: (democh.they_hard_limit*5)+'px'}">&nbsp;</div>
+            <div v-if="democh.ins_balance>0" class="slider"  style="display:inline-flex;background-color:green; pointer-events: none;position:absolute;" :style="{width: (democh.ins_balance*5)+'px', left: (democh.they_credit*5)+'px'}">&nbsp;</div>
 
             <input type="range" :style="{width: resolveDemo(democh).width+'px'}" :min="resolveDemo(democh).min_offdelta" :max="resolveDemo(democh).max_offdelta" value="0" class="slider" v-model="democh.offdelta"> 
 
@@ -210,16 +210,16 @@
 
           <div>
 
-          <b>(Left)</b> Credit: <input style="width:50px"   v-model="democh.hard_limit"> / Payable: {{resolveDemo(democh).payable}} / Insured: {{resolveDemo(democh).insured}} / Uninsured: {{resolveDemo(democh).uninsured}}
+          <b>(Left)</b> Credit: <input style="width:50px"   v-model="democh.credit"> / Payable: {{resolveDemo(democh).payable}} / Insured: {{resolveDemo(democh).insured}} / Uninsured: {{resolveDemo(democh).uninsured}}
 
 
-          <span style="float:right"><b>(Right)</b> Credit: <input  style="width:50px" v-model="democh.they_hard_limit"> / Payable: {{resolveDemo(democh).they_payable}} / Insured: {{resolveDemo(democh).they_insured}} / Uninsured: {{resolveDemo(democh).they_uninsured}}</span>
+          <span style="float:right"><b>(Right)</b> Credit: <input  style="width:50px" v-model="democh.they_credit"> / Payable: {{resolveDemo(democh).they_payable}} / Insured: {{resolveDemo(democh).they_insured}} / Uninsured: {{resolveDemo(democh).they_uninsured}}</span>
 
           </div>
 
 
         </div>
-        <button class="btn btn-success" @click="demochannels.push({ins_balance: '0', ins_ondelta:'0', offdelta: '0', hard_limit:'0', they_hard_limit:'0'})">Add Demo Channel</button>
+        <button class="btn btn-success" @click="demochannels.push({ins_balance: '0', ins_ondelta:'0', offdelta: '0', credit:'0', they_credit:'0'})">Add Demo Channel</button>
 
 
 
@@ -251,14 +251,14 @@
           <h4 class="alert alert-primary" v-if="my_validator">This node is a validator: {{my_validator.username}}</h4>
           <div v-if="record">
             <h2>
-              {{onchain}} balances
+              {{onchain}}
             </h2>
-            <p>
-              <p v-for="a in record.balances">
-                <button class="btn btn-outline-secondary">{{to_ticker(a.asset)}}: {{commy(getAsset(a.asset))}} </button> &nbsp;
-                <span class="badge badge-success layer-faucet" @click="call('onchainFaucet', {amount: uncommy(prompt('How much you want to get?')), asset: a.asset })">faucet</span>&nbsp;
-              </p>
-              <br>
+
+            <h3 v-for="a in record.balances">
+              {{to_ticker(a.asset)}}: {{commy(getAsset(a.asset))}} 
+              &nbsp;
+              <span class="badge badge-success layer-faucet" @click="call('onchainFaucet', {amount: uncommy(prompt('How much you want to get?')), asset: a.asset })">faucet</span>
+            </h3>
           </div>
           <div v-else>
             <h4 style="display:inline-block">
@@ -266,15 +266,14 @@
             </h4>
           </div>
 
-          <hr/>
           
           <div class="alert alert-info" v-for="ch in channels">
             <h2>
-                {{pubkeyToUser(ch.d.partnerId)}}
+                {{pubkeyToUser(ch.d.they_pubkey)}}
               </h2>
             <p>
               <p v-for="subch in ch.d.subchannels">
-                <button class="btn btn-outline-info" @click="mod={shown:true, ch:ch, subch: subch, hard_limit: commy(subch.hard_limit), soft_limit: commy(subch.soft_limit)}">{{to_ticker(subch.asset)}}: {{commy(ch.derived[subch.asset].payable)}}</button>&nbsp;
+                <button class="btn btn-outline-info" @click="mod={shown:true, ch:ch, subch: subch, credit: commy(subch.they_credit), rebalance: commy(subch.rebalance)}">{{to_ticker(subch.asset)}}: {{commy(ch.derived[subch.asset].payable)}}</button>&nbsp;
 
                 <VisualChannel :derived="ch.derived[subch.asset]"></VisualChannel>
 
@@ -287,7 +286,7 @@
               <span v-else-if="ch.d.status=='dispute'">
                   Wait until your dispute tx is broadcasted
                 </span>
-              <button v-else type="button" class="btn btn-outline-danger" @click="call('startDispute', {partnerId: ch.d.partnerId})">Start a Dispute 🌐</button>
+              <button v-else type="button" class="btn btn-outline-danger" @click="call('startDispute', {they_pubkey: ch.d.they_pubkey})">Start a Dispute 🌐</button>
             </p>
             <p v-if="devmode">
             Status: {{ch.d.status}}, nonce {{ch.d.dispute_nonce}}
@@ -307,15 +306,14 @@
             </li>
           </ul>
           <p>
-            <div class="input-group" style="width:400px">
+            <div class="input-group" style="width:300px">
               <input type="text" class="form-control small-input" v-model="outward.address" :disabled="['none','amount'].includes(outward_editable)" placeholder="Address" aria-describedby="basic-addon2" @input="updateRoutes">
             </div>
           </p>
           <p>
-            <div class="input-group" style="width:400px">
+            <div class="input-group" style="width:300px">
               <input type="text" class="form-control small-input" v-model="outward.amount" :disabled="outward_editable=='none'" placeholder="Amount" aria-describedby="basic-addon2" @input="updateRoutes">
               <select @input="updateRoutes" style="display:inline-block" v-model="outward.asset" class="custom-select custom-select-lg mb-6">
-                <option disabled>Select asset:</option>
                 <option v-for="a in assets" :value="a.id">{{a.ticker}}</option>
               </select>
             </div>
@@ -346,7 +344,7 @@
 
                   <td @click="outward.address=(h.is_inward ? h.source_address : h.destination_address)+'#'+h.private_invoice; outward.amount=commy(h.amount);"><u class="dotted">{{paymentToDetails(h)}}</u>: {{h.invoice}} via {{to_user(channels.find(ch=>ch.d.id==h.channelId).partner)}}</td>
 
-                  <td width="15%">{{commy(h.is_inward ? h.amount : -h.amount)}} {{to_ticker(h.asset)}} {{payment_status(h)}}</td>
+                  <td width="15%">{{to_ticker(h.asset)}} {{commy(h.is_inward ? h.amount : -h.amount)}}  {{payment_status(h)}}</td>
 
                 </tr>
               </transition-group>
@@ -356,7 +354,11 @@
             </table>
           </template>
           <template v-else>
+
             <div v-if="parsedAddress.hubs">
+              <h5>Choose their bank:</h5>
+
+
               <div class="radio">
                 <label>
                   <input type="radio" :value="0" v-model="outward.hub"> Deposit to {{onchain}} balance</label>
@@ -368,7 +370,7 @@
             </div>
             <p>
               <button v-if="record" type="button" class="btn btn-outline-success" @click="addExternalDeposit">Transfer 🌐</button>
-              <small v-else>You are not registered in the {{onchain}}</small>
+              <small v-else>You are not registered</small>
             </p>
             <table v-if="events.length > 0" class="table">
               <thead>
@@ -546,7 +548,7 @@
                 <td>{{b.id}}</td>
                 <td>{{b.prev_hash.substr(0,10)}}</td>
                 <td>{{b.hash.substr(0,10)}}</td>
-                <td>{{b.built_by}} ({{new Date(b.timestamp*1000)}})</td>
+                <td>{{b.built_by}} ({{(new Date(b.timestamp*1000)).toLocaleString()}})</td>
                 <td>{{b.total_tx}}</td>
               </tr>
               <tr v-for="batch in (b.meta && b.meta.parsed_tx)">
@@ -554,13 +556,13 @@
                   <span class="badge badge-warning">By {{to_user(batch.signer.id)}} ({{batch.gas}}*{{commy(batch.gasprice, true, false)}}={{commy(batch.txfee)}} fee):</span>&nbsp;
                   <template v-for="d in batch.events">
                     &nbsp;
-                    <span v-if="d[0]=='disputeWith'" class="badge badge-primary" v-html="dispute_outcome(d[2], d[3], d[4])">
+                    <span v-if="d[0]=='dispute'" class="badge badge-primary" v-html="dispute_outcome(d[2], d[3], d[4])">
                     </span>
                     <span v-else-if="d[0]=='setAsset'" class="badge badge-dark">{{d[1]}} {{to_ticker(d[2])}}</span>
-                    <span v-else-if="d[0]=='withdrawFrom'" class="badge badge-danger">{{commy(d[1])}} from {{to_user(d[2])}}</span>
+                    <span v-else-if="d[0]=='withdraw'" class="badge badge-danger">{{commy(d[1])}} from {{to_user(d[2])}}</span>
                     <span v-else-if="d[0]=='revealSecrets'" class="badge badge-danger">Reveal: {{trim(d[1])}}</span>
                     <span v-else-if="d[0]=='enforceDebt'" class="badge badge-dark">{{commy(d[1])}} debt to {{to_user(d[2])}}</span>
-                    <span v-else-if="d[0]=='depositTo'" class="badge badge-success">{{commy(d[1])}} to {{d[3] ? ((d[2] == batch.signer.id ? '': to_user(d[2]))+'@'+to_user(d[3])) : to_user(d[2])}}{{d[4] ? ' for '+d[4] : ''}}</span>
+                    <span v-else-if="d[0]=='deposit'" class="badge badge-success">{{commy(d[1])}} to {{d[3] ? ((d[2] == batch.signer.id ? '': to_user(d[2]))+'@'+to_user(d[3])) : to_user(d[2])}}{{d[4] ? ' for '+d[4] : ''}}</span>
                     <span v-else-if="d[0]=='createOrder'" class="badge badge-dark">Created order {{commy(d[2])}} {{to_ticker(d[1])}} for {{to_ticker(d[3])}}</span>
                     <span v-else-if="d[0]=='cancelOrder'" class="badge badge-dark">Cancelled order {{d[1]}}</span>
                     <span v-else-if="d[0]=='createAsset'" class="badge badge-dark">Created {{commy(d[2])}} of asset {{d[1]}}</span>
@@ -683,9 +685,9 @@
               <div class="row">
                 <div class="col-md-6">
                   <h4>Information</h4>
-                  <p>Payable: {{commy(derived.payable)}} <span class="badge badge-success bank-faucet" @click="call('withChannel', {partnerId: mod.ch.d.partnerId, op: 'testnet', action: 'faucet', asset: mod.subch.asset, amount: uncommy(prompt('How much you want to get?')) })">Use faucet</span></p>
+                  <p>Payable: {{commy(derived.payable)}} <span class="badge badge-success bank-faucet" @click="call('withChannel', {they_pubkey: mod.ch.d.they_pubkey, op: 'testnet', action: 'faucet', asset: mod.subch.asset, amount: uncommy(prompt('How much you want to get?')) })">Use faucet</span></p>
                   <p>Receivable: {{commy(derived.they_payable)}}</p>
-                  <p>Insured: {{commy(derived.insured)}} <span class="badge badge-danger" @click="a=prompt(`How much to withdraw to onchain?`);if (a) {call('withChannel', {partnerId: mod.ch.d.partnerId, asset: mod.subch.asset, op: 'withdraw', amount: uncommy(a)})};">Withdraw</span>/<span class="badge badge-danger" @click="mod.shown=false;outward.address=address;updateRoutes();outward.type='onchain';outward.asset=mod.subch.asset;outward.hub = mod.ch.partner;">Deposit</span>
+                  <p>Insured: {{commy(derived.insured)}} <span v-if="record" class="badge badge-danger" @click="a=prompt(`How much to withdraw to onchain?`);if (a) {call('withChannel', {they_pubkey: mod.ch.d.they_pubkey, asset: mod.subch.asset, op: 'withdraw', amount: uncommy(a)})};">Withdraw</span>&nbsp;<span  v-if="record"  class="badge badge-danger" @click="mod.shown=false;outward.address=address;updateRoutes();outward.type='onchain';outward.asset=mod.subch.asset;outward.hub = mod.ch.partner;">Deposit</span>
                   </p>
 
                   <p v-if="mod.subch.withdrawal_amount > 0">Pending withdrawal from you: {{commy(mod.subch.withdrawal_amount)}}</p>
@@ -694,29 +696,28 @@
                   <p>Uninsured: {{commy(derived.uninsured)}} <span class="badge badge-danger" @click="requestInsurance(mod.ch, mod.subch.asset)">Request Insurance</span>
                     <dotsloader v-if="derived.subch.requested_insurance"></dotsloader>
                   </p>
-                  <p><span class="badge badge-danger" @click="call('withChannel', {partnerId: mod.ch.d.partnerId, asset: mod.subch.asset, op: 'requestCredit', amount: 1})">Request Credit</span>
+
+                  <p v-if="false"><span class="badge badge-danger" @click="call('withChannel', {they_pubkey: mod.ch.d.they_pubkey, asset: mod.subch.asset, op: 'requestCredit', amount: 1})">Request Credit</span>
                   </p>
                 </div>
                 <div class="col-md-6">
                   <h4>Set credit</h4>
                   <p>Maximum uninsured balance</p>
                   <p>
-                    <input type="text" class="form-control" v-model="mod.hard_limit">
+                    <input type="text" class="form-control" v-model="mod.credit">
                   </p>
                   <p>Automatically request insurance after</p>
                   <p>
-                    <input type="text" class="form-control" v-model="mod.soft_limit">
+                    <input type="text" class="form-control" v-model="mod.rebalance">
                   </p>
                   <p>
-                    <button type="button" class="btn btn-outline-success" @click="call('withChannel', {partnerId: mod.ch.d.partnerId, asset: mod.subch.asset, op: 'setLimits', hard_limit: uncommy(mod.hard_limit), soft_limit: uncommy(mod.soft_limit)})" href="#">Update Credit Limits</button>
+                    <button type="button" class="btn btn-outline-success" @click="call('withChannel', {they_pubkey: mod.ch.d.they_pubkey, asset: mod.subch.asset, op: 'setLimits', credit: uncommy(mod.credit), rebalance: uncommy(mod.rebalance)})" href="#">Update Credit Limits</button>
                   </p>
                 </div>
               </div>
             </div>
           </div>
-          <div class="modal-footer">
-            <button @click="mod.shown=false" type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-          </div>
+
         </div>
       </div>
     </div>

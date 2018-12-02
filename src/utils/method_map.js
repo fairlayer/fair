@@ -11,9 +11,9 @@ module.exports = (i) => {
         'batch', // all transactions are batched one by one
 
         // methods below are per-assets (ie should have setAsset directive beforehand)
-        'disputeWith', // defines signed state (balance proof). Used only as last resort!
-        'withdrawFrom', // mutual *instant* withdrawal proof. Used during normal cooperation.
-        'depositTo', // send money to some channel or user
+        'dispute', // defines signed state (balance proof). Used only as last resort!
+        'withdraw', // mutual *instant* withdrawal proof. Used during normal cooperation.
+        'deposit', // send money to some channel or user
 
         // onchain exchange
         'createOrder',

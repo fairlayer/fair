@@ -5,9 +5,9 @@
 
 // some big tx handlers are in separate tx/* files
 const Tx = {
-  withdrawFrom: require('./tx/withdraw_from'),
-  depositTo: require('./tx/deposit_to'),
-  disputeWith: require('./tx/dispute_with'),
+  withdraw: require('./tx/withdraw'),
+  deposit: require('./tx/deposit'),
+  dispute: require('./tx/dispute'),
 
   createOrder: require('./tx/create_order'),
   createAsset: require('./tx/create_asset'),

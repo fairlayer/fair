@@ -110,11 +110,12 @@ input[type='radio'] {
   }
 }
 
+/*
 @media (min-width: 979px) {
   li.dropdown:hover > ul.dropdown-menu {
     display: block;
   }
-}
+}*/
 
 u.dotted {
   border-bottom: 1px dashed #999;

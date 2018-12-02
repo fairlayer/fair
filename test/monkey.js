@@ -18,7 +18,7 @@ const payMonkey = async (on_server, counter = 1) => {
   const reg = await getUserByIdOrKey(parsedAddress.pubkey)
 
   // onchain payment (batched, not sent to validator yet)
-  me.batchAdd('depositTo', [
+  me.batchAdd('deposit', [
     1,
     [
       Math.round(Math.random() * 1000),
@@ -34,7 +34,7 @@ const payMonkey = async (on_server, counter = 1) => {
 
     setTimeout(() => {
       payMonkey(on_server, counter + 1)
-    }, Math.round(9500 + Math.random() * 9000))
+    }, Math.round(500 + Math.random() * 9000))
   } else if (counter < 6) {
     setTimeout(() => {
       payMonkey(on_server, counter + 1)
@@ -43,20 +43,20 @@ const payMonkey = async (on_server, counter = 1) => {
 }
 
 let run = async () => {
-  await sleep(5000)
-
   if (base_port > 8000) {
     // add first hub by default and open limit
-    PK.usedHubs.push(1)
+    //PK.usedHubs.push(1)
 
     setTimeout(() => {}, 4000)
   }
 
   // only in monkey mode, not on end user node
+
   if (base_port != 8008) {
-    Periodical.schedule('broadcast', K.blocktime * 1500)
+    Periodical.schedule('broadcast', K.blocktime * 800)
   }
 
+  /*
   let stubs = [
     'Chase Bank',
     'Bank of America',
@@ -81,22 +81,24 @@ let run = async () => {
       add_routes: '1,2,3,4'
     })
   }
+  */
 
-  if (base_port > 8003 && base_port < 8500) {
+  if (base_port > 8000 && base_port < 8500) {
     monkeys.splice(monkeys.indexOf(me.getAddress()), 1) // *except our addr
 
     setTimeout(async () => {
-      await sleep(2000)
+      // ensure 1st bank node is up already
+      await sleep(1000)
 
       await require('../src/internal_rpc/with_channel')({
         op: 'setLimits',
-        partnerId: K.hubs[0].pubkey,
+        they_pubkey: K.hubs[0].pubkey,
         asset: 1,
-        soft_limit: K.soft_limit,
-        hard_limit: K.hard_limit
+        rebalance: K.rebalance,
+        credit: K.credit
       })
 
-      await sleep(5000)
+      await sleep(1000)
 
       me.sendJSON(K.hubs[0], 'testnet', {
         action: 'faucet',
@@ -106,6 +108,26 @@ let run = async () => {
       })
 
       l('Requesting faucet to ' + me.getAddress())
+
+      if (me.record && me.record.id == 2) {
+        // withdraw 12.34 from hub and deposit 9.12 to 3 @ 1
+        let ch = await Channel.get(K.hubs[0].pubkey)
+
+        let withdrawn = await require('../src/internal_rpc/with_channel')({
+          they_pubkey: toHex(ch.d.they_pubkey),
+          asset: 1,
+          op: 'withdraw',
+          amount: 1234
+        })
+        l('Withdrawn ', withdrawn)
+
+        require('../src/internal_rpc/external_deposit')({
+          asset: 1,
+          userId: 3,
+          hub: 1,
+          amount: 912
+        })
+      }
     }, K.blocktime * 1000)
 
     setTimeout(() => {
@@ -152,9 +174,13 @@ let run = async () => {
       //if (monkey5ins < 100) failed.push('monkey5insurance')
 
       if ((await Block.count()) < 2) failed.push('blocks')
-      if ((await Order.count()) < 1) failed.push('orders')
       if ((await Channel.count()) < 5) failed.push('deltas')
+
+      /* not in MVP
+
       if ((await Asset.count()) < 4) failed.push('assets')
+      if ((await Order.count()) < 1) failed.push('orders')
+        */
 
       let e2e = 'e2e: ' + (failed.length == 0 ? 'success' : failed.join(', '))
       l(e2e)
@@ -176,11 +202,11 @@ let run = async () => {
     for (var dest of monkeys) {
       let [pubkey, box_pubkey] = r(base58.decode(dest))
       if (pubkey.length < 6) pubkey = readInt(pubkey)
-      me.batchAdd('depositTo', [1, [1000000, pubkey, 0]])
+      me.batchAdd('deposit', [1, [1000000, pubkey, 0]])
     }
 
     // creating an initial FRB sell for FRD
-    me.batchAdd('createOrder', [2, 10000000, 1, 0.001 * 1000000])
+    //me.batchAdd('createOrder', [2, 10000000, 1, 0.001 * 1000000])
   }
 
   if (me.record.id == 4) {
@@ -197,9 +223,10 @@ let run = async () => {
     }, 12000)
 
     // create an asset
-    me.batchAdd('createAsset', ['TESTCOIN', 13371337, 'Test coin', 'No goal'])
+    //me.batchAdd('createAsset', ['TESTCOIN', 13371337, 'Test coin', 'No goal'])
   }
 
+  /*
   if (me.record.id == 3) {
     // just to make sure there's no leaky unescaped injection
     var xss = 'XSSCOIN' //\'"><img src=x onerror=alert(0)>'
@@ -208,26 +235,7 @@ let run = async () => {
     // buying bunch of FRB for $4
     me.batchAdd('createOrder', [1, 400, 2, 0.001 * 1000000])
   }
-
-  if (me.record.id == 2) {
-    // withdraw 12.34 from hub and deposit 9.12 to 3 @ 1
-    let ch = await Channel.get(K.hubs[0].pubkey)
-
-    let withdrawn = await require('../src/internal_rpc/with_channel')({
-      partnerId: toHex(ch.d.partnerId),
-      asset: 1,
-      op: 'withdraw',
-      amount: 1234
-    })
-    l('Withdrawn ', withdrawn)
-
-    require('../src/internal_rpc/external_deposit')({
-      asset: 1,
-      userId: 3,
-      hub: 1,
-      amount: 912
-    })
-  }
+  */
 }
 
 if (argv.monkey) {

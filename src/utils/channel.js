@@ -74,10 +74,10 @@ refresh = function(ch) {
   // Canonical state.
   // To be parsed in case of a dispute onchain
   ch.state = [
-    methodMap('disputeWith'),
+    methodMap('dispute'),
     [
-      ch.d.isLeft() ? ch.d.myId : ch.d.partnerId,
-      ch.d.isLeft() ? ch.d.partnerId : ch.d.myId,
+      ch.d.isLeft() ? me.pubkey : ch.d.they_pubkey,
+      ch.d.isLeft() ? ch.d.they_pubkey : me.pubkey,
       ch.d.dispute_nonce
     ],
     // assetId, offdelta, leftlocks, rightlocks
@@ -146,14 +146,14 @@ refresh = function(ch) {
     out.payable =
       out.insured +
       out.uninsured +
-      subch.they_hard_limit -
+      subch.they_credit -
       out.they_uninsured -
       out.outwards_hold
 
     out.they_payable =
       out.they_insured +
       out.they_uninsured +
-      subch.hard_limit -
+      subch.credit -
       out.uninsured -
       out.inwards_hold
 

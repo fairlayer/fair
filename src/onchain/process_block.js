@@ -148,7 +148,6 @@ module.exports = async (s, header, ordered_tx_body) => {
 
   if (is_usable && K.usable_blocks % 2 == 0) {
     // Auto resolving disputes that are due
-    //await Periodical.syncChanges()
 
     all.push(
       Insurance.findAll({
@@ -156,10 +155,6 @@ module.exports = async (s, header, ordered_tx_body) => {
         include: [Subinsurance]
       }).then(async (insurances) => {
         for (let ins of insurances) {
-          // take from cache instead
-          let str = stringify([ins.leftId, ins.rightId])
-          if (cache.ins[str]) ins = cache.ins[str]
-
           s.meta.cron.push(['resolved', ins, await insuranceResolve(ins)])
         }
       })
@@ -209,9 +204,6 @@ module.exports = async (s, header, ordered_tx_body) => {
     l('🎉 Maturity day! Copy all FRB balances to FRD')
     s.meta.cron.push(['maturity'])
 
-    // clear up from cache
-    await Periodical.syncChanges({flush: 'users'})
-
     // first assignment must happen before zeroing
     await onchainDB.db.query('UPDATE users SET balance1 = balance1 + balance2')
     await onchainDB.db.query('UPDATE users SET balance2 = 0')
@@ -227,15 +219,10 @@ module.exports = async (s, header, ordered_tx_body) => {
 
   await Promise.all(all)
 
-  // looking for non-determinism
-  /*
   if (K.total_blocks % 50 == 0) {
-    await syncdb()
-
-    var out = child_process.execSync(`shasum -a 256 ${datadir}/onchain/db*`).toString().split(/[ \n]/)
+    //var out = child_process.execSync(`shasum -a 256 ${datadir}/onchain/db*`).toString().split(/[ \n]/)
     //K.current_db_hash = out[0]
   }
-  */
 
   // save final block in offchain history db
   // Required for validators/hubs, optional for everyone else (aka "pruning" mode)
@@ -294,7 +281,6 @@ module.exports = async (s, header, ordered_tx_body) => {
       // it's important to flush current K to disk before snapshot
     }
     */
-    await Periodical.syncChanges()
 
     const path_filter = (path, stat) => {
       // must be deterministic

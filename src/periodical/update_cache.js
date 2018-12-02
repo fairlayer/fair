@@ -48,7 +48,7 @@ module.exports = async (force = false) => {
         },
         async () => {
           cached_result.blocks = (await Block.findAll({
-            limit: 50,
+            limit: 100,
             order: [['id', 'desc']],
             where: me.show_empty_blocks
               ? {}

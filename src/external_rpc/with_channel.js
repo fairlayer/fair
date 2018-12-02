@@ -13,25 +13,28 @@ module.exports = async (ws, args) => {
     if (json.method == 'setLimits') {
       let subch = ch.d.subchannels.by('asset', json.asset)
 
-      subch.they_hard_limit = json.hard_limit
-      subch.they_soft_limit = json.soft_limit
+      subch.they_credit = json.credit
+      subch.they_rebalance = json.rebalance
       await subch.save()
 
-      me.textMessage(ch.d.partnerId, 'Updated credit limits')
+      me.textMessage(ch.d.they_pubkey, 'Updated credit limits')
     } else if (json.method == 'requestCredit') {
       let subch = ch.d.subchannels.by('asset', json.asset)
 
-      subch.hard_limit = 100000
+      subch.credit = 100000
 
-      me.sendJSON(ch.d.partnerId, 'setLimits', {
+      me.sendJSON(ch.d.they_pubkey, 'setLimits', {
         asset: json.asset,
-        hard_limit: subch.hard_limit
+        credit: subch.credit
       })
 
       await subch.save()
 
+      // forced flush, gives them sig
+      await me.flushChannel(pubkey, false)
+
       me.textMessage(
-        ch.d.partnerId,
+        ch.d.they_pubkey,
         'Congrats, we opened a credit line for you'
       )
     } else if (json.method == 'requestInsurance') {
@@ -39,7 +42,7 @@ module.exports = async (ws, args) => {
       subch.they_requested_insurance = true
       await subch.save()
 
-      me.textMessage(ch.d.partnerId, 'Added to rebalance queue')
+      me.textMessage(ch.d.they_pubkey, 'Added to rebalance queue')
     } else if (json.method == 'giveWithdrawal') {
       let asset = parseInt(json.asset)
       let amount = parseInt(json.amount)
@@ -48,7 +51,7 @@ module.exports = async (ws, args) => {
       /*
       if (!ch.ins) {
         me.textMessage(
-          ch.d.partnerId,
+          ch.d.they_pubkey,
           'You must be registered'
         )
         return
@@ -57,12 +60,14 @@ module.exports = async (ws, args) => {
 
       let subch = ch.d.subchannels.by('asset', asset)
 
-      let they = await getUserByIdOrKey(ch.d.partnerId)
+      let they = await getUserByIdOrKey(ch.d.they_pubkey)
+      if (!they) return l('no they ', they)
+
       let pair = [they.id, me.record.id]
       if (ch.d.isLeft()) pair.reverse()
 
       let withdrawal = [
-        methodMap('withdrawFrom'),
+        methodMap('withdraw'),
         pair[0],
         pair[1],
         ch.ins ? ch.ins.withdrawal_nonce : 0,
@@ -95,7 +100,7 @@ module.exports = async (ws, args) => {
       }
 
       if (!ch.ins) {
-        me.textMessage(ch.d.partnerId, 'You must be registered')
+        me.textMessage(ch.d.they_pubkey, 'You must be registered')
         return
       }
 
@@ -107,7 +112,7 @@ module.exports = async (ws, args) => {
 
       if (amount > available) {
         me.textMessage(
-          ch.d.partnerId,
+          ch.d.they_pubkey,
           `Sorry, you can only withdraw up to ${available}`
         )
         return false
@@ -128,7 +133,7 @@ module.exports = async (ws, args) => {
       }
 
       let withdrawal = r([
-        methodMap('withdrawFrom'),
+        methodMap('withdraw'),
         ch.ins.leftId,
         ch.ins.rightId,
         ch.ins.withdrawal_nonce,
@@ -163,7 +168,7 @@ module.exports = async (ws, args) => {
       } else if (json.action == 'onchainFaucet') {
         let faucet = [json.asset, [json.amount, fromHex(json.pubkey), 0]]
         l('Added ', faucet)
-        me.batchAdd('depositTo', faucet)
+        me.batchAdd('deposit', faucet)
       }
     }
   })
@@ -203,14 +208,6 @@ module.exports = async (ws, args) => {
       }
     }
     await Promise.all(flushed)
-
-    if (argv.syncdb) {
-      //all.push(ch.d.save())
-
-      // end-users would prefer instant save for responsive UI
-      await Periodical.syncChanges()
-      //Promise.all(all)
-    }
 
     // use lazy react for external requests
     react({private: true})

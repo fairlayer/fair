@@ -99,8 +99,8 @@ module.exports = async (datadir) => {
 
     risk: 10000, // hubs usually withdraw after this amount
 
-    soft_limit: 5000000, // rebalance after
-    hard_limit: 50000000, // how much can a user lose if hub is insolvent?
+    rebalance: 5000000, // rebalance after
+    credit: 50000000, // how much can a user lose if hub is insolvent?
 
     collected_fees: 0,
 
@@ -218,7 +218,7 @@ module.exports = async (datadir) => {
     fee_bps: 10,
     createdAt: ts(),
 
-    handle: 'Temp'
+    handle: 'Temporary'
   })
 
   // similar to https://en.wikipedia.org/wiki/Nostro_and_vostro_accounts
@@ -295,7 +295,7 @@ module.exports = async (datadir) => {
 
     pending_batch: null,
 
-    usedHubs: [],
+    usedHubs: [1],
     usedAssets: [1, 2]
   }
 

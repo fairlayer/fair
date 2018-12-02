@@ -10,8 +10,7 @@ module.exports = async (a) => {
       l(err)
       //return
     }
-    //flush changes to db
-    //await syncdb()
+
     fatal('Bye')
     //fatal(`Fatal rejection, quitting`)
   }

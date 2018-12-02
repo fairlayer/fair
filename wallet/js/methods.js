@@ -19,8 +19,8 @@ module.exports = {
       'ins_ondelta',
       'ins_balance',
       'offdelta',
-      'hard_limit',
-      'they_hard_limit'
+      'credit',
+      'they_credit'
     ]) {
       if (Number.isInteger(parseInt(democh[arg]))) {
         democh[arg] = parseInt(democh[arg])
@@ -71,14 +71,14 @@ module.exports = {
         bar(parts.insured, '=') + bar(parts.uninsured, '-') + '|'
     }
 
-    parts.payable = delta + democh.they_hard_limit
+    parts.payable = delta + democh.they_credit
 
-    parts.they_payable = insurance + democh.hard_limit - delta
+    parts.they_payable = insurance + democh.credit - delta
 
-    parts.min_offdelta = -democh.ins_ondelta - democh.they_hard_limit
+    parts.min_offdelta = -democh.ins_ondelta - democh.they_credit
 
     parts.max_offdelta =
-      -democh.ins_ondelta + democh.ins_balance + democh.hard_limit
+      -democh.ins_ondelta + democh.ins_balance + democh.credit
 
     parts.width = (parts.max_offdelta - parts.min_offdelta) * 5
 
@@ -163,7 +163,7 @@ module.exports = {
       )
     ) {
       app.call('withChannel', {
-        partnerId: ch.d.partnerId,
+        they_pubkey: ch.d.they_pubkey,
         op: 'requestInsurance',
         asset: asset
       })
@@ -400,7 +400,7 @@ module.exports = {
   prettyBatch: (batch) => {
     let r = ''
     for (let tx of batch) {
-      if (['withdrawFrom', 'depositTo'].includes(tx[0])) {
+      if (['withdraw', 'deposit'].includes(tx[0])) {
         r += `<span class="badge badge-danger">${tx[1][1].length} ${
           tx[0]
         } (in ${app.to_ticker(tx[1][0])})</span>&nbsp;`

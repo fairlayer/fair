@@ -61,8 +61,8 @@ module.exports = async (ws, json) => {
       break
 
     case 'startDispute':
-      let ch = await Channel.get(json.params.partnerId)
-      me.batchAdd('disputeWith', await startDispute(ch))
+      let ch = await Channel.get(json.params.they_pubkey)
+      me.batchAdd('dispute', await startDispute(ch))
       react({confirm: 'OK'})
 
       break
@@ -125,6 +125,8 @@ module.exports = async (ws, json) => {
       break
 
     case 'toggleHub':
+      // not enabled yet
+      /*
       let index = PK.usedHubs.indexOf(json.params.id)
       if (index == -1) {
         PK.usedHubs.push(json.params.id)
@@ -133,10 +135,10 @@ module.exports = async (ws, json) => {
 
         require('./with_channel')({
           op: 'setLimits',
-          partnerId: hub.pubkey,
+          they_pubkey: hub.pubkey,
           asset: 1,
-          soft_limit: K.soft_limit,
-          hard_limit: K.hard_limit
+          rebalance: K.rebalance,
+          credit: K.credit
         })
 
         //result.confirm = 'Hub added'
@@ -146,12 +148,12 @@ module.exports = async (ws, json) => {
 
         result.confirm = 'Hub removed'
       }
-      //
       react({force: true})
-      //Periodical.updateCache()
+      */
 
       break
     case 'toggleAsset':
+      /*
       if ([1, 2].includes(json.params.id)) {
         react({alert: 'This asset is required by the system'})
         return
@@ -167,6 +169,7 @@ module.exports = async (ws, json) => {
         result.confirm = 'Asset removed'
       }
       react({force: true})
+      */
 
       break
 

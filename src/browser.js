@@ -43,20 +43,10 @@ react = async (result) => {
 
     let chans = await Channel.findAll()
     for (let d of chans) {
-      let ch = await Channel.get(d.partnerId)
+      let ch = await Channel.get(d.they_pubkey)
 
       result.channels.push(ch)
     }
-
-    // now add all channels to used hubs
-    /*
-    for (var m of K.hubs) {
-      let partnerId = fromHex(m.pubkey)
-      if (me.is_me(partnerId) || !PK.usedHubs.includes(m.id)) continue
-
-      result.channels.push(await Channel.get(partnerId))
-    }
-    */
 
     result.record = await getUserByIdOrKey(bin(me.id.publicKey))
     //l('Getting record', result.record.id)

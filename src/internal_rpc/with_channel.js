@@ -2,7 +2,7 @@ const withdraw = require('../offchain/withdraw')
 
 module.exports = async (p) => {
   // perform a specific operation on given channel
-  let ch = await Channel.get(fromHex(p.partnerId))
+  let ch = await Channel.get(fromHex(p.they_pubkey))
   if (!ch) {
     l('no channel')
     return
@@ -37,34 +37,36 @@ module.exports = async (p) => {
 
     l('Adding withdrawal ', withdrawal)
 
-    me.batchAdd('withdrawFrom', [p.asset, withdrawal])
+    me.batchAdd('withdraw', [p.asset, withdrawal])
     await subch.save()
 
     react({confirm: 'OK'})
     return withdrawal
   } else if (p.op == 'deposit') {
     // not used
-    me.batchAdd('depositTo', [p.asset, [p.amount, me.record.id, ch.partner, 0]])
+    me.batchAdd('deposit', [p.asset, [p.amount, me.record.id, ch.partner, 0]])
     react({confirm: 'OK'})
   } else if (p.op == 'setLimits') {
-    subch.hard_limit = p.hard_limit
-    subch.soft_limit = p.soft_limit
+    subch.credit = p.credit
+    subch.rebalance = p.rebalance
 
     // nothing happened
 
     await subch.save()
 
-    //l('set limits to ', ch.d.partnerId)
+    //l('set limits to ', ch.d.they_pubkey)
 
-    me.sendJSON(ch.d.partnerId, 'setLimits', {
+    me.sendJSON(ch.d.they_pubkey, 'setLimits', {
       asset: subch.asset,
-      hard_limit: subch.hard_limit,
-      soft_limit: subch.soft_limit
+      credit: subch.credit,
+      rebalance: subch.rebalance
     })
+
+    await me.flushChannel(ch.d.they_pubkey, false)
 
     //react({confirm: 'OK'})
   } else if (p.op == 'requestCredit') {
-    me.sendJSON(ch.d.partnerId, 'requestCredit', {
+    me.sendJSON(ch.d.they_pubkey, 'requestCredit', {
       asset: p.asset,
       amount: p.amount
     })
@@ -72,10 +74,10 @@ module.exports = async (p) => {
     subch.requested_insurance = true
     await subch.save()
 
-    me.sendJSON(ch.d.partnerId, 'requestInsurance', {asset: p.asset})
+    me.sendJSON(ch.d.they_pubkey, 'requestInsurance', {asset: p.asset})
     //react({confirm: 'Requested insurance, please wait'})
   } else if (p.op == 'testnet') {
-    me.sendJSON(ch.d.partnerId, 'testnet', {
+    me.sendJSON(ch.d.they_pubkey, 'testnet', {
       action: p.action,
       asset: p.asset,
       amount: p.amount,

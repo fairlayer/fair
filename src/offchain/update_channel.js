@@ -312,11 +312,9 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
 
         if (trace) l(`Mediating ${outward_amount} payment to ${trim(nextHop)}`)
 
-        //if (argv.syncdb)
         await outward_hl.save()
 
-        uniqFlushable(dest_ch.d.partnerId)
-        //})
+        uniqFlushable(dest_ch.d.they_pubkey)
       } else {
         inward_hl.type = 'del'
         inward_hl.status = 'new'
@@ -324,7 +322,6 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
         inward_hl.outcome = bin('UnknownError')
       }
 
-      //if (argv.syncdb) all.push(inward_hl.save())
       await inward_hl.save()
     } else if (t[0] == 'del' || t[0] == 'delrisk') {
       var [asset, hash, outcome_type, outcome] = t[1]
@@ -372,7 +369,6 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
 
       me.metrics[valid ? 'settle' : 'fail'].current++
 
-      //if (argv.syncdb) all.push(outward_hl.save())
       await outward_hl.save()
       //l('Saved as delack', outward_hl)
 
@@ -411,7 +407,6 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
           pull_hl.type = 'del'
           pull_hl.status = 'new'
 
-          //if (argv.syncdb) all.push(pull_hl.save())
           await pull_hl.save()
 
           if (trace)
@@ -482,25 +477,21 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
     ch.d.pending = null
   }
 
-  // CHEAT_: storing most profitable outcome for us
-  /*
+  // CHEAT_: storing most profitable outcome in asset 1
   if (!ch.d.CHEAT_profitable_state) {
     ch.d.CHEAT_profitable_state = ch.d.signed_state
     ch.d.CHEAT_profitable_sig = ch.d.sig
   }
   let profitable = r(ch.d.CHEAT_profitable_state)
-  let o = readInt(profitable[1][3])
+  let o = readInt(profitable[2][0][1])
+  let subch1 = ch.d.subchannels.by('asset', 1)
   if (
-    (ch.d.isLeft() && ch.d.offdelta > o) ||
-    (!ch.d.isLeft() && ch.d.offdelta < o)
+    (ch.d.isLeft() && subch1.offdelta > o) ||
+    (!ch.d.isLeft() && subch1.offdelta < o)
   ) {
     ch.d.CHEAT_profitable_state = ch.d.signed_state
     ch.d.CHEAT_profitable_sig = ch.d.sig
   }
-  */
-
-  //if (argv.syncdb) {
-  //all.push(ch.d.save())
 
   await ch.d.save()
   for (let subch of ch.d.subchannels) {
@@ -508,9 +499,6 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
   }
 
   react({private: true}, false)
-
-  //await syncdb() //Promise.all(all)
-  //}
 
   return flushable
 

@@ -20,6 +20,8 @@ class Me {
 
     this.withdrawalRequests = {}
 
+    this.show_empty_blocks = true
+
     // generic metric boilerplate: contains array of averages over time
     let getMetric = () => {
       return {
@@ -63,12 +65,24 @@ class Me {
     this.box = nacl.box.keyPair.fromSecretKey(this.seed)
 
     this.last_react = new Date()
-    this.last_synced = ts()
+    this.last_sync_changes = ts()
+    this.last_sync_chain = ts()
 
     PK.username = username
     PK.seed = seed.toString('hex')
-    PK.usedHubs = []
+    PK.usedHubs = [1]
     PK.usedAssets = [1, 2]
+
+    if (K) {
+      // use 1st bank by default
+      require('./internal_rpc/with_channel')({
+        op: 'setLimits',
+        they_pubkey: K.hubs[0].pubkey,
+        asset: 1,
+        rebalance: K.rebalance,
+        credit: K.credit
+      })
+    }
 
     await promise_writeFile(datadir + '/offchain/pk.json', JSON.stringify(PK))
   }
@@ -101,7 +115,7 @@ class Me {
       return false
     }
 
-    let mergeable = ['withdrawFrom', 'depositTo']
+    let mergeable = ['withdraw', 'deposit']
 
     if (mergeable.includes(method)) {
       let exists = me.batch.find((b) => b[0] == method && b[1][0] == args[0])
@@ -111,7 +125,7 @@ class Me {
         exists[1][1].push(args[1])
       } else {
         // create new set, withdrawals go first
-        me.batch[method == 'withdrawFrom' ? 'unshift' : 'push']([
+        me.batch[method == 'withdraw' ? 'unshift' : 'push']([
           method,
           [args[0], [args[1]]]
         ])
@@ -149,7 +163,7 @@ class Me {
     let by_first = (a, b) => b[0] - a[0]
 
     let merged = me.batch.map((m) => {
-      if (m[0] == 'depositTo' || m[0] == 'withdrawFrom') {
+      if (m[0] == 'deposit' || m[0] == 'withdraw') {
         m[1][1].sort(by_first)
       }
 
@@ -231,7 +245,7 @@ class Me {
         if (me.my_validator != m) {
           me.send(m, 'auth', me.envelope(methodMap('auth')))
 
-          l('Connected to ', m)
+          //l('Connected to ', m)
         }
       })
     }
@@ -304,8 +318,8 @@ class Me {
     })
   }
 
-  textMessage(partnerId, msg) {
-    me.send(partnerId, 'textMessage', r([msg]))
+  textMessage(they_pubkey, msg) {
+    me.send(they_pubkey, 'textMessage', r([msg]))
   }
 
   // a generic interface to send a websocket message to some user or validator
