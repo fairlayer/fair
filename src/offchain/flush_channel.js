@@ -61,8 +61,8 @@ module.exports = async (pubkey, opportunistic) => {
     // merge cannot add new transitions because expects another ack
     // in merge mode all you do is ack last (merged) state
     if (ch.d.status == 'master') {
-      // hub waits a bit in case destination returns secret quickly
-      //if (me.my_hub && !opportunistic) await sleep(150)
+      // bank waits a bit in case destination returns secret quickly
+      //if (me.my_bank && !opportunistic) await sleep(150)
 
       for (let t of ch.payments) {
         if (t.status != 'new') continue
@@ -111,7 +111,7 @@ module.exports = async (pubkey, opportunistic) => {
                 }.`
               )
 
-            if (me.my_hub && t.amount > derived.payable) {
+            if (me.my_bank && t.amount > derived.payable) {
               me.textMessage(
                 ch.d.they_pubkey,
                 `Cant send ${t.amount} payable ${
@@ -128,22 +128,20 @@ module.exports = async (pubkey, opportunistic) => {
             await t.save()
 
             if (t.inward_pubkey) {
-              //await section(['use', t.inward_pubkey], async () => {
               var inward_ch = await Channel.get(t.inward_pubkey)
               var pull_hl = inward_ch.derived[t.asset].inwards.find((hl) =>
                 hl.hash.equals(t.hash)
               )
               pull_hl.type = 'del'
               pull_hl.status = 'new'
-              let reason = `${me.my_hub.id} to ${trim(ch.d.they_pubkey)}`
+              let reason = `${me.my_bank.id} to ${trim(ch.d.they_pubkey)}`
 
               pull_hl.outcome_type = 'outcomeCapacity'
-              pull_hl.outcome = bin(reason)
+              pull_hl.outcome = reason
 
               await pull_hl.save()
 
               uniqFlushable(inward_ch.d.they_pubkey)
-              //})
             }
 
             continue

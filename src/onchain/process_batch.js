@@ -11,7 +11,7 @@ const Tx = {
 
   createOrder: require('./tx/create_order'),
   createAsset: require('./tx/create_asset'),
-  createHub: require('./tx/create_hub'),
+  createBank: require('./tx/create_bank'),
 
   propose: require('./tx/propose'),
   vote: require('./tx/vote')

@@ -39,14 +39,14 @@ Periodical.startValidator = () => {
   Periodical.schedule('consensus', 300)
 }
 
-Periodical.startHub = () => {
+Periodical.startBank = () => {
   //if (!me.external_wss_server){
-  l('Starting hub ', me.my_hub)
-  me.startExternalRPC(me.my_hub.location)
+  l('Starting bank ', me.my_bank)
+  me.startExternalRPC(me.my_bank.location)
 
   Periodical.schedule('rebalance', K.blocktime * 2000)
 
-  // hubs have to force react regularly
+  // banks have to force react regularly
   Periodical.schedule('forceReact', K.blocktime * 3000)
   //}
 }

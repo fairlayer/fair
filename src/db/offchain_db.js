@@ -198,7 +198,7 @@ const defineModels = (sequelize) => {
       // secret or fail reason
       outcome_type: Sequelize.STRING,
       // payload of outcome
-      outcome: Sequelize.BLOB,
+      outcome: Sequelize.STRING,
 
       // string to be decrypted by outward
       unlocker: Sequelize.BLOB,
@@ -216,7 +216,7 @@ const defineModels = (sequelize) => {
       // sender may decide to provide refund address inside the private message
       source_address: Sequelize.TEXT,
 
-      // who caused us to make this payment (if we're hub)?
+      // who caused us to make this payment (if we're bank)?
       inward_pubkey: Sequelize.BLOB
     },
     {
@@ -270,6 +270,8 @@ const defineModels = (sequelize) => {
     asset: Sequelize.INTEGER,
     userId: Sequelize.INTEGER, // receiver/sender's id
     blockId: Sequelize.INTEGER, // when it happened
+
+    processed: Sequelize.BOOLEAN,
     public_invoice: Sequelize.BLOB
   })
 

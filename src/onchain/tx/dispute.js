@@ -70,9 +70,9 @@ module.exports = async (s, args) => {
 
     ins.dispute_left = compared == -1
 
-    // hubs are always online and react faster
-    let delay = K.hubs.find((h) => h.id == partner.id)
-      ? K.dispute_delay_for_hubs
+    // banks are always online and react faster
+    let delay = K.banks.find((h) => h.id == partner.id)
+      ? K.dispute_delay_for_banks
       : K.dispute_delay_for_users
     ins.dispute_delayed = K.usable_blocks + delay
 

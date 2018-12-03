@@ -38,7 +38,7 @@ module.exports = async () => {
         // we have secret for inward payment but it's not acked
         if (
           inward.is_inward &&
-          inward.outcome_type == methodMap('outcomeSecret') &&
+          inward.outcome_type == 'outcomeSecret' &&
           inward.status != 'ack'
         ) {
           // ensure they will still be revealed when resolve() happens. Extend lifetime if needed

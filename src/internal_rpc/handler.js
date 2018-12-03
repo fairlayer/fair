@@ -73,7 +73,7 @@ module.exports = async (ws, json) => {
     case 'onchainFaucet':
       json.params.pubkey = toHex(me.pubkey)
       json.params.action = 'onchainFaucet'
-      me.sendJSON(K.hubs[0], 'testnet', json.params)
+      me.sendJSON(K.banks[0], 'testnet', json.params)
       react({confirm: 'Await onchain faucet'})
 
       break
@@ -93,8 +93,8 @@ module.exports = async (ws, json) => {
       react({confirm: 'Added to batch', force: true})
       break
 
-    case 'createHub':
-      require('./create_hub')(json.params)
+    case 'createBank':
+      require('./create_bank')(json.params)
 
       react({confirm: 'Added to batch'})
       break
@@ -124,29 +124,29 @@ module.exports = async (ws, json) => {
       react({confirm: 'Batch cleared'})
       break
 
-    case 'toggleHub':
+    case 'toggleBank':
       // not enabled yet
       /*
-      let index = PK.usedHubs.indexOf(json.params.id)
+      let index = PK.usedBanks.indexOf(json.params.id)
       if (index == -1) {
-        PK.usedHubs.push(json.params.id)
+        PK.usedBanks.push(json.params.id)
 
-        let hub = K.hubs.find((h) => h.id == json.params.id)
+        let bank = K.banks.find((h) => h.id == json.params.id)
 
         require('./with_channel')({
           op: 'setLimits',
-          they_pubkey: hub.pubkey,
+          they_pubkey: bank.pubkey,
           asset: 1,
           rebalance: K.rebalance,
           credit: K.credit
         })
 
-        //result.confirm = 'Hub added'
+        //result.confirm = 'Bank added'
       } else {
         // ensure no connection
-        PK.usedHubs.splice(index, 1)
+        PK.usedBanks.splice(index, 1)
 
-        result.confirm = 'Hub removed'
+        result.confirm = 'Bank removed'
       }
       react({force: true})
       */

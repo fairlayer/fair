@@ -6,10 +6,10 @@ module.exports = async (ws, args) => {
 
     // wrap in custom WebSocketClient if it is a raw ws object
     if (ws.instance) {
-      me.users[pubkey] = ws
+      me.sockets[pubkey] = ws
     } else {
-      me.users[pubkey] = new WebSocketClient()
-      me.users[pubkey].instance = ws
+      me.sockets[pubkey] = new WebSocketClient()
+      me.sockets[pubkey].instance = ws
     }
 
     if (trace) l('New peer: ', pubkey)

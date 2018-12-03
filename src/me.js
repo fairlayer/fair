@@ -6,12 +6,12 @@ class Me {
   constructor() {
     this.status = 'await'
 
-    this.my_hub = false
+    this.my_bank = false
 
     this.mempool = []
     this.batch = []
 
-    this.users = {}
+    this.sockets = {}
 
     // array of sockets to frontends
     this.browsers = []
@@ -70,14 +70,14 @@ class Me {
 
     PK.username = username
     PK.seed = seed.toString('hex')
-    PK.usedHubs = [1]
+    PK.usedBanks = [1]
     PK.usedAssets = [1, 2]
 
     if (K) {
       // use 1st bank by default
       require('./internal_rpc/with_channel')({
         op: 'setLimits',
-        they_pubkey: K.hubs[0].pubkey,
+        they_pubkey: K.banks[0].pubkey,
         asset: 1,
         rebalance: K.rebalance,
         credit: K.credit
@@ -87,12 +87,12 @@ class Me {
     await promise_writeFile(datadir + '/offchain/pk.json', JSON.stringify(PK))
   }
 
-  // returns current address: pubkey, box_pubkey, hubs
+  // returns current address: pubkey, box_pubkey, banks
   getAddress() {
     let encodable = [
       me.record ? me.record.id : this.pubkey,
       bin(this.box.publicKey),
-      PK.usedHubs
+      PK.usedBanks
     ]
     return base58.encode(r(encodable))
   }
@@ -220,16 +220,16 @@ class Me {
       me.record = record
 
       me.my_validator = Validators.find((m) => m.id == me.record.id)
-      me.my_hub = K.hubs.find((m) => m.id == me.record.id)
+      me.my_bank = K.banks.find((m) => m.id == me.record.id)
     }
 
-    // both validators and hubs must run external_wss
+    // both validators and banks must run external_wss
     if (me.my_validator) {
       Periodical.startValidator()
     }
 
-    if (me.my_hub) {
-      Periodical.startHub()
+    if (me.my_bank) {
+      Periodical.startBank()
     }
 
     if (me.my_validator) {
@@ -240,7 +240,7 @@ class Me {
         }
       }
     } else {
-      // keep connection to all hubs
+      // keep connection to all banks
       Validators.map((m) => {
         if (me.my_validator != m) {
           me.send(m, 'auth', me.envelope(methodMap('auth')))
@@ -273,7 +273,7 @@ class Me {
     if (me.external_wss_server) {
       return l('Already have external server started')
     }
-    // there's 2nd dedicated websocket server for validator/hub commands
+    // there's 2nd dedicated websocket server for validator/bank commands
 
     me.external_wss_server = require('http').createServer(async (req, res) => {
       var [path, query] = req.url.split('?')
@@ -343,17 +343,17 @@ class Me {
     if (m instanceof Buffer) {
       //if (method == 'update') l(`Sending to ${trim(m)} `, toHex(sha3(tx)))
 
-      if (me.users[m]) {
-        me.users[m].send(msg, wscb)
+      if (me.sockets[m]) {
+        me.sockets[m].send(msg, wscb)
         return true
       } else {
-        // try to find by this pubkey among validators/hubs
+        // try to find by this pubkey among validators/banks
         var validator = Validators.find((f) => f.pubkey.equals(m))
-        var hub = K.hubs.find((f) => fromHex(f.pubkey).equals(m))
+        var bank = K.banks.find((f) => fromHex(f.pubkey).equals(m))
         if (validator) {
           m = validator
-        } else if (hub) {
-          m = hub
+        } else if (bank) {
+          m = bank
         } else {
           //l('Not online: ', m)
           return false
@@ -364,30 +364,30 @@ class Me {
     // validator object
     //l(`Invoking ${method} in validator ${m.id}`)
 
-    if (me.users[m.pubkey]) {
-      return me.users[m.pubkey].send(msg, wscb)
+    if (me.sockets[m.pubkey]) {
+      return me.sockets[m.pubkey].send(msg, wscb)
     } else {
-      me.users[m.pubkey] = new WebSocketClient()
+      me.sockets[m.pubkey] = new WebSocketClient()
 
-      me.users[m.pubkey].onmessage = (msg) => {
-        RPC.external_rpc(me.users[m.pubkey], msg)
+      me.sockets[m.pubkey].onmessage = (msg) => {
+        RPC.external_rpc(me.sockets[m.pubkey], msg)
       }
 
-      me.users[m.pubkey].onerror = function(e) {
+      me.sockets[m.pubkey].onerror = function(e) {
         l('Failed to open the socket')
       }
-      me.users[m.pubkey].onopen = function(e) {
+      me.sockets[m.pubkey].onopen = function(e) {
         if (me.id) {
-          me.users[m.pubkey].send(
+          me.sockets[m.pubkey].send(
             concat(bin(methodMap('auth')), me.envelope(methodMap('auth'))),
             l
           )
         }
 
-        me.users[m.pubkey].send(msg, wscb)
+        me.sockets[m.pubkey].send(msg, wscb)
       }
 
-      me.users[m.pubkey].open(m.location)
+      me.sockets[m.pubkey].open(m.location)
     }
 
     return true

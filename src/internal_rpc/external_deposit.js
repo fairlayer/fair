@@ -21,7 +21,7 @@ module.exports = async (dep) => {
 
     let newDeposit = [
       dep.asset,
-      [amount, userId, parseInt(dep.hub), public_invoice]
+      [amount, userId, parseInt(dep.bank), public_invoice]
     ]
 
     l('Adding to queue a deposit ', newDeposit)

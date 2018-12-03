@@ -225,7 +225,7 @@ module.exports = async (s, header, ordered_tx_body) => {
   }
 
   // save final block in offchain history db
-  // Required for validators/hubs, optional for everyone else (aka "pruning" mode)
+  // Required for validators/banks, optional for everyone else (aka "pruning" mode)
   // it is fine to delete a block after grace period ~3 months.
   if (me.my_validator || PK.explorer) {
     s.meta.missed_validators = s.missed_validators

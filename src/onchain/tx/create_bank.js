@@ -11,14 +11,14 @@ module.exports = async (s, args) => {
   json.fee_bps = parseInt(json.fee_bps)
   if (json.fee_bps > 500) return false
 
-  let hub = K.hubs.find((h) => h.handle == json.handle)
+  let bank = K.banks.find((h) => h.handle == json.handle)
 
-  // trying to modify someone else's hub
-  if (hub && hub.id != s.signer.id) return false
+  // trying to modify someone else's bank
+  if (bank && bank.id != s.signer.id) return false
 
-  if (!hub) {
-    // create new hub
-    hub = {
+  if (!bank) {
+    // create new bank
+    bank = {
       id: s.signer.id,
       location: json.location,
       pubkey: toHex(s.signer.pubkey),
@@ -34,17 +34,17 @@ module.exports = async (s, args) => {
       createdAt: K.ts
     }
 
-    K.hubs.push(hub)
+    K.banks.push(bank)
 
     if (me.record && me.record.id == s.signer.id) {
-      // we just started our own hub
-      me.my_hub = hub
-      Periodical.startHub()
+      // we just started our own bank
+      me.my_bank = bank
+      Periodical.startBank()
     } else {
-      // start trusting new hub automatically
+      // start trusting new bank automatically
       require('../../internal_rpc/with_channel')({
         op: 'setLimits',
-        they_pubkey: hub.pubkey,
+        they_pubkey: bank.pubkey,
         asset: 1,
         rebalance: K.rebalance,
         credit: K.credit
@@ -54,15 +54,15 @@ module.exports = async (s, args) => {
 
   if (json.add_routes) {
     json.add_routes.map((r) => {
-      Router.addRoute(hub.id, parseInt(r))
+      Router.addRoute(bank.id, parseInt(r))
     })
   }
 
   if (json.remove_routes) {
     json.remove_routes.map((r) => {
-      Router.removeRoute(hub.id, parseInt(r))
+      Router.removeRoute(bank.id, parseInt(r))
     })
   }
 
-  s.parsed_tx.events.push(['createHub', json.handle])
+  s.parsed_tx.events.push(['createBank', json.handle])
 }

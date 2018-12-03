@@ -9,7 +9,7 @@ module.exports = {
   },
 
   pubkeyToUser: (pubkey) => {
-    let h = app.K.hubs.find((h) => h.pubkey == pubkey)
+    let h = app.K.banks.find((h) => h.pubkey == pubkey)
     return h ? h.handle : app.trim(pubkey)
   },
 
@@ -104,10 +104,10 @@ module.exports = {
     let info = []
 
     for (let hop of r[1]) {
-      let hub = app.K.hubs.find((h) => h.id == hop)
-      if (hub) {
-        //(${app.bpsToPercent(hub.fee_bps)})
-        info.push(`${app.to_user(hub.id)}`)
+      let bank = app.K.banks.find((h) => h.id == hop)
+      if (bank) {
+        //(${app.bpsToPercent(bank.fee_bps)})
+        info.push(`${app.to_user(bank.id)}`)
       }
     }
 
@@ -185,7 +185,7 @@ module.exports = {
     app.call('externalDeposit', {
       asset: d.asset,
       amount: app.uncommy(d.amount),
-      hub: d.hub,
+      bank: d.bank,
       address: d.address
     })
     //app.resetOutward()
@@ -198,7 +198,7 @@ module.exports = {
       amount: '',
       asset: 1,
       type: app.outward.type,
-      hub: -1
+      bank: -1
     }
   },
 
@@ -232,7 +232,7 @@ module.exports = {
     // returns either bank name or just id
     // todo: twitter-style tooltips with info on the user
 
-    let h = app.K.hubs.find((h) => h.id == userId)
+    let h = app.K.banks.find((h) => h.id == userId)
     //`<span class="badge badge-success">${h.handle}</span>`
     return h ? h.handle : userId
   },
@@ -251,10 +251,10 @@ module.exports = {
   },
 
   showGraph: () => {
-    if (!window.hubgraph) return
+    if (!window.bankgraph) return
 
     drawHubgraph({
-      nodes: app.K.hubs.map((h) => {
+      nodes: app.K.banks.map((h) => {
         return {id: h.id, handle: h.handle, group: 1}
       }),
       links: app.K.routes.map((r) => {
@@ -290,13 +290,6 @@ module.exports = {
         h.destination_address ? app.trim(h.destination_address) : 'N/A'
       }`
     }
-  },
-
-  deltaColor: (d) => {
-    if (d <= -app.K.risk) return '#ff6e7c'
-    if (d >= app.K.risk) return '#5ed679'
-
-    return ''
   },
 
   dispute_outcome: (prefix, ins, parts) => {

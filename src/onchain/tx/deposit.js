@@ -6,7 +6,7 @@ module.exports = async (s, args) => {
 
   await userPayDebts(s.signer, asset, s.parsed_tx)
 
-  // there's a tiny bias here, the hub always gets reimbursed more than fee paid
+  // there's a tiny bias here, the bank always gets reimbursed more than fee paid
   // todo: consider splitting txfee based on % in total output volume
   // const reimburse_txfee = 1 + Math.floor(s.parsed_tx.txfee / args.length)
 
@@ -55,7 +55,7 @@ module.exports = async (s, args) => {
           l("Both partners don't exist")
           return
         }
-        // todo: support usecase of paying to new account @hub
+        // todo: support usecase of paying to new account @bank
         throw 'yolo'
 
         const fee = K.standalone_balance + K.account_creation_fee
@@ -137,11 +137,11 @@ module.exports = async (s, args) => {
 
       userAsset(s.signer, asset, -amount)
 
-      if (K.hubs.find((h) => h.id == s.signer.id)) {
-        // The hub gets reimbursed for rebalancing users.
+      if (K.banks.find((h) => h.id == s.signer.id)) {
+        // The bank gets reimbursed for rebalancing users.
         // Otherwise it would be harder to collect fee from participants
         // TODO: attack vector, the user may not endorsed this rebalance
-        // reimbures to hub rebalance fees
+        // reimbures to bank rebalance fees
         /*
         subins.balance -= reimburse_txfee
         subins.ondelta -= compared * reimburse_txfee
@@ -167,7 +167,7 @@ module.exports = async (s, args) => {
         ch.d.subchannels.by('asset', asset).requested_insurance = false
       }
 
-      // rebalance by hub for our account = reimburse hub fees
+      // rebalance by bank for our account = reimburse bank fees
       /*
       if (me.is_me(withPartner.pubkey)) {
         await me.addHistory(

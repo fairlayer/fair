@@ -41,8 +41,8 @@
           <li v-if="auth_code" class="nav-item" v-bind:class="{ active: tab=='wallet' }">
             <a class="nav-link" @click="go('wallet')">{{t('wallet')}}</a>
           </li>
-          <li class="nav-item" v-bind:class="{ active: tab=='hubs' }">
-            <a class="nav-link" @click="go('hubs')">{{t('banks')}}</a>
+          <li class="nav-item" v-bind:class="{ active: tab=='banks' }">
+            <a class="nav-link" @click="go('banks')">{{t('banks')}}</a>
           </li>
           <li class="nav-item" v-bind:class="{ active: tab=='assets'}"><a class="nav-link" @click="go('assets')">{{t('assets')}}</a></li>
 
@@ -99,7 +99,7 @@
         </div>
       </div>
 
-      <div class="tpstrend visible-lg-4" @click="go('metrics')" v-if="my_hub">
+      <div class="tpstrend visible-lg-4" @click="go('metrics')" v-if="my_bank">
         <trend :data="metrics.settle.avgs.slice(metrics.settle.avgs.length-300)" :gradient="['#6fa8dc', '#42b983', '#2c3e50']" auto-draw :min=0 :width=150 :height=50>
         </trend>
       </div>
@@ -144,7 +144,7 @@
           <h2>Become a Validator</h2>
           <p>
             <label for="comment">Identity verification:</label>
-            <input class="form-control" v-model="new_validator.handle" rows="2" placeholder="newhub"></input>
+            <input class="form-control" v-model="new_validator.handle" rows="2" placeholder="newbank"></input>
           </p>
           <p>
             <label for="comment">Location (Fairlayer-compatible RPC):</label>
@@ -165,15 +165,15 @@
         <p>Account creation fee (pubkey registration): {{commy(K.account_creation_fee)}}</p>
         <p>Average broadcast fee: {{commy(K.min_gasprice * 83)}} (to short ID) – {{commy(K.min_gasprice * 115)}} (to pubkey)</p>
         <h2>Banks & topology</h2>
-        <p>Risk limit: {{commy(K.risk)}}</p>
-        <p>Credit : {{commy(K.credit)}}</p>
+        <p>Rebalance: {{commy(K.rebalance)}}</p>
+        <p>Credit: {{commy(K.credit)}}</p>
         <h2>Snapshots</h2>
         <p>Make snapshot at blocks: {{K.snapshot_after_blocks}}</p>
         <p>Last snapshot at block # : {{K.last_snapshot_height}}</p>
         <p>Snapshots taken: {{K.snapshots_taken}}</p>
         <h2>Network stats</h2>
         <p>Total blocks: {{K.total_blocks}}</p>
-        <p>Current {{onchain}} hash: {{K.current_db_hash}}</p>
+        <p>Current hash: {{K.current_db_hash}}</p>
         <p>Usable blocks: {{K.total_blocks}}</p>
         <p>Last block received {{timeAgo(K.ts)}}</p>
         <p>Network created {{timeAgo(K.created_at)}}</p>
@@ -247,33 +247,36 @@
       </div>
       <div v-else-if="tab=='wallet'">
         <template v-if="pubkey">
-          <h4 class="alert alert-primary" v-if="my_hub">This node is a bank: {{my_hub.handle}}</h4>
-          <h4 class="alert alert-primary" v-if="my_validator">This node is a validator: {{my_validator.username}}</h4>
-          <div v-if="record">
-            <h2>
-              {{onchain}}
-            </h2>
+          <ul class="nav nav-pills nav-fill">
+            <li class="nav-item">
+              <a @click="outward.type='offchain'" class="nav-link " v-bind:class="{active: outward.type=='offchain'}" href="javascript:void(0)">Offchain ⚡️</a>
+            </li>
+            <li class="nav-item">
+              <a @click="outward.type='onchain'" class="nav-link " v-bind:class="{active: outward.type=='onchain'}" href="javascript:void(0)">Onchain 🌐</a>
+            </li>
+          </ul>
+          
+          <br>
 
-            <h3 v-for="a in record.balances">
-              {{to_ticker(a.asset)}}: {{commy(getAsset(a.asset))}} 
-              &nbsp;
-              <span class="badge badge-success layer-faucet" @click="call('onchainFaucet', {amount: uncommy(prompt('How much you want to get?')), asset: a.asset })">faucet</span>
-            </h3>
-          </div>
-          <div v-else>
-            <h4 style="display:inline-block">
-              {{onchain}}: not registered <span class="badge badge-success layer-faucet" @click="call('onchainFaucet', {amount: uncommy(prompt('How much you want to get?')), asset: 1 })">faucet</span>
-            </h4>
-          </div>
+
+
+          <h4 class="alert alert-primary" v-if="my_bank">This node is a bank: {{my_bank.handle}}</h4>
+          <h4 class="alert alert-primary" v-if="my_validator">This node is a validator: {{my_validator.username}}</h4>
 
           
-          <div class="alert alert-info" v-for="ch in channels">
+          <p style="word-wrap: break-word">Your address: <b>{{address}}</b></p>
+
+
+          <template v-if="outward.type == 'offchain'">
+
+          
+          <div class="alert alert-outline-info" v-for="ch in channels">
             <h2>
                 {{pubkeyToUser(ch.d.they_pubkey)}}
               </h2>
             <p>
               <p v-for="subch in ch.d.subchannels">
-                <button class="btn btn-outline-info" @click="mod={shown:true, ch:ch, subch: subch, credit: commy(subch.they_credit), rebalance: commy(subch.rebalance)}">{{to_ticker(subch.asset)}}: {{commy(ch.derived[subch.asset].payable)}}</button>&nbsp;
+                <button class="btn btn-outline-info" @click="mod={shown:true, ch:ch, subch: subch, credit: commy(subch.credit), rebalance: commy(subch.rebalance)}">{{to_ticker(subch.asset)}}: {{commy(ch.derived[subch.asset].payable)}}</button>&nbsp;
 
                 <VisualChannel :derived="ch.derived[subch.asset]"></VisualChannel>
 
@@ -294,17 +297,32 @@
             </p>
           </div>
           <template v-if="channels.length == 0">
-            <h3 class="alert alert-info"><a class="dotted" @click=go('hubs')>Add banks</a> to send & receive payments instantly.</h3>
+            <h3 class="alert alert-info"><a class="dotted" @click=go('banks')>Add banks</a> to send & receive payments instantly.</h3>
           </template>
-          <p style="word-wrap: break-word">Your Address: <b>{{address}}</b></p>
-          <ul class="nav nav-pills nav-fill">
-            <li class="nav-item">
-              <a @click="outward.type='offchain'" class="nav-link " v-bind:class="{active: outward.type=='offchain'}" href="javascript:void(0)">Offchain ⚡️</a>
-            </li>
-            <li class="nav-item">
-              <a @click="outward.type='onchain'" class="nav-link " v-bind:class="{active: outward.type=='onchain'}" href="javascript:void(0)">Onchain 🌐</a>
-            </li>
-          </ul>
+
+          </template>
+          <template v-else>
+
+
+          <div v-if="record">
+
+            <h3 v-for="a in record.balances">
+              {{to_ticker(a.asset)}}: {{commy(getAsset(a.asset))}} 
+              &nbsp;
+              <span class="badge badge-success layer-faucet" @click="call('onchainFaucet', {amount: uncommy(prompt('How much you want to get?')), asset: a.asset })">faucet</span>
+            </h3>
+          </div>
+
+
+          <div v-else>
+            <h4 style="display:inline-block">
+              {{onchain}}: not registered <span class="badge badge-success layer-faucet" @click="call('onchainFaucet', {amount: uncommy(prompt('How much you want to get?')), asset: 1 })">faucet</span>
+            </h4>
+          </div>
+          </template>
+
+
+          
           <p>
             <div class="input-group" style="width:300px">
               <input type="text" class="form-control small-input" v-model="outward.address" :disabled="['none','amount'].includes(outward_editable)" placeholder="Address" aria-describedby="basic-addon2" @input="updateRoutes">
@@ -355,17 +373,17 @@
           </template>
           <template v-else>
 
-            <div v-if="parsedAddress.hubs">
-              <h5>Choose their bank:</h5>
+            <div v-if="parsedAddress.banks">
+              <h5>Choose a bank or :</h5>
 
 
               <div class="radio">
                 <label>
-                  <input type="radio" :value="0" v-model="outward.hub"> Deposit to {{onchain}} balance</label>
+                  <input type="radio" :value="0" v-model="outward.bank"> Deposit to {{onchain}}</label>
               </div>
-              <div class="radio" v-for="id in parsedAddress.hubs">
+              <div class="radio" v-for="id in parsedAddress.banks">
                 <label>
-                  <input type="radio" :value="id" v-model="outward.hub"> {{to_user(id)}}</label>
+                  <input type="radio" :value="id" v-model="outward.bank"> {{to_user(id)}}</label>
               </div>
             </div>
             <p>
@@ -375,7 +393,7 @@
             <table v-if="events.length > 0" class="table">
               <thead>
                 <tr>
-                  <th width="5%">Block #</th>
+                  <th width="5%">Block</th>
                   <th width="65%">Details</th>
                 </tr>
               </thead>
@@ -396,18 +414,18 @@
           <button class="btn btn-lg btn-outline-primary btn-block step-login" id="login" type="submit">Generate Wallet</button>
         </form>
       </div>
-      <div v-else-if="tab=='hubs'">
+      <div v-else-if="tab=='banks'">
         <p>Banks inside Fairlayer are provably-solvent by design. Your device always stores a cryptographic dispute proof in case you need to get your assets back. Choose your banks based on people and businesses you transact with, your location and their track record. If a bank is compromised you may lose your uninsured balance, so don't forget to request insurance.</p>
-        <template v-for="u in K.hubs">
+        <template v-for="u in K.banks">
           <h1>{{u.handle}}</h1>
           <!--<img v-bind:src="'/img/icons/' + u.id +'.jpg'">-->
           <small>Created at {{new Date(u.createdAt*1000).toDateString()}}</small>
           <p>Fees: {{bpsToPercent(u.fee_bps)}}</p>
           <small><a :href="u.website">{{u.website}}</a></small>
           <p v-if="PK">
-            <button v-if="PK.usedHubs.includes(u.id)" class="btn btn-outline-danger" @click="call('toggleHub', {id: u.id})">Close Account</button>
-            <button v-else-if="my_hub && my_hub.id==u.id" class="btn btn-outline-success">It's you</button>
-            <button v-else class="btn btn-outline-success" @click="call('toggleHub', {id: u.id})">Open an Account</button>
+            <button v-if="PK.usedBanks.includes(u.id)" class="btn btn-outline-danger" @click="call('toggleBank', {id: u.id})">Close Account</button>
+            <button v-else-if="my_bank && my_bank.id==u.id" class="btn btn-outline-success">It's you</button>
+            <button v-else class="btn btn-outline-success" @click="call('toggleBank', {id: u.id})">Open an Account</button>
           </p>
         </template>
       </div>
@@ -446,32 +464,32 @@
           <h2>Create a Bank</h2>
           <p>
             <label for="comment">Handle:</label>
-            <input class="form-control" v-model="new_hub.handle" rows="2" placeholder="newhub"></input>
+            <input class="form-control" v-model="new_bank.handle" rows="2" placeholder="newbank"></input>
           </p>
           <p>
             <label for="comment">Fee (in basis points, 10 is 0.10%):</label>
-            <input class="form-control" v-model="new_hub.fee_bps" rows="2" id="comment"></input>
+            <input class="form-control" v-model="new_bank.fee_bps" rows="2" id="comment"></input>
           </p>
           <p>
             <label for="comment">Fairlayer-compatible RPC:</label>
-            <input class="form-control" v-model="new_hub.location" rows="2"></input>
+            <input class="form-control" v-model="new_bank.location" rows="2"></input>
           </p>
           <p>
             <label for="comment">Routes to add (their bank id, route agreement in hex):</label>
-            <input class="form-control" v-model="new_hub.add_routes" rows="2"></input>
+            <input class="form-control" v-model="new_bank.add_routes" rows="2"></input>
           </p>
           <p>
             <label for="comment">Routes to remove (comma separated ids):</label>
-            <input class="form-control" v-model="new_hub.remove_routes" rows="2"></input>
+            <input class="form-control" v-model="new_bank.remove_routes" rows="2"></input>
           </p>
-          <p v-if="record && !my_hub">
-            <button class="btn btn-outline-success" @click="call('createHub', new_hub)">Create Bank 🌐</button>
+          <p v-if="record && !my_bank">
+            <button class="btn btn-outline-success" @click="call('createBank', new_bank)">Create Bank 🌐</button>
           </p>
-          <p v-else-if="my_hub"><b>You are already a bank.</b></p>
+          <p v-else-if="my_bank"><b>You are already a bank.</b></p>
           <p v-else>In order to create your own asset you must have a registered account with FRD balance.</p>
           <div class="alert alert-primary">After execution this account will be marked as a bank. Do not use this account for any other purposes.</div>
         </div>
-        <svg width="800" height="600" id="hubgraph"></svg>
+        <svg width="800" height="600" id="bankgraph"></svg>
       </div>
       <div v-else-if="tab=='install'">
         <h4>Web Wallet (optimized for convenience)</h4>
@@ -566,7 +584,7 @@
                     <span v-else-if="d[0]=='createOrder'" class="badge badge-dark">Created order {{commy(d[2])}} {{to_ticker(d[1])}} for {{to_ticker(d[3])}}</span>
                     <span v-else-if="d[0]=='cancelOrder'" class="badge badge-dark">Cancelled order {{d[1]}}</span>
                     <span v-else-if="d[0]=='createAsset'" class="badge badge-dark">Created {{commy(d[2])}} of asset {{d[1]}}</span>
-                    <span v-else-if="d[0]=='createHub'" class="badge badge-dark">Created bank {{d[1]}}</span>
+                    <span v-else-if="d[0]=='createBank'" class="badge badge-dark">Created bank {{d[1]}}</span>
                   </template>
                 </td>
               </tr>
@@ -687,7 +705,7 @@
                   <h4>Information</h4>
                   <p>Payable: {{commy(derived.payable)}} <span class="badge badge-success bank-faucet" @click="call('withChannel', {they_pubkey: mod.ch.d.they_pubkey, op: 'testnet', action: 'faucet', asset: mod.subch.asset, amount: uncommy(prompt('How much you want to get?')) })">Use faucet</span></p>
                   <p>Receivable: {{commy(derived.they_payable)}}</p>
-                  <p>Insured: {{commy(derived.insured)}} <span v-if="record" class="badge badge-danger" @click="a=prompt(`How much to withdraw to onchain?`);if (a) {call('withChannel', {they_pubkey: mod.ch.d.they_pubkey, asset: mod.subch.asset, op: 'withdraw', amount: uncommy(a)})};">Withdraw</span>&nbsp;<span  v-if="record"  class="badge badge-danger" @click="mod.shown=false;outward.address=address;updateRoutes();outward.type='onchain';outward.asset=mod.subch.asset;outward.hub = mod.ch.partner;">Deposit</span>
+                  <p>Insured: {{commy(derived.insured)}} <span v-if="record" class="badge badge-danger" @click="a=prompt(`How much to withdraw to onchain?`);if (a) {call('withChannel', {they_pubkey: mod.ch.d.they_pubkey, asset: mod.subch.asset, op: 'withdraw', amount: uncommy(a)})};">Withdraw</span>&nbsp;<span  v-if="record"  class="badge badge-danger" @click="mod.shown=false;outward.address=address;updateRoutes();outward.type='onchain';outward.asset=mod.subch.asset;outward.bank = mod.ch.partner;">Deposit</span>
                   </p>
 
                   <p v-if="mod.subch.withdrawal_amount > 0">Pending withdrawal from you: {{commy(mod.subch.withdrawal_amount)}}</p>

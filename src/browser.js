@@ -9,10 +9,10 @@ const isHeadless = () => {
   // || me.browser.readyState != 1
 }
 
-// Flush an object to browser websocket. Send force=false for lazy react (for high-tps nodes like hubs)
+// Flush an object to browser websocket. Send force=false for lazy react (for high-tps nodes like banks)
 react = async (result) => {
-  // hubs dont react OR no alive browser socket
-  if (me.my_hub && !result.force) {
+  // banks dont react OR no alive browser socket
+  if (me.my_bank && !result.force) {
     return //l('No working me.browser')
   }
 
@@ -37,7 +37,7 @@ react = async (result) => {
 
     //l('Payments')
 
-    // returns channels with supported hubs
+    // returns channels with supported banks
 
     result.channels = []
 

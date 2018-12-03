@@ -44,8 +44,8 @@ const payMonkey = async (on_server, counter = 1) => {
 
 let run = async () => {
   if (base_port > 8000) {
-    // add first hub by default and open limit
-    //PK.usedHubs.push(1)
+    // add first bank by default and open limit
+    //PK.usedBanks.push(1)
 
     setTimeout(() => {}, 4000)
   }
@@ -73,7 +73,7 @@ let run = async () => {
     let loc = on_server
       ? `wss://fairlayer.com:${base_port + 100}`
       : `ws://${localhost}:${base_port + 100}`
-    require('../src/internal_rpc/create_hub')({
+    require('../src/internal_rpc/create_bank')({
       fee_bps: 5,
       handle: stubs[base_port - 8001],
       location: loc,
@@ -92,7 +92,7 @@ let run = async () => {
 
       await require('../src/internal_rpc/with_channel')({
         op: 'setLimits',
-        they_pubkey: K.hubs[0].pubkey,
+        they_pubkey: K.banks[0].pubkey,
         asset: 1,
         rebalance: K.rebalance,
         credit: K.credit
@@ -100,7 +100,7 @@ let run = async () => {
 
       await sleep(1000)
 
-      me.sendJSON(K.hubs[0], 'testnet', {
+      me.sendJSON(K.banks[0], 'testnet', {
         action: 'faucet',
         asset: 1,
         amount: 500000,
@@ -110,8 +110,8 @@ let run = async () => {
       l('Requesting faucet to ' + me.getAddress())
 
       if (me.record && me.record.id == 2) {
-        // withdraw 12.34 from hub and deposit 9.12 to 3 @ 1
-        let ch = await Channel.get(K.hubs[0].pubkey)
+        // withdraw 12.34 from bank and deposit 9.12 to 3 @ 1
+        let ch = await Channel.get(K.banks[0].pubkey)
 
         let withdrawn = await require('../src/internal_rpc/with_channel')({
           they_pubkey: toHex(ch.d.they_pubkey),
@@ -124,7 +124,7 @@ let run = async () => {
         require('../src/internal_rpc/external_deposit')({
           asset: 1,
           userId: 3,
-          hub: 1,
+          bank: 1,
           amount: 912
         })
       }
@@ -134,6 +134,7 @@ let run = async () => {
       payMonkey(on_server)
 
       // intended to fail
+
       me.payChannel({
         address:
           'BummAd9FuuYvjGWemSNfnMKVbTCQcfq2ZymYLt9NxxbLELj5cunk4iyTGqr5ya5GsD31HvZysH5241VaKeeycaJzDZKT56fs#DOOMEDTOFAIL',
@@ -150,7 +151,7 @@ let run = async () => {
 
   if (me.record.id == 1) {
     l('Scheduling e2e checks')
-    // after a while the hub checks environment, db counts etc and test fails if anything is unexpected
+    // after a while the bank checks environment, db counts etc and test fails if anything is unexpected
     setTimeout(async () => {
       // no need to run test on server
       if (on_server) return
@@ -210,7 +211,7 @@ let run = async () => {
   }
 
   if (me.record.id == 4) {
-    // trigger the dispute from hub
+    // trigger the dispute from bank
     //me.CHEAT_dontack = true
     //me.CHEAT_dontwithdraw = true
 

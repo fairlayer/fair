@@ -55,20 +55,20 @@ const Router = {
     let addr = await parseAddress(address)
     if (!addr) return []
 
-    let toArray = addr.hubs
+    let toArray = addr.banks
     let fromArray = []
     var found = []
 
-    if (me.my_hub && addr.hubs.includes(me.my_hub.id)) {
+    if (me.my_bank && addr.banks.includes(me.my_bank.id)) {
       // for faucet: return direct route as only option
       return [[1, []]]
     }
     // TODO: atomic multipath
 
     // where do we have enough amount in payable
-    for (let candidate of PK.usedHubs) {
-      let hub = K.hubs.find((h) => h.id == candidate)
-      let ch = await Channel.get(hub.pubkey)
+    for (let candidate of PK.usedBanks) {
+      let bank = K.banks.find((h) => h.id == candidate)
+      let ch = await Channel.get(bank.pubkey)
 
       if (!ch || !ch.derived[args.asset]) continue
 
@@ -115,9 +115,9 @@ const Router = {
       // calculate total fees of entire path
       var afterfees = 1
       for (let hop of route) {
-        let hub = K.hubs.find((h) => h.id == hop)
-        if (hub) {
-          afterfees *= 1 - hub.fee_bps / 10000
+        let bank = K.banks.find((h) => h.id == hop)
+        if (bank) {
+          afterfees *= 1 - bank.fee_bps / 10000
         }
       }
 

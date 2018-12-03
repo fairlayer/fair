@@ -6,7 +6,7 @@ module.exports = async (force = false) => {
   if (!me.my_validator && isHeadless() && !force) return
 
   if (K) {
-    cached_result.my_hub = me.my_hub
+    cached_result.my_bank = me.my_bank
 
     cached_result.my_validator = me.my_validator
 
@@ -33,8 +33,8 @@ module.exports = async (force = false) => {
           })
         },
         async () => {
-          for (var hub of cached_result.K.hubs) {
-            hub.sumForUser = await getInsuranceSumForUser(hub.id)
+          for (var bank of cached_result.K.banks) {
+            bank.sumForUser = await getInsuranceSumForUser(bank.id)
           }
         },
         async () => {

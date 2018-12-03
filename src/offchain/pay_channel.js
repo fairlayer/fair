@@ -45,7 +45,7 @@ module.exports = async (opts) => {
     if (!Number.isInteger(amount)) return 'NaN'
 
     if (!opts.chosenRoute) {
-      if (me.my_hub && addr.hubs.includes(me.my_hub.id)) {
+      if (me.my_bank && addr.banks.includes(me.my_bank.id)) {
         // just pay direct
         opts.chosenRoute = []
       } else {
@@ -55,7 +55,7 @@ module.exports = async (opts) => {
           asset: asset
         })
         if (!best[0]) {
-          //l('No route found:', best, addr.hubs)
+          //l('No route found:', best, addr.banks)
           return 'No route found:'
         } else {
           // first is the cheapest
@@ -88,9 +88,9 @@ module.exports = async (opts) => {
     // 2. encrypt msg for each hop in reverse order
     let reversed = opts.chosenRoute.reverse()
     for (let hop of reversed) {
-      let hub = K.hubs.find((h) => h.id == hop)
+      let bank = K.banks.find((h) => h.id == hop)
 
-      amount = beforeFee(amount, hub)
+      amount = beforeFee(amount, bank)
 
       onion = encrypt_box_json(
         {
@@ -100,10 +100,10 @@ module.exports = async (opts) => {
 
           unlocker: onion
         },
-        fromHex(hub.box_pubkey)
+        fromHex(bank.box_pubkey)
       )
 
-      nextHop = hub.pubkey
+      nextHop = bank.pubkey
     }
 
     // 3. now nextHop is equal our first hop, and amount includes all fees
@@ -119,7 +119,7 @@ module.exports = async (opts) => {
 
     // 4. do we have enough payable for this hop?
     if (amount > payable) {
-      if (me.my_hub) {
+      if (me.my_bank) {
         // ask to increase credit
         me.textMessage(
           ch.d.they_pubkey,

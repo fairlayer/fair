@@ -88,7 +88,7 @@ module.exports = async (datadir) => {
     account_creation_fee: 100,
 
     standalone_balance: 1000, // keep $10 on your own balance for unexpected onchain fees
-    hub_standalone_balance: 100000, // hub has higher operational costs, so $1k is safer for unexpected onchain fees
+    bank_standalone_balance: 100000, // bank has higher operational costs, so $1k is safer for unexpected onchain fees
 
     // up to X seconds, validators don't propose blocks if empty
     // the problem is all delayed actions also happen much later if no blocks made
@@ -97,10 +97,10 @@ module.exports = async (datadir) => {
     // each genesis is randomized
     prev_hash: toHex(crypto.randomBytes(32)), // toHex(Buffer.alloc(32)),
 
-    risk: 10000, // hubs usually withdraw after this amount
+    risk: 10000, // banks usually withdraw after this amount
 
+    credit: 50000000, // how much can a user lose if bank is insolvent?
     rebalance: 5000000, // rebalance after
-    credit: 50000000, // how much can a user lose if hub is insolvent?
 
     collected_fees: 0,
 
@@ -114,7 +114,7 @@ module.exports = async (datadir) => {
     max_amount: 300000000,
 
     validators: [],
-    hubs: [],
+    banks: [],
     flush_timeout: 250,
 
     cache_timeout: 3, //s, keep channel in memory since last use
@@ -129,7 +129,7 @@ module.exports = async (datadir) => {
     secret_len: 32,
 
     dispute_delay_for_users: 8, // in how many blocks disputes are considered final
-    dispute_delay_for_hubs: 4, // fast reaction is expected by hubs
+    dispute_delay_for_banks: 4, // fast reaction is expected by banks
 
     hashlock_exp: 16, // how many blocks (worst case scenario) a user needs to be a able to reveal secret
     hashlock_keepalive: 100, // for how many blocks onchain keeps it unlocked since reveal (it takes space on all fullnodes, so it must be deleted eventually)
@@ -154,17 +154,17 @@ module.exports = async (datadir) => {
   const base_rpc = local ? 'ws://' + localhost : 'wss://fairlayer.com'
   const base_web = local ? 'http://' + localhost : 'https://fairlayer.com'
 
-  // validators provide services: 1) build blocks 2) hubs 3) watchers 4) storage of vaults
+  // validators provide services: 1) build blocks 2) banks 3) watchers 4) storage of vaults
   l(note('New validators:'))
 
-  // create hub
-  const [hubValidator, hubSeed] = await createValidator(
+  // create bank
+  const [bankValidator, bankSeed] = await createValidator(
     'root',
     toHex(crypto.randomBytes(16)),
     `${base_rpc}:8100`,
     local ? 'http://' + localhost + ':8433' : 'https://fairlayer.com'
   )
-  K.validators.push(hubValidator)
+  K.validators.push(bankValidator)
 
   // create other validators
   for (const i of [8001, 8002, 8003]) {
@@ -176,8 +176,10 @@ module.exports = async (datadir) => {
     )
 
     const left =
-      Buffer.compare(fromHex(validator.pubkey), fromHex(hubValidator.pubkey)) ==
-      -1
+      Buffer.compare(
+        fromHex(validator.pubkey),
+        fromHex(bankValidator.pubkey)
+      ) == -1
 
     K.validators.push(validator)
 
@@ -206,8 +208,8 @@ module.exports = async (datadir) => {
   K.validators[3].shares = 1
   K.validators[3].platform = 'Google Cloud'
 
-  // set hub
-  K.hubs.push({
+  // set bank
+  K.banks.push({
     id: K.validators[0].id,
     location: K.validators[0].location,
     pubkey: K.validators[0].pubkey,
@@ -223,7 +225,7 @@ module.exports = async (datadir) => {
 
   // similar to https://en.wikipedia.org/wiki/Nostro_and_vostro_accounts
   // in fairlayer both parties are equally non-custodial (no one "holds" an account in another party)
-  // we don't expect more than 1-10k of hubs any time soon (there are about 10,000 traditional banks in the world)
+  // we don't expect more than 1-10k of banks any time soon (there are about 10,000 traditional banks in the world)
   // so in-JSON storage is fine
   K.routes = []
 
@@ -233,14 +235,14 @@ module.exports = async (datadir) => {
 
   // testing stubs to check dijkstra
   if (argv.generate_airports) {
-    let addHub = (data) => {
-      data.id = K.hubs.length + 1000
+    let addBank = (data) => {
+      data.id = K.banks.length + 1000
       data.fee_bps = Math.round(Math.random() * 500)
 
       data.pubkey = crypto.randomBytes(32)
       data.createdAt = ts()
       data.location = 'ws://127.0.0.1:8100'
-      K.hubs.push(data)
+      K.banks.push(data)
       return data
     }
 
@@ -256,12 +258,12 @@ module.exports = async (datadir) => {
       if (parts[7] != '0') continue
 
       //from 2 to 4
-      let from = K.hubs.find((h) => h.handle == parts[2])
-      let to = K.hubs.find((h) => h.handle == parts[4])
+      let from = K.banks.find((h) => h.handle == parts[2])
+      let to = K.banks.find((h) => h.handle == parts[4])
 
-      // if not exists, create stub-hubs
-      if (!from) from = addHub({handle: parts[2]})
-      if (!to) to = addHub({handle: parts[4]})
+      // if not exists, create stub-banks
+      if (!from) from = addBank({handle: parts[2]})
+      if (!to) to = addBank({handle: parts[4]})
 
       if (Router.getRouteIndex(from.id, to.id) == -1) {
         // only unique routes are saved
@@ -290,12 +292,12 @@ module.exports = async (datadir) => {
   // private config
   const PK = {
     username: 'root',
-    seed: hubSeed.toString('hex'),
+    seed: bankSeed.toString('hex'),
     auth_code: toHex(crypto.randomBytes(32)),
 
     pending_batch: null,
 
-    usedHubs: [1],
+    usedBanks: [1],
     usedAssets: [1, 2]
   }
 
@@ -303,7 +305,7 @@ module.exports = async (datadir) => {
   await writeGenesisOffchainConfig(PK, datadir)
 
   l(
-    `Genesis done (${datadir}). Hubs ${K.hubs.length}, routes ${
+    `Genesis done (${datadir}). Banks ${K.banks.length}, routes ${
       K.routes.length
     }, quitting`
   )

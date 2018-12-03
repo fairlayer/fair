@@ -320,8 +320,8 @@ perf.stats = (label) => {
   }
 }
 
-beforeFee = (amount, hub) => {
-  new_amount = Math.round((amount / (10000 - hub.fee_bps)) * 10000)
+beforeFee = (amount, bank) => {
+  new_amount = Math.round((amount / (10000 - bank.fee_bps)) * 10000)
   if (new_amount == amount) new_amount = amount + K.min_fee
   if (new_amount > amount + K.max_fee) new_amount = amount + K.max_fee
   amount = new_amount
@@ -329,10 +329,10 @@ beforeFee = (amount, hub) => {
   return new_amount
 }
 
-afterFees = (amount, hubs) => {
-  if (!(hubs instanceof Array)) hubs = [hubs]
-  for (var hub of hubs) {
-    let taken_fee = Math.round((amount * hub.fee_bps) / 10000)
+afterFees = (amount, banks) => {
+  if (!(banks instanceof Array)) banks = [banks]
+  for (var bank of banks) {
+    let taken_fee = Math.round((amount * bank.fee_bps) / 10000)
     if (taken_fee == 0) taken_fee = K.min_fee
     if (taken_fee > K.max_fee) taken_fee = K.max_fee
     amount = amount - taken_fee

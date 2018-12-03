@@ -34,10 +34,10 @@ module.exports = async (pubkey, doRefresh = true) => {
     }
 
     /*      online:
-        me.users[pubkey] &&
-        (me.users[pubkey].readyState == 1 ||
-          (me.users[pubkey].instance &&
-            me.users[pubkey].instance.readyState == 1))
+        me.sockets[pubkey] &&
+        (me.sockets[pubkey].readyState == 1 ||
+          (me.sockets[pubkey].instance &&
+            me.sockets[pubkey].instance.readyState == 1))
 
 */
 
@@ -49,11 +49,11 @@ module.exports = async (pubkey, doRefresh = true) => {
     /*
       let defaults = {}
 
-      if (me.my_hub) {
+      if (me.my_bank) {
         defaults.they_rebalance = K.rebalance
         defaults.they_credit = K.credit
       }
-      if (my_hub(pubkey)) {
+      if (my_bank(pubkey)) {
         defaults.rebalance = K.rebalance
         defaults.credit = K.credit
       }
@@ -105,7 +105,7 @@ module.exports = async (pubkey, doRefresh = true) => {
         [Op.or]: [{type: {[Op.ne]: 'del'}}, {status: {[Op.ne]: 'ack'}}]
       },
       limit: 3000,
-      // explicit order because of postgres https://github.com/sequelize/sequelize/issues/9289
+      // explicit order because of postgres https://gitbank.com/sequelize/sequelize/issues/9289
       order: [['id', 'ASC']]
     })
 

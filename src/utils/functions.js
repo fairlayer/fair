@@ -48,12 +48,12 @@ const parseAddress = async (address) => {
     }
   }
 
-  // both pubkeys and hub list must be present
+  // both pubkeys and bank list must be present
   if (parts[0] && parts[0].length == 32 && parts[1] && parts[1].length == 32) {
     return {
       pubkey: parts[0],
       box_pubkey: parts[1],
-      hubs: parts[2],
+      banks: parts[2],
       invoice: invoice,
       address: addr
     }
@@ -108,7 +108,7 @@ const generateMonkeys = async () => {
     const me = new Me()
     await me.init(username, seed)
     // all monkeys use first bank by default
-    PK.usedHubs = [1]
+    PK.usedBanks = [1]
     PK.usedAssets = [1, 2]
     addr.push(me.getAddress())
   }
@@ -196,7 +196,7 @@ const getInsuranceBetween = async function(user1, user2) {
 }
 
 // you cannot really reason about who owns what by looking at onchain db only (w/o offdelta)
-// but the hubs with higher sum(insurance) locked around them are more trustworthy
+// but the banks with higher sum(insurance) locked around them are more trustworthy
 // and users probably own most part of insurances around them
 const getInsuranceSumForUser = async function(id, asset = 1) {
   return 0
@@ -290,7 +290,7 @@ const userPayDebts = async (user, asset, parsed_tx) => {
     // otherwise the nodes won't be able to send onchain tx
     const chargable =
       asset == 1
-        ? userAsset(user, asset) - K.hub_standalone_balance
+        ? userAsset(user, asset) - K.bank_standalone_balance
         : userAsset(user, asset)
 
     if (d.amount_left <= userAsset(user, asset)) {

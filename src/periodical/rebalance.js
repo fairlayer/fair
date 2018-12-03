@@ -1,20 +1,20 @@
 /*
-The most important job of the hub is to rebalance assets once in a while.
-1. the hub finds who wants to insure their uninsured balances. They can learn automatically (given soft limit) or manually (Request Insurance in the wallet)
-2. now the hub tries to find the total amount of insurance needed from the net-spenders who are currently online
+The most important job of the bank is to rebalance assets once in a while.
+1. the bank finds who wants to insure their uninsured balances. They can learn automatically (given soft limit) or manually (Request Insurance in the wallet)
+2. now the bank tries to find the total amount of insurance needed from the net-spenders who are currently online
 3. it's up to the alg implementation to start disputes with net-spenders who are offline for too long
-4. if hub fails to find enough net-spenders right now, they may drop some low value or high value net-receivers to match the numbers on both sides
+4. if bank fails to find enough net-spenders right now, they may drop some low value or high value net-receivers to match the numbers on both sides
 5. packs withdrawals and deposits into one large rebalance batch and broadcasts onchain
 
 Current implementation is super simple and straightforward. There's huge room for improvement:
 * smart learning based on balances over time not on balance at the time of matching
 * use as little withdrawals/deposits to transfer as much as possible volume
 * have different schedule for different assets, e.g. rebalance FRD every 1 block but rare assets every 1k blocks
-* often hub needs to request insurance from another hub (cross-hub payments).
+* often bank needs to request insurance from another bank (cross-bank payments).
 
 General recommendations:
 1. assets stuck in a dispute is a waste. It's better to do everything by mutual agreement as much as possible, w/o suffering dispute delays and locked up liquidity
-2. the hub must store as little funds on their @onchain balances as possible. So once hub withdraw from net-spenders they should immediately deposit it to net-receiver.
+2. the bank must store as little funds on their @onchain balances as possible. So once bank withdraw from net-spenders they should immediately deposit it to net-receiver.
 
 */
 
@@ -27,7 +27,7 @@ const rebalance = async function(asset) {
   let netSpenders = []
   let netReceivers = []
 
-  let minRisk = 100 //K.risk
+  let minRisk = 500
 
   for (let d of deltas) {
     await section(['use', d.they_pubkey], async () => {
@@ -50,7 +50,7 @@ const rebalance = async function(asset) {
         //l('Adding output for our promise ', ch.d.they_pubkey)
         netReceivers.push(ch)
       } else if (derived.insured >= minRisk) {
-        if (me.users[ch.d.they_pubkey]) {
+        if (me.sockets[ch.d.they_pubkey]) {
           // they either get added in this rebalance or next one
           //l('Request withdraw withdraw: ', derived)
           netSpenders.push(withdraw(ch, subch, derived.insured))
@@ -100,7 +100,7 @@ const rebalance = async function(asset) {
   )
 
   // dont let our FRD onchain balance go lower than that
-  let safety = asset == 1 ? K.hub_standalone_balance : 0
+  let safety = asset == 1 ? K.bank_standalone_balance : 0
 
   // 4. now do our best to cover net receivers
   for (let ch of netReceivers) {

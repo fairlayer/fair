@@ -20,7 +20,7 @@ module.exports = (i) => {
         'cancelOrder',
 
         'createAsset',
-        'createHub',
+        'createBank',
 
         'revealSecrets', // reveal secrets if partner has not acked our del settle
         'vote',

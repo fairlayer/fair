@@ -13,8 +13,8 @@ module.exports = (args) => {
   if (json.remove_routes && json.remove_routes.length > 0) {
     json.remove_routes = json.remove_routes.split(',').map((f) => parseInt(f))
   }
-  l('create hub json ', json)
+  l('create bank json ', json)
 
-  me.batchAdd('createHub', stringify(json))
+  me.batchAdd('createBank', stringify(json))
   return {}
 }

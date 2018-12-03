@@ -1,5 +1,5 @@
 // This method receives set of transitions by another party and applies it
-// hubs normally pass forward payments, end users normally decode payloads and unlock hashlocks
+// banks normally pass forward payments, end users normally decode payloads and unlock hashlocks
 module.exports = async (pubkey, ackSig, transitions, debug) => {
   let ch = await Channel.get(pubkey)
   ch.last_used = ts()
@@ -33,7 +33,7 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
   let theirState = debug[1] ? r(fromHex(debug[1])) : false
   prettyState(theirState)
 
-  let mismatch = (reason) => {
+  let mismatch = (reason, lastState) => {
     l(`=========${reason}. Rollback ${ch.d.rollback_nonce}
   Current state 
   ${ascii_state(ch.state)}
@@ -43,6 +43,7 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
 
   Their current state
   ${theirState ? ascii_state(theirState) : '-'}
+  ${lastState ? ascii_state(lastState) : '-'}
 
   Their signed state
   ${ascii_state(theirSignedState)}
@@ -183,10 +184,10 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
       let nextState = refresh(ch)
 
       if (!deltaVerify(ch.d, nextState, ackSig)) {
-        loff('error: Invalid state sig add')
-        let theirState = r(fromHex(t[3]))
-        prettyState(theirState)
-        mismatch('error: Invalid state sig add', theirState)
+        let lastState = r(fromHex(t[3]))
+        prettyState(lastState)
+
+        mismatch('error: Invalid state sig add', lastState)
 
         break
       }
@@ -209,8 +210,8 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
         failure = 'WrongAsset'
       }
 
-      if (!me.my_hub && !box_data.secret) {
-        failure = 'NotHubNotReceiver'
+      if (!me.my_bank && !box_data.secret) {
+        failure = 'NotBankNotReceiver'
       }
 
       let reveal_until = K.usable_blocks + K.hashlock_exp
@@ -226,7 +227,7 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
         inward_hl.type = 'del'
         inward_hl.status = 'new'
         inward_hl.outcome_type = 'outcomeCapacity'
-        inward_hl.outcome = bin(failure)
+        inward_hl.outcome = failure
       } else if (box_data.secret) {
         // we are final destination, no unlocker to pass
 
@@ -242,10 +243,10 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
         // secret doesn't fit?
         if (sha3(box_data.secret).equals(hash)) {
           inward_hl.outcome_type = 'outcomeSecret'
-          inward_hl.outcome = box_data.secret
+          inward_hl.outcome = toHex(box_data.secret)
         } else {
           inward_hl.outcome_type = 'outcomeCapacity'
-          inward_hl.outcome = bin('BadSecret')
+          inward_hl.outcome = 'BadSecret'
         }
 
         inward_hl.type = 'del'
@@ -259,9 +260,9 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
         // SECURITY: if after timeout the del is not ack, go to blockchain ASAP to reveal the preimage. See ensure_ack
 
         // no need to add to flushable - secret will be returned during ack to sender anyway
-      } else if (me.my_hub && box_data.nextHop) {
+      } else if (me.my_bank && box_data.nextHop) {
         //loff(`Forward ${amount} to ${box_data.nextHop}`)
-        let outward_amount = afterFees(amount, me.my_hub)
+        let outward_amount = afterFees(amount, me.my_bank)
 
         // ensure it's equal what they expect us to pay
         let nextHop = fromHex(box_data.nextHop)
@@ -275,9 +276,13 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
           inward_hl.outcome_type = 'outcomeDisputed'
         }
 
+        if (!me.sockets[dest_ch.d.they_pubkey]) {
+          //inward_hl.outcome_type = 'outcomeOffline'
+        }
+
         if (inward_hl.outcome_type) {
           l('Failed to mediate')
-          inward_hl.outcome = bin(`id`)
+          inward_hl.outcome = `${me.record.id}`
           // fail right now
           inward_hl.type = 'del'
           //t[0] == 'add' ? 'del' : 'delrisk'
@@ -319,16 +324,19 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
         inward_hl.type = 'del'
         inward_hl.status = 'new'
         inward_hl.outcome_type = 'outcomeCapacity'
-        inward_hl.outcome = bin('UnknownError')
+        inward_hl.outcome = 'UnknownError'
       }
 
       await inward_hl.save()
     } else if (t[0] == 'del' || t[0] == 'delrisk') {
       var [asset, hash, outcome_type, outcome] = t[1]
-      ;[hash, outcome] = [hash, outcome].map(fromHex)
+      hash = fromHex(hash)
 
       // try to parse outcome as secret and check its hash
-      if (outcome_type == 'outcomeSecret' && sha3(outcome).equals(hash)) {
+      if (
+        outcome_type == 'outcomeSecret' &&
+        sha3(fromHex(outcome)).equals(hash)
+      ) {
         var valid = true
       } else {
         // otherwise it is a reason why mediation failed
@@ -363,16 +371,18 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
 
       ch.d.dispute_nonce++
       if (!deltaVerify(ch.d, refresh(ch), ackSig)) {
-        fatal('error: Invalid state sig at del')
+        let lastState = r(fromHex(t[3]))
+        prettyState(lastState)
+
+        mismatch('error: Invalid state sig at del', lastState)
         break
       }
 
       me.metrics[valid ? 'settle' : 'fail'].current++
 
       await outward_hl.save()
-      //l('Saved as delack', outward_hl)
 
-      // if there's an inward channel for this, we are hub
+      // if there's an inward channel for this, we are bank
       if (outward_hl.inward_pubkey) {
         //await section(['use', outward_hl.inward_pubkey], async () => {
         var inward_ch = await Channel.get(outward_hl.inward_pubkey)
@@ -430,14 +440,12 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
             false
           )
         } else {
-          // if not a hub, we are sender
+          // if not a bank, we are sender
           react(
             {
               payment_outcome: 'fail',
               alert:
-                'Payment failed, try another route: ' +
-                outcome_type +
-                outcome.toString()
+                'Payment failed, try another route: ' + outcome_type + outcome
             },
             false
           )
@@ -453,8 +461,6 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
       }
     }
   }
-
-  //refresh(ch)
 
   // since we applied partner's diffs, all we need is to add the diff of our own transitions
   if (ch.d.rollback_nonce > 0) {
