@@ -186,7 +186,7 @@
         <p><b>Deposit X into a channel (onchain)</b>: increase <b>insurance balance</b> by this amount and also increase <b>ondelta</b> if you deposit to the Left user.</p>
         <p><b>Withdraw X from a channel (onchain)</b>: decrease insurance by this amount and also decrease <b>ondelta</b> if you withdraw from the Left user.</p>
         <p><b>Make instant payment (offchain)</b>: move the <b>offdelta slider towards sender</b> - to the left if you are Left user and to the right if you're Right.</p>
-        <p><b>Extend capacity with credit (offchain):</b> Extended Lightning allows opening a credit line in either direction. This will increase <b>payable</b> of another party, i.e. your receivability, and <a href="https://medium.com/fairlayer/xln-extended-lightning-network-80fa7acf80f3">solves the inward capacity problem.</a></p>
+        <p><b>Extend capacity with credit (offchain):</b> Extended Lightning allows opening a credit line in either direction. This will increase <b>available</b> of another party, i.e. your receivability, and <a href="https://medium.com/fairlayer/xln-extended-lightning-network-80fa7acf80f3">solves the inward capacity problem.</a></p>
 
         <div class="alert alert-secondary" v-for="democh in demochannels">
           Insurance balance (onchain): <input style="width:50px" v-model="democh.ins_balance">
@@ -210,10 +210,10 @@
 
           <div>
 
-          <b>(Left)</b> Credit: <input style="width:50px"   v-model="democh.credit"> / Payable: {{resolveDemo(democh).payable}} / Insured: {{resolveDemo(democh).insured}} / Uninsured: {{resolveDemo(democh).uninsured}}
+          <b>(Left)</b> Credit: <input style="width:50px"   v-model="democh.credit"> / Payable: {{resolveDemo(democh).available}} / Insured: {{resolveDemo(democh).insured}} / Uninsured: {{resolveDemo(democh).uninsured}}
 
 
-          <span style="float:right"><b>(Right)</b> Credit: <input  style="width:50px" v-model="democh.they_credit"> / Payable: {{resolveDemo(democh).they_payable}} / Insured: {{resolveDemo(democh).they_insured}} / Uninsured: {{resolveDemo(democh).they_uninsured}}</span>
+          <span style="float:right"><b>(Right)</b> Credit: <input  style="width:50px" v-model="democh.they_credit"> / Payable: {{resolveDemo(democh).they_available}} / Insured: {{resolveDemo(democh).they_insured}} / Uninsured: {{resolveDemo(democh).they_uninsured}}</span>
 
           </div>
 
@@ -276,7 +276,7 @@
               </h2>
             <p>
               <p v-for="subch in ch.d.subchannels">
-                <button class="btn btn-outline-info" @click="mod={shown:true, ch:ch, subch: subch, credit: commy(subch.credit), rebalance: commy(subch.rebalance)}">{{to_ticker(subch.asset)}}: {{commy(ch.derived[subch.asset].payable)}}</button>&nbsp;
+                <button class="btn btn-outline-info" @click="mod={shown:true, ch:ch, subch: subch, credit: commy(subch.credit), rebalance: commy(subch.rebalance)}">{{to_ticker(subch.asset)}}: {{commy(ch.derived[subch.asset].available)}}</button>&nbsp;
 
                 <VisualChannel :derived="ch.derived[subch.asset]"></VisualChannel>
 
@@ -419,7 +419,7 @@
         <template v-for="u in K.banks">
           <h1>{{u.handle}}</h1>
           <!--<img v-bind:src="'/img/icons/' + u.id +'.jpg'">-->
-          <small>Created at {{new Date(u.createdAt*1000).toDateString()}}</small>
+          <small>Created at {{new Date(u.createdAt).toDateString()}}</small>
           <p>Fees: {{bpsToPercent(u.fee_bps)}}</p>
           <small><a :href="u.website">{{u.website}}</a></small>
           <p v-if="PK">
@@ -566,7 +566,7 @@
                 <td>{{b.id}}</td>
                 <td>{{b.prev_hash.substr(0,10)}}</td>
                 <td>{{b.hash.substr(0,10)}}</td>
-                <td>{{b.built_by}} ({{(new Date(b.timestamp*1000)).toLocaleString()}})</td>
+                <td>{{b.built_by}} ({{(new Date(b.timestamp)).toLocaleString()}})</td>
                 <td>{{b.total_tx}}</td>
               </tr>
               <tr v-for="batch in (b.meta && b.meta.parsed_tx)">
@@ -703,8 +703,8 @@
               <div class="row">
                 <div class="col-md-6">
                   <h4>Information</h4>
-                  <p>Payable: {{commy(derived.payable)}} <span class="badge badge-success bank-faucet" @click="call('withChannel', {they_pubkey: mod.ch.d.they_pubkey, op: 'testnet', action: 'faucet', asset: mod.subch.asset, amount: uncommy(prompt('How much you want to get?')) })">Use faucet</span></p>
-                  <p>Receivable: {{commy(derived.they_payable)}}</p>
+                  <p>Payable: {{commy(derived.available)}} <span class="badge badge-success bank-faucet" @click="call('withChannel', {they_pubkey: mod.ch.d.they_pubkey, op: 'testnet', action: 'faucet', asset: mod.subch.asset, amount: uncommy(prompt('How much you want to get?')) })">Use faucet</span></p>
+                  <p>Receivable: {{commy(derived.they_available)}}</p>
                   <p>Insured: {{commy(derived.insured)}} <span v-if="record" class="badge badge-danger" @click="a=prompt(`How much to withdraw to onchain?`);if (a) {call('withChannel', {they_pubkey: mod.ch.d.they_pubkey, asset: mod.subch.asset, op: 'withdraw', amount: uncommy(a)})};">Withdraw</span>&nbsp;<span  v-if="record"  class="badge badge-danger" @click="mod.shown=false;outward.address=address;updateRoutes();outward.type='onchain';outward.asset=mod.subch.asset;outward.bank = mod.ch.partner;">Deposit</span>
                   </p>
 

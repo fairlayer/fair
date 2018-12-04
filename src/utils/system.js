@@ -282,7 +282,7 @@ sha3 = (a) =>
 js_sha3 = require('js-sha3')
 sha3 = (a) => bin(js_sha3.sha3_256.digest(bin(a)))
 
-ts = () => Math.round(new Date() / 1000)
+ts = () => Math.round(new Date())
 
 hrtime = () => {
   let hrTime = process.hrtime()

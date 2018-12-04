@@ -4,7 +4,10 @@ module.exports = async (dep) => {
   } else if (dep.address && dep.address.length > 0) {
     var addr = await parseAddress(dep.address)
 
-    let user = await User.findOne({where: {pubkey: addr.pubkey}})
+    let user = await User.findOne({
+      where: {pubkey: addr.pubkey},
+      include: [Balance]
+    })
     var userId = user ? user.id : addr.pubkey
   }
 

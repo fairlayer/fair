@@ -1,4 +1,6 @@
 module.exports = (args) => {
+  return
+
   let amount = parseInt(args.amount)
 
   // 256**6, buffer max size

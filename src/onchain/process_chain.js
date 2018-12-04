@@ -133,11 +133,8 @@ module.exports = async (args) => {
       cached_result.sync_tx_started_at = false
     } else {
       l('So many blocks. Syncing one more time')
-      //Periodical.syncChain()
     }
 
-    //
-    //Periodical.updateCache()
     react({})
 
     // Ensure our last broadcasted batch was added
@@ -149,7 +146,7 @@ module.exports = async (args) => {
         force: true
       })
 
-      me.send(nextValidator(true), 'tx', r([raw]))
+      me.send(nextValidator(true), 'add_batch', r([raw]))
       return
     }
 

@@ -65,8 +65,8 @@ class Me {
     this.box = nacl.box.keyPair.fromSecretKey(this.seed)
 
     this.last_react = new Date()
-    this.last_sync_changes = ts()
-    this.last_sync_chain = ts()
+    this.last_sync_changes = 0
+    this.last_sync_chain = 0
 
     PK.username = username
     PK.seed = seed.toString('hex')
@@ -110,7 +110,7 @@ class Me {
   }
 
   batchAdd(method, args) {
-    if (!me.record || !me.record.id) {
+    if (!me.record) {
       react({alert: "You can't do onchain tx if you are not registred"})
       return false
     }
@@ -149,14 +149,7 @@ class Me {
   // compiles signed tx from current batch, not state changing
   async batch_estimate(opts = {}) {
     // we select our record again to get our current nonce
-    if (!me.id || me.batch.length == 0) {
-      return false
-    }
-
-    let record = await getUserByIdOrKey(bin(me.id.publicKey))
-    if (record && record.id) {
-      me.record = record
-    } else {
+    if (!me.id || !me.record || me.batch.length == 0) {
       return false
     }
 
@@ -214,11 +207,12 @@ class Me {
 
   async start() {
     // in json pubkeys are in hex
-    let record = await getUserByIdOrKey(bin(me.id.publicKey))
+    me.record = await User.findOne({
+      where: {pubkey: bin(me.id.publicKey)},
+      include: [Balance]
+    })
 
-    if (record && record.id) {
-      me.record = record
-
+    if (me.record) {
       me.my_validator = Validators.find((m) => m.id == me.record.id)
       me.my_bank = K.banks.find((m) => m.id == me.record.id)
     }
@@ -359,6 +353,12 @@ class Me {
           return false
         }
       }
+    }
+
+    if (me.my_validator == m) {
+      // send to self internally
+      RPC.external_rpc(false, msg)
+      return
     }
 
     // validator object

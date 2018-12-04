@@ -10,7 +10,10 @@ module.exports = async (s, args) => {
 
     amount = readInt(amount)
 
-    const partner = await getUserByIdOrKey(they_pubkey)
+    const partner = await User.findOne({
+      where: {pubkey: they_pubkey},
+      include: [Balance]
+    })
     if (!partner || !partner.id) {
       l('Cant withdraw from nonexistent partner')
       return
@@ -114,7 +117,6 @@ module.exports = async (s, args) => {
       subch.withdrawal_amount = 0
       subch.withdrawal_sig = null
 
-      ch.ins = ins
       await subch.save()
     }
   }

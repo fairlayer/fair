@@ -150,8 +150,8 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
       let box_data = open_box_json(unlocker)
 
       // these things CANT happen, partner is malicious so just ignore and break
-      if (amount < K.min_amount || amount > derived.they_payable) {
-        l('Bad amount: ', amount, derived.they_payable)
+      if (amount < K.min_amount || amount > derived.they_available) {
+        l('Bad amount: ', amount, derived.they_available)
         break
       }
       if (hash.length != 32) {
@@ -270,7 +270,7 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
         //await section(['use', nextHop], async () => {
         let dest_ch = await Channel.get(nextHop)
 
-        // is next hop online? Is payable?
+        // is next hop online? Is available?
 
         if (dest_ch.d.status == 'disputed') {
           inward_hl.outcome_type = 'outcomeDisputed'

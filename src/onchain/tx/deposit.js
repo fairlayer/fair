@@ -66,7 +66,7 @@ module.exports = async (s, args) => {
         //userAsset(s.signer, asset, -fee)
       }
 
-      await saveId(deposit)
+      await deposit.save()
 
       K.collected_fees += K.account_creation_fee
     } else {
@@ -84,7 +84,7 @@ module.exports = async (s, args) => {
           userAsset(withPartner, asset, K.standalone_balance)
           amount -= fee
           //userAsset(s.signer, asset, -fee)
-          await saveId(withPartner)
+          await withPartner.save()
           // now it has id
 
           /*
@@ -109,7 +109,7 @@ module.exports = async (s, args) => {
         }
         userAsset(deposit, asset, amount)
         userAsset(s.signer, asset, -amount)
-        await saveId(deposit)
+        await deposit.save()
       }
     }
 
@@ -161,10 +161,11 @@ module.exports = async (s, args) => {
         const ch = await Channel.get(
           me.is_me(withPartner.pubkey) ? deposit.pubkey : withPartner.pubkey
         )
-        ch.ins = ins
 
         // rebalance happened, nullify
-        ch.d.subchannels.by('asset', asset).requested_insurance = false
+        let subch = ch.d.subchannels.by('asset', asset)
+        subch.requested_insurance = false
+        await subch.save()
       }
 
       // rebalance by bank for our account = reimburse bank fees

@@ -143,22 +143,22 @@ refresh = function(ch) {
     Object.assign(out, resolveChannel(ins_balance, delta, ch.d.isLeft()))
 
     // inputs are like bearer cheques and can be used any minute, so we deduct them
-    out.payable =
+    out.available =
       out.insured +
       out.uninsured +
       subch.they_credit -
       out.they_uninsured -
       out.outwards_hold
 
-    out.they_payable =
+    out.they_available =
       out.they_insured +
       out.they_uninsured +
       subch.credit -
       out.uninsured -
       out.inwards_hold
 
-    if (out.payable < 0 || out.they_payable < 0) {
-      l('Invalid payables', JSON.stringify(out, null, 4))
+    if (out.available < 0 || out.they_available < 0) {
+      l('Invalid availables', JSON.stringify(out, null, 4))
       //fatal('invalid outs')
     }
 

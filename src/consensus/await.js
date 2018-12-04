@@ -30,7 +30,7 @@ module.exports = () => {
     )
 
     // go sync immediately, went out of sync?
-    //Periodical.syncChain()
+    Periodical.syncChain()
   } else if (me.proposed_block.header) {
     // adding to our external queue to avoid race conditions
     // we don't call processBlock directly to avoid races

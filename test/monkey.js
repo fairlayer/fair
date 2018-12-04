@@ -53,7 +53,7 @@ let run = async () => {
   // only in monkey mode, not on end user node
 
   if (base_port != 8008) {
-    Periodical.schedule('broadcast', K.blocktime * 800)
+    Periodical.schedule('broadcast', K.blocktime)
   }
 
   /*
@@ -128,7 +128,7 @@ let run = async () => {
           amount: 912
         })
       }
-    }, K.blocktime * 1000)
+    }, K.blocktime)
 
     setTimeout(() => {
       payMonkey(on_server)

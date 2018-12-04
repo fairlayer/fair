@@ -101,21 +101,21 @@ module.exports = async (pubkey, opportunistic) => {
           if (
             t.amount < K.min_amount ||
             t.amount > K.max_amount ||
-            t.amount > derived.payable ||
+            t.amount > derived.available ||
             derived.outwards.length >= K.max_hashlocks
           ) {
             if (trace)
               loff(
-                `error cannot transit ${t.amount}/${derived.payable}. Locks ${
+                `error cannot transit ${t.amount}/${derived.available}. Locks ${
                   derived.outwards.length
                 }.`
               )
 
-            if (me.my_bank && t.amount > derived.payable) {
+            if (me.my_bank && t.amount > derived.available) {
               me.textMessage(
                 ch.d.they_pubkey,
-                `Cant send ${t.amount} payable ${
-                  derived.payable
+                `Cant send ${t.amount} available ${
+                  derived.available
                 }, extend credit`
               )
             }

@@ -4,7 +4,7 @@
 module.exports = async (opts = {}) => {
   me.metrics.syncChanges.current++
 
-  if (ts() - me.last_sync_changes < 10) {
+  if (ts() - me.last_sync_changes < 10000) {
     return
   }
   me.last_sync_changes = ts()
@@ -99,7 +99,7 @@ module.exports = async (opts = {}) => {
         }
         //ch.payments = left_payments
 
-        let evict = ch.last_used < ts() - 2
+        let evict = ch.last_used < ts() - 2000
         //K.cache_timeout
 
         await Promise.all(promises)

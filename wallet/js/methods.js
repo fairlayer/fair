@@ -71,9 +71,9 @@ module.exports = {
         bar(parts.insured, '=') + bar(parts.uninsured, '-') + '|'
     }
 
-    parts.payable = delta + democh.they_credit
+    parts.available = delta + democh.they_credit
 
-    parts.they_payable = insurance + democh.credit - delta
+    parts.they_available = insurance + democh.credit - delta
 
     parts.min_offdelta = -democh.ins_ondelta - democh.they_credit
 
@@ -363,7 +363,7 @@ module.exports = {
         in_seconds: 31556926
       }
     ]
-    var diff = (new Date() - new Date(time * 1000)) / 1000
+    var diff = (new Date() - new Date(time)) / 1000
     if (diff < 5) return 'now'
 
     var i = 0,
@@ -388,7 +388,7 @@ module.exports = {
     app.settings = !app.settings
   },
 
-  ts: () => Math.round(new Date() / 1000),
+  ts: () => Math.round(new Date()),
 
   prettyBatch: (batch) => {
     let r = ''

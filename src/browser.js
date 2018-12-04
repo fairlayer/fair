@@ -48,7 +48,12 @@ react = async (result) => {
       result.channels.push(ch)
     }
 
-    result.record = await getUserByIdOrKey(bin(me.id.publicKey))
+    me.record = await User.findOne({
+      where: {pubkey: bin(me.id.publicKey)},
+      include: [Balance]
+    })
+    result.record = me.record
+
     //l('Getting record', result.record.id)
 
     result.events = await Event.findAll({
@@ -56,7 +61,7 @@ react = async (result) => {
       limit: 20
     })
 
-    if (!result.record.id) result.record = null
+    //if (!result.record.id) result.record = null
 
     result.timeouts = Object.keys(Periodical.timeouts)
 

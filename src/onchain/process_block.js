@@ -25,7 +25,7 @@ module.exports = async (s, header, ordered_tx_body) => {
   built_by = readInt(built_by)
   prev_hash = toHex(prev_hash)
 
-  s.proposer = await getUserByIdOrKey(built_by)
+  s.proposer = await User.findById(built_by, {include: [Balance]})
 
   if (!s.proposer) {
     l(`This user doesnt exist ${built_by}`)
@@ -49,8 +49,8 @@ module.exports = async (s, header, ordered_tx_body) => {
     return l('New block from the past')
   }
 
-  if (timestamp > ts() + 86400) {
-    return l('Block from far future?')
+  if (timestamp > ts() + 3600000) {
+    return l('Block from far future (1hr+)?')
   }
 
   if (!sha3(ordered_tx_body).equals(tx_root)) {
@@ -64,7 +64,7 @@ module.exports = async (s, header, ordered_tx_body) => {
   if (s.dry_run) {
     // this is just dry run during consensus
     var clock_skew = ts() - timestamp
-    if (clock_skew > 60 || clock_skew < -60) {
+    if (clock_skew > 60000 || clock_skew < -60000) {
       l('Timestamp skew is outside range')
       return
     }
@@ -276,7 +276,7 @@ module.exports = async (s, header, ordered_tx_body) => {
     /*
     if (me.my_validator.id != 1) {
       // in dev mode only to prevent race for /data
-      //await sleep(K.blocktime * 1000)
+      //await sleep(K.blocktime)
     } else {
       // it's important to flush current K to disk before snapshot
     }
@@ -333,7 +333,7 @@ module.exports = async (s, header, ordered_tx_body) => {
           child_process.execSync(
             `ln -sf ${datadir}/offchain/${filename}  ${datadir}/offchain/Fair-latest.tar.gz`
           )
-        }, 5 * 60 * 1000)
+        }, 20 * 60 * 1000)
       }
       snapshotHash()
     }

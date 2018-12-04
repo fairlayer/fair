@@ -89,7 +89,7 @@ module.exports = async (pubkey, doRefresh = true) => {
       //l('Found old channel ', ch.d.subchannels)
     }
 
-    let user = await getUserByIdOrKey(pubkey)
+    let user = await User.findOne({where: {pubkey: pubkey}, include: [Balance]})
 
     if (user && user.id) {
       ch.partner = user.id

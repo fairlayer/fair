@@ -22,8 +22,8 @@ module.exports = (ws, msg) => {
 
       case 'auth':
         return require('./auth')(ws, args)
-      case 'tx':
-        return require('./tx')(args)
+      case 'add_batch':
+        return require('./add_batch')(args)
       case 'propose':
         return require('./propose')(args)
       case 'prevote':

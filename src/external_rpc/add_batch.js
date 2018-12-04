@@ -7,6 +7,6 @@ module.exports = async (args) => {
     me.mempool.push(tx)
   })
   //} else {
-  //  me.send(nextValidator(true), 'tx', msg)
+  //  me.send(nextValidator(true), 'add_batch', msg)
   //}
 }

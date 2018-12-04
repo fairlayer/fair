@@ -27,9 +27,14 @@ module.exports = () => {
   //if (me.my_validator) {
   //  return sendSync()
   //}
-
-  if (me.last_sync_chain < ts() - K.blocktime / 2) {
-    me.last_sync_chain = ts()
+  let now = ts()
+  // is there new block expected & we didn't request for a while
+  if (
+    !cached_result.sync_started_at &&
+    K.ts + K.blocktime < now &&
+    me.last_sync_chain + 1000 < now
+  ) {
+    me.last_sync_chain = now
     return sendSync()
   }
 

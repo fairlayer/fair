@@ -115,22 +115,22 @@ module.exports = async (opts) => {
     }
 
     let subch = ch.d.subchannels.by('asset', asset)
-    let payable = ch.derived[asset].payable
+    let available = ch.derived[asset].available
 
-    // 4. do we have enough payable for this hop?
-    if (amount > payable) {
+    // 4. do we have enough available for this hop?
+    if (amount > available) {
       if (me.my_bank) {
         // ask to increase credit
         me.textMessage(
           ch.d.they_pubkey,
-          `Cannot send ${commy(amount)} when payable is ${commy(
-            payable
+          `Cannot send ${commy(amount)} when available is ${commy(
+            available
           )}, extend credit`
         )
       }
-      react({alert: `Not enough funds ${payable}`})
+      react({alert: `Not enough funds ${available}`})
 
-      return 'No payable'
+      return 'No available'
     } else if (amount > K.max_amount) {
       react({alert: `Maximum payment is $${commy(K.max_amount)}`})
       return 'out of range'

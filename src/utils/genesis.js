@@ -48,18 +48,21 @@ const writeGenesisOffchainConfig = async (pk, datadir) => {
 module.exports = async (datadir) => {
   l('Start genesis')
 
+  // all timeouts are in milliseconds
+  let sec = 1000
+
   // K is a handy config JSON
   const K = {
     // Things that are different in testnet vs mainnet
     network_name: 'testnet',
     blocksize: 20000,
-    blocktime: 10,
-    step_latency: 3, // how long is each consensus step: propose, prevote, precommit, await is the rest
-    gossip_delay: 700, // anti clock skew, give others time to change state
+    blocktime: 10 * sec,
+    step_latency: 2 * sec, // how long is each consensus step: propose, prevote, precommit, await is the rest
+    gossip_delay: 1 * sec, // anti clock skew, give others time to change state
 
     //Time.at(1913370000) => 2030-08-19 20:40:00 +0900
 
-    bet_maturity: ts() + 100, // when all FRB turn into FRD
+    bet_maturity: ts() + 100 * sec, // when all FRB turn into FRD
     created_at: ts(),
 
     usable_blocks: 0, // blocks that have some extra space (to ensure disputes add on-time)
@@ -81,7 +84,7 @@ module.exports = async (datadir) => {
     snapshots_taken: 0,
     proposals_created: 0,
 
-    // cents per byte of tx
+    // cents per 100 bytes of tx
     min_gasprice: 1,
 
     // manually priced actions to prevent spam
@@ -115,10 +118,9 @@ module.exports = async (datadir) => {
 
     validators: [],
     banks: [],
-    flush_timeout: 250,
 
-    cache_timeout: 3, //s, keep channel in memory since last use
-    safe_sync_delay: 180, //s, after what time prohibit using wallet if unsynced
+    cache_timeout: 3 * sec, //keep channel in memory since last use
+    safe_sync_delay: 180 * sec, //after what time prohibit using wallet if unsynced
     sync_limit: 500, // how many blocks to share at once
 
     // global wide fee sanity limits
@@ -137,7 +139,7 @@ module.exports = async (datadir) => {
     hashlock_service_fee: 100, // the one who adds hashlock pays for it
 
     // ensure it is much shorter than hashlock_exp
-    dispute_if_no_ack: 60000 // ms, how long we wait for ack before going to blockchain
+    dispute_if_no_ack: 60 * sec // how long we wait for ack before going to blockchain
   }
 
   // Defines global Byzantine tolerance parameter

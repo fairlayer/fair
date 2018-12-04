@@ -17,8 +17,8 @@ module.exports = async (p) => {
   //todo: ensure not in a dispute!
 
   if (p.op == 'withdraw') {
-    if (p.amount > ch.derived[p.asset].payable) {
-      react({alert: 'More than you can withdraw from payable'})
+    if (p.amount > ch.derived[p.asset].available) {
+      react({alert: 'More than you can withdraw from available'})
       return
     }
     // meanwhile ch has been updated

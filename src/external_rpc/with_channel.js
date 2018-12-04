@@ -60,8 +60,11 @@ module.exports = async (ws, args) => {
 
       let subch = ch.d.subchannels.by('asset', asset)
 
-      let they = await getUserByIdOrKey(ch.d.they_pubkey)
-      if (!they) return l('no they ', they)
+      let they = await User.findOne({
+        where: {pubkey: ch.d.they_pubkey},
+        include: [Balance]
+      })
+      if (!they || !me.record) return l('no pair ', they, me.record)
 
       let pair = [they.id, me.record.id]
       if (ch.d.isLeft()) pair.reverse()
@@ -118,10 +121,10 @@ module.exports = async (ws, args) => {
         return false
       }
 
-      if (amount == 0 || amount > ch.derived[asset].they_payable) {
+      if (amount == 0 || amount > ch.derived[asset].they_available) {
         l(
           `Partner asks for ${amount} but owns ${
-            ch.derived[asset].they_payable
+            ch.derived[asset].they_available
           }`
         )
         return false

@@ -42,7 +42,7 @@ const parseAddress = async (address) => {
 
   if (parts[0] && parts[0].length <= 6) {
     // not pubkey? can be an id and we find out real pubkey
-    let u = await getUserByIdOrKey(readInt(parts[0]))
+    let u = await User.findById(readInt(parts[0]), {include: [Balance]})
     if (u) {
       parts[0] = u.pubkey
     }
@@ -254,6 +254,8 @@ const getUserByIdOrKey = async function(id) {
 }
 
 const userAsset = (user, asset, diff) => {
+  if (!user.balances) return 0
+
   if (diff) {
     let b = user.balances.by('asset', asset)
 
@@ -284,7 +286,7 @@ const userPayDebts = async (user, asset, parsed_tx) => {
   const debts = await user.getDebts({where: {asset: asset}})
 
   for (const d of debts) {
-    var u = await getUserByIdOrKey(d.oweTo)
+    var u = await User.findById(d.oweTo, {include: [Balance]})
 
     // FRD cannot be enforced below safety limit,
     // otherwise the nodes won't be able to send onchain tx

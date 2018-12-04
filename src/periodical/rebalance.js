@@ -57,7 +57,7 @@ const rebalance = async function(asset) {
         } else if (subch.withdrawal_requested_at == null) {
           l('Delayed pull')
           subch.withdrawal_requested_at = ts()
-        } else if (subch.withdrawal_requested_at + 600 < ts()) {
+        } else if (subch.withdrawal_requested_at + 600000 < ts()) {
           l('User is offline for too long, or tried to cheat')
           me.batchAdd('dispute', await startDispute(ch))
         }
@@ -69,14 +69,18 @@ const rebalance = async function(asset) {
   netSpenders = await Promise.all(netSpenders)
 
   // 1. how much we own of this asset
-  let weOwn = userAsset(me.record, asset)
+
+  let weOwn = me.record ? userAsset(me.record, asset) : 0
 
   // 2. add all withdrawals we received
   for (let ch of netSpenders) {
     let subch = ch.derived[asset].subch
     if (subch.withdrawal_sig) {
       weOwn += subch.withdrawal_amount
-      let user = await getUserByIdOrKey(ch.d.they_pubkey)
+      let user = await User.findOne({
+        where: {pubkey: ch.d.they_pubkey},
+        include: [Balance]
+      })
 
       me.batchAdd('withdraw', [
         subch.asset,

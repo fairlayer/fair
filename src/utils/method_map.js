@@ -11,27 +11,19 @@ module.exports = (i) => {
         'batch', // all transactions are batched one by one
 
         // methods below are per-assets (ie should have setAsset directive beforehand)
-        'dispute', // defines signed state (balance proof). Used only as last resort!
-        'withdraw', // mutual *instant* withdrawal proof. Used during normal cooperation.
         'deposit', // send money to some channel or user
-
-        // onchain exchange
-        'createOrder',
-        'cancelOrder',
-
-        'createAsset',
-        'createBank',
+        'withdraw', // mutual *instant* withdrawal proof. Used during normal cooperation.
+        'dispute', // defines signed state (balance proof). Used only as last resort!
 
         'revealSecrets', // reveal secrets if partner has not acked our del settle
         'vote',
 
         // offchain inputs
         'auth', // any kind of offchain auth signatures between partners
-        'tx', // propose array of tx to add to block
+        'add_batch', // propose array of tx to add to block
         'sync', // i want to sync since this prev_hash
         'chain', // return X blocks since given prev_hash
 
-        'ack',
         'testnet',
 
         'JSON',

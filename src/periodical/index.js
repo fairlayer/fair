@@ -44,20 +44,20 @@ Periodical.startBank = () => {
   l('Starting bank ', me.my_bank)
   me.startExternalRPC(me.my_bank.location)
 
-  Periodical.schedule('rebalance', K.blocktime * 2000)
+  Periodical.schedule('rebalance', 3 * K.blocktime)
 
   // banks have to force react regularly
-  Periodical.schedule('forceReact', K.blocktime * 3000)
+  Periodical.schedule('forceReact', K.blocktime)
   //}
 }
 
 Periodical.scheduleAll = function() {
   Periodical.schedule('updateMetrics', 1000)
-  Periodical.schedule('updateCache', K.blocktime * 1000)
+  Periodical.schedule('updateCache', K.blocktime)
 
-  Periodical.schedule('syncChanges', K.blocktime * 1000)
+  Periodical.schedule('syncChanges', K.blocktime)
 
-  //Periodical.schedule('ensureAck', K.blocktime * 2000)
+  //Periodical.schedule('ensureAck', K.blocktime * 2)
 }
 
 module.exports = Periodical

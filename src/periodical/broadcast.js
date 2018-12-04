@@ -2,7 +2,7 @@ const rebroadcast = (signed_batch) => {
   if (me.my_validator && me.my_validator == nextValidator(true)) {
     me.mempool.push(signed_batch)
   } else {
-    me.send(nextValidator(true), 'tx', r([signed_batch]))
+    me.send(nextValidator(true), 'add_batch', r([signed_batch]))
   }
 }
 
@@ -30,7 +30,7 @@ module.exports = async function(opts) {
     if (me.my_validator && me.my_validator == nextValidator(true)) {
       me.mempool.push(estimated.signed_batch)
     } else {
-      me.send(nextValidator(true), 'tx', r([estimated.signed_batch]))
+      me.send(nextValidator(true), 'add_batch', r([estimated.signed_batch]))
     }
     */
 

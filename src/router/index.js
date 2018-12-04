@@ -65,7 +65,7 @@ const Router = {
     }
     // TODO: atomic multipath
 
-    // where do we have enough amount in payable
+    // where do we have enough amount in available
     for (let candidate of PK.usedBanks) {
       let bank = K.banks.find((h) => h.id == candidate)
       let ch = await Channel.get(bank.pubkey)
@@ -76,11 +76,11 @@ const Router = {
       // 0 >= 0? return potential routes even for no amount
       if (
         ch.d.status != 'disputed' &&
-        ch.derived[args.asset].payable >= args.amount
+        ch.derived[args.asset].available >= args.amount
       ) {
         fromArray.push(candidate)
       } else {
-        //l('Not enough payable: ', ch.derived[args.asset].payable, args.amount)
+        //l('Not enough available: ', ch.derived[args.asset].available, args.amount)
       }
     }
 
