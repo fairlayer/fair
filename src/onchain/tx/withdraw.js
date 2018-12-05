@@ -10,10 +10,7 @@ module.exports = async (s, args) => {
 
     amount = readInt(amount)
 
-    const partner = await User.findOne({
-      where: {pubkey: they_pubkey},
-      include: [Balance]
-    })
+    const partner = await getUserByIdOrKey(they_pubkey)
     if (!partner || !partner.id) {
       l('Cant withdraw from nonexistent partner')
       return

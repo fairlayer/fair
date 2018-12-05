@@ -374,7 +374,7 @@ class Me {
       }
 
       me.sockets[m.pubkey].onerror = function(e) {
-        l('Failed to open the socket')
+        l('Failed to open the socket to ', m)
       }
       me.sockets[m.pubkey].onopen = function(e) {
         if (me.id) {
