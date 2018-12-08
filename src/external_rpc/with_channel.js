@@ -1,11 +1,5 @@
-module.exports = async (ws, args) => {
+module.exports = async (pubkey, json, ws) => {
   //todo: ensure no conflicts happen if two parties withdraw from each other at the same time
-  let [pubkey, sig, body] = args
-  if (!ec.verify(body, sig, pubkey)) {
-    l('Invalid message in with_channel')
-    return false
-  }
-  let json = parse(body.toString())
 
   await section(['use', pubkey], async () => {
     let ch = await Channel.get(pubkey)
@@ -23,7 +17,8 @@ module.exports = async (ws, args) => {
 
       subch.credit = 100000
 
-      me.sendJSON(ch.d.they_pubkey, 'setLimits', {
+      me.send(ch.d.they_pubkey, {
+        method: 'setLimits',
         asset: json.asset,
         credit: subch.credit
       })
@@ -146,7 +141,8 @@ module.exports = async (ws, args) => {
 
       await subch.save()
 
-      me.sendJSON(pubkey, 'giveWithdrawal', {
+      me.send(pubkey, {
+        method: 'giveWithdrawal',
         withdrawal_sig: ec(withdrawal, me.id.secretKey),
         amount: amount,
         asset: asset

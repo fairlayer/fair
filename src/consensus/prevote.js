@@ -5,6 +5,9 @@ module.exports = () => {
   const prevotable = me.proposed_block ? me.proposed_block.header : 0
 
   setTimeout(() => {
-    me.gossip('prevote', me.block_envelope(methodMap('prevote'), prevotable))
+    me.sendAllValidators({
+      method: 'prevote',
+      proof: me.block_envelope(methodMap('prevote'), prevotable)
+    })
   }, K.gossip_delay)
 }

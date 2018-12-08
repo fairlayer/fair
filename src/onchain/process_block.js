@@ -258,9 +258,14 @@ module.exports = async (s, header, ordered_tx_body) => {
   // Tendermint uses 2/3+ prevotes as "proof of lock change", but we don't see need in that
   if (me.proposed_block.locked) {
     let locked_prev_hash = r(me.proposed_block.header)[3]
+    let height = r(me.proposed_block.header)[2]
 
     if (prev_hash == toHex(locked_prev_hash)) {
-      l('Just unlocked from previous proposed block')
+      l(
+        `Just unlocked from previous proposed block: ${readInt(height)} vs ${
+          K.total_blocks
+        }`
+      )
       me.proposed_block = {}
     }
   }

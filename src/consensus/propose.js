@@ -80,6 +80,6 @@ module.exports = async () => {
   //l('Gossiping header ', toHex(header))
 
   setTimeout(() => {
-    me.gossip('propose', propose)
+    me.sendAllValidators({method: 'propose', propose: propose})
   }, K.gossip_delay)
 }

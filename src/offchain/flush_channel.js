@@ -203,7 +203,8 @@ module.exports = async (pubkey, opportunistic) => {
     ]
 
     // transitions: method, args, sig, new state
-    let envelope = {
+    let data = {
+      method: 'update',
       ackSig: ackSig,
       transitions: transitions,
       debug: debug
@@ -213,7 +214,7 @@ module.exports = async (pubkey, opportunistic) => {
       // if there were any transitions, we need an ack on top
       ch.d.ack_requested_at = new Date()
       //l('Set ack request ', ch.d.ack_requested_at, trim(pubkey))
-      ch.d.pending = stringify(envelope)
+      ch.d.pending = stringify(data)
       ch.d.status = 'sent'
       if (trace) l(`Flushing ${transitions.length} to ${trim(pubkey)}`)
     }
@@ -222,7 +223,7 @@ module.exports = async (pubkey, opportunistic) => {
       await subch.save()
     }
 
-    me.sendJSON(ch.d.they_pubkey, 'update', envelope)
+    me.send(ch.d.they_pubkey, data)
 
     return Promise.all(flushable.map((fl) => me.flushChannel(fl, true)))
   })

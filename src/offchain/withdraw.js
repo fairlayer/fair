@@ -7,7 +7,8 @@ module.exports = async function(ch, subch, amount) {
 
   l('Withdrawal request for ' + amount)
 
-  me.sendJSON(ch.d.they_pubkey, 'requestWithdrawal', {
+  me.send(ch.d.they_pubkey, {
+    method: 'requestWithdrawal',
     amount: amount,
     asset: subch.asset
   })

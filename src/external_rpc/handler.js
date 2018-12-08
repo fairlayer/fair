@@ -1,11 +1,13 @@
-module.exports = (ws, msg) => {
+const getChain = require('./get_chain')
+
+module.exports = async (ws, msg) => {
   // uws gives ArrayBuffer, we create a view
   let msgb = bin(msg)
 
   // count total bandwidth
   me.metrics.bandwidth.current += msgb.length
 
-  // sanity checks 10mb
+  // sanity checks
   if (msgb.length > 50000000) {
     l(`too long input ${msgb.length}`)
     return false
@@ -13,34 +15,62 @@ module.exports = (ws, msg) => {
 
   // we have no control over potentially malicious user input, so ignore all errors
   try {
-    let args = r(msgb.slice(1))
-    let inputType = methodMap(msgb[0])
+    let contentType = methodMap(msgb[0])
+    let content = msgb.slice(1)
 
-    switch (inputType) {
-      case 'JSON':
-        return require('./with_channel')(ws, args)
+    if (contentType == 'JSON') {
+      var [pubkey, sig, body] = r(content)
+      let json = parse(body.toString())
 
-      case 'auth':
-        return require('./auth')(ws, args)
-      case 'add_batch':
-        return require('./add_batch')(args)
-      case 'propose':
-        return require('./propose')(args)
-      case 'prevote':
-        return require('./prevote_precommit')(inputType, args)
-      case 'precommit':
-        return require('./prevote_precommit')(inputType, args)
-      case 'chain':
-        return me.processChain(args)
-      case 'sync':
-        return require('./sync')(ws, args)
-
-      case 'textMessage':
-        react({confirm: args[0].toString()})
-        return
-
-      default:
+      if (
+        RPC.requireSig.includes(json.method) &&
+        !ec.verify(body, sig, pubkey)
+      ) {
+        l('Invalid sig in external_rpc')
         return false
+      }
+
+      if (json.method == 'auth') {
+        require('./auth')(pubkey, json, ws)
+      } else if (json.method == 'propose') {
+        require('./propose')(pubkey, json, ws)
+      } else if (json.method == 'prevote' || json.method == 'precommit') {
+        require('./prevote_precommit')(pubkey, json, ws)
+      } else if (
+        [
+          'update',
+          'setLimits',
+          'requestInsurance',
+          'requestCredit',
+          'giveWithdrawal',
+          'requestWithdawal',
+          'testnet'
+        ].includes(json.method)
+      ) {
+        require('./with_channel')(pubkey, json, ws)
+      } else if (json.method == 'add_batch') {
+        require('./add_batch')(json, ws)
+      } else if (json.method == 'requestChain') {
+        let raw_chain = await getChain({
+          their_block: parseInt(json.their_block),
+          limit: parseInt(json.limit)
+        })
+
+        //l('Returning chain ', raw_chain.length)
+        if (raw_chain.length > 3) {
+          ws.send(concat(bin(methodMap('returnChain')), raw_chain), wscb)
+        } else {
+          //l('No blocks to sync after ')
+        }
+      } else if (json.method == 'textMessage') {
+        react({confirm: json.msg})
+      }
+
+      return
+    } else if (contentType == 'returnChain') {
+      // the only method that is not json to avoid serialization overhead
+
+      return me.processChain(r(content))
     }
   } catch (e) {
     l('External RPC error', e)

@@ -25,9 +25,9 @@ module.exports = () => {
   }
 
   setTimeout(() => {
-    me.gossip(
-      'precommit',
-      me.block_envelope(methodMap('precommit'), precommitable)
-    )
+    me.sendAllValidators({
+      method: 'precommit',
+      proof: me.block_envelope(methodMap('precommit'), precommitable)
+    })
   }, K.gossip_delay)
 }

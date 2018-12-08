@@ -1,14 +1,8 @@
 // This method gets Insurance from onchain db, Channel from offchain db
 // then derives a ton of info about current channel: (un)insured balances
 
-class WrappedChannel {
-  constructor() {}
-
-  //toJSON(){}
-}
-
 // TODO: periodically clone Insurance to Channel db to only deal with one db having all data
-module.exports = async (pubkey, doRefresh = true) => {
+module.exports = async (pubkey) => {
   // this critical section protects from simultaneous getChannel and doublesaved db records
   return await section(['get', pubkey], async () => {
     if (!me.pubkey) {
@@ -19,45 +13,17 @@ module.exports = async (pubkey, doRefresh = true) => {
 
     if (typeof pubkey == 'string') pubkey = fromHex(pubkey)
 
-    var key = stringify([pubkey])
-    /*
-    if (cache.ch[key]) {
-      if (doRefresh) refresh(cache.ch[key])
-      return cache.ch[key]
-    }*/
-
-    //l('Loading channel from db: ', key)
+    //l('Loading channel : ', pubkey)
 
     if (me.pubkey.equals(pubkey)) {
       l('Channel to self?')
       return false
     }
 
-    /*      online:
-        me.sockets[pubkey] &&
-        (me.sockets[pubkey].readyState == 1 ||
-          (me.sockets[pubkey].instance &&
-            me.sockets[pubkey].instance.readyState == 1))
-
-*/
-
-    ch = {} //new WrappedChannel()
+    ch = {}
     ch.derived = {}
 
     ch.last_used = ts() // for eviction from memory
-
-    /*
-      let defaults = {}
-
-      if (me.my_bank) {
-        defaults.they_rebalance = K.rebalance
-        defaults.they_credit = K.credit
-      }
-      if (my_bank(pubkey)) {
-        defaults.rebalance = K.rebalance
-        defaults.credit = K.credit
-      }
-      */
 
     ch.d = await Channel.findOne({
       where: {
@@ -109,7 +75,7 @@ module.exports = async (pubkey, doRefresh = true) => {
       order: [['id', 'ASC']]
     })
 
-    if (doRefresh) refresh(ch)
+    refresh(ch)
 
     //cache.ch[key] = ch
     //l('Saved in cache ', key)

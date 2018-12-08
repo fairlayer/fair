@@ -91,7 +91,7 @@ let run = async () => {
       await sleep(1000)
 
       await require('../src/internal_rpc/with_channel')({
-        op: 'setLimits',
+        method: 'setLimits',
         they_pubkey: K.banks[0].pubkey,
         asset: 1,
         rebalance: K.rebalance,
@@ -100,7 +100,8 @@ let run = async () => {
 
       await sleep(1000)
 
-      me.sendJSON(K.banks[0], 'testnet', {
+      me.send(K.banks[0], {
+        method: 'testnet',
         action: 'faucet',
         asset: 1,
         amount: 500000,
@@ -114,9 +115,9 @@ let run = async () => {
         let ch = await Channel.get(K.banks[0].pubkey)
 
         let withdrawn = await require('../src/internal_rpc/with_channel')({
+          method: 'withdraw',
           they_pubkey: toHex(ch.d.they_pubkey),
           asset: 1,
-          op: 'withdraw',
           amount: 1234
         })
         l('Withdrawn ', withdrawn)
@@ -125,7 +126,7 @@ let run = async () => {
           asset: 1,
           userId: 3,
           bank: 1,
-          amount: 912
+          amount: 1234
         })
       }
     }, K.blocktime)

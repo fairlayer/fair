@@ -43,7 +43,7 @@ module.exports = async (s, args) => {
     } else {
       // start trusting new bank automatically
       require('../../internal_rpc/with_channel')({
-        op: 'setLimits',
+        method: 'setLimits',
         they_pubkey: bank.pubkey,
         asset: 1,
         rebalance: K.rebalance,

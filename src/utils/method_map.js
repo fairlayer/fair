@@ -18,17 +18,8 @@ module.exports = (i) => {
         'revealSecrets', // reveal secrets if partner has not acked our del settle
         'vote',
 
-        // offchain inputs
-        'auth', // any kind of offchain auth signatures between partners
-        'add_batch', // propose array of tx to add to block
-        'sync', // i want to sync since this prev_hash
-        'chain', // return X blocks since given prev_hash
-
-        'testnet',
-
         'JSON',
-
-        'textMessage' // random message to notify
+        'returnChain'
     ]
 
     if (typeof i === 'string') {

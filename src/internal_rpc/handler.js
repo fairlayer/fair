@@ -72,8 +72,9 @@ module.exports = async (ws, json) => {
 
     case 'onchainFaucet':
       json.params.pubkey = toHex(me.pubkey)
-      json.params.action = 'onchainFaucet'
-      me.sendJSON(K.banks[0], 'testnet', json.params)
+      json.params.method = 'onchainFaucet'
+
+      me.send(K.banks[0], json.params)
       react({confirm: 'Await onchain faucet'})
 
       break
@@ -86,27 +87,6 @@ module.exports = async (ws, json) => {
       Periodical.broadcast(json.params)
       react({force: true})
       return false
-      break
-
-    case 'createAsset':
-      require('./create_asset')(json.params)
-      react({confirm: 'Added to batch', force: true})
-      break
-
-    case 'createBank':
-      require('./create_bank')(json.params)
-
-      react({confirm: 'Added to batch'})
-      break
-
-    case 'createOrder':
-      require('./create_order')(json.params)
-      react({confirm: 'Added to batch'})
-      break
-
-    case 'cancelOrder':
-      require('./cancel_order')(json.params)
-      react({confirm: 'Added to batch'})
       break
 
     case 'getRoutes':
@@ -122,55 +102,6 @@ module.exports = async (ws, json) => {
     case 'clearBatch':
       me.batch = []
       react({confirm: 'Batch cleared'})
-      break
-
-    case 'toggleBank':
-      // not enabled yet
-      /*
-      let index = PK.usedBanks.indexOf(json.params.id)
-      if (index == -1) {
-        PK.usedBanks.push(json.params.id)
-
-        let bank = K.banks.find((h) => h.id == json.params.id)
-
-        require('./with_channel')({
-          op: 'setLimits',
-          they_pubkey: bank.pubkey,
-          asset: 1,
-          rebalance: K.rebalance,
-          credit: K.credit
-        })
-
-        //result.confirm = 'Bank added'
-      } else {
-        // ensure no connection
-        PK.usedBanks.splice(index, 1)
-
-        result.confirm = 'Bank removed'
-      }
-      react({force: true})
-      */
-
-      break
-    case 'toggleAsset':
-      /*
-      if ([1, 2].includes(json.params.id)) {
-        react({alert: 'This asset is required by the system'})
-        return
-      }
-      let assetIndex = PK.usedAssets.indexOf(json.params.id)
-      if (assetIndex == -1) {
-        PK.usedAssets.push(json.params.id)
-
-        result.confirm = 'Asset added'
-      } else {
-        PK.usedAssets.splice(assetIndex, 1)
-
-        result.confirm = 'Asset removed'
-      }
-      react({force: true})
-      */
-
       break
 
     case 'getinfo':
@@ -192,12 +123,6 @@ module.exports = async (ws, json) => {
     // commonly called by merchant app on the same server
     case 'receivedAndFailed':
       result = await require('./received_and_failed')(ws)
-      break
-
-    case 'hardfork':
-      //security: ensure it's not RCE and put extra safeguards
-      //eval(json.params.hardfork)
-      result.confirm = 'Executed'
       break
 
     default:

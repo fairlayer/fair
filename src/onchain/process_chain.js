@@ -146,7 +146,7 @@ module.exports = async (args) => {
         force: true
       })
 
-      me.send(nextValidator(true), 'add_batch', r([raw]))
+      me.send(nextValidator(true), {method: 'add_batch', data: r([raw])})
       return
     }
 

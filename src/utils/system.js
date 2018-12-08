@@ -99,7 +99,21 @@ PK = {}
 
 RPC = {
   internal_rpc: require('../internal_rpc'),
-  external_rpc: require('../external_rpc')
+  external_rpc: require('../external_rpc'),
+  requireSig: [
+    'auth',
+    'propose',
+    'prevote',
+    'precommit',
+
+    'update',
+    'setLimits',
+    'requestInsurance',
+    'requestCredit',
+    'giveWithdrawal',
+    'requestWithdawal',
+    'testnet'
+  ]
 }
 
 // it's just handier when Buffer is stringified into hex vs Type: Buffer..

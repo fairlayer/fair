@@ -101,8 +101,7 @@ module.exports = async (s, args) => {
     // was this input related to us?
     if (me.record && [partner.id, s.signer.id].includes(me.record.id)) {
       const ch = await Channel.get(
-        me.record.id == partner.id ? s.signer.pubkey : partner.pubkey,
-        false
+        me.record.id == partner.id ? s.signer.pubkey : partner.pubkey
       )
       let subch = ch.d.subchannels.by('asset', asset)
 

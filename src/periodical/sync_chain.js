@@ -12,16 +12,13 @@ module.exports = () => {
 
     //l('Sync from ', randomChosenValidator.location)
 
-    me.send(
-      randomChosenValidator,
-      'sync',
-      r([
-        K.network_name,
-        fromHex(K.prev_hash),
-        K.total_blocks, // start from
-        parseInt(argv.sync_limit ? argv.sync_limit : K.sync_limit) // how many
-      ])
-    )
+    me.send(randomChosenValidator, {
+      method: 'requestChain',
+      their_block: K.total_blocks,
+      network_name: K.network_name,
+      prev_hash: K.prev_hash,
+      limit: parseInt(argv.sync_limit ? argv.sync_limit : K.sync_limit)
+    })
   }
 
   //if (me.my_validator) {
@@ -31,7 +28,7 @@ module.exports = () => {
   // is there new block expected & we didn't request for a while
   if (
     !cached_result.sync_started_at &&
-    K.ts + K.blocktime < now &&
+    K.ts + K.blocktime + 1000 < now &&
     me.last_sync_chain + 1000 < now
   ) {
     me.last_sync_chain = now

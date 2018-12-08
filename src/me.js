@@ -76,7 +76,7 @@ class Me {
     if (K) {
       // use 1st bank by default
       require('./internal_rpc/with_channel')({
-        op: 'setLimits',
+        method: 'setLimits',
         they_pubkey: K.banks[0].pubkey,
         asset: 1,
         rebalance: K.rebalance,
@@ -184,9 +184,9 @@ class Me {
   }
 
   // tell all validators the same thing
-  gossip(method, data) {
+  sendAllValidators(data) {
     Validators.map((c) => {
-      me.send(c, method, data)
+      me.send(c, data)
     })
   }
 
@@ -230,14 +230,14 @@ class Me {
       for (var m of Validators) {
         if (me.my_validator != m) {
           // we need to have connections ready to all validators
-          me.send(m, 'auth', me.envelope(methodMap('auth')))
+          me.send(m, {method: 'auth', data: ts()})
         }
       }
     } else {
       // keep connection to all banks
       Validators.map((m) => {
         if (me.my_validator != m) {
-          me.send(m, 'auth', me.envelope(methodMap('auth')))
+          me.send(m, {method: 'auth', data: ts()})
 
           //l('Connected to ', m)
         }
@@ -313,25 +313,23 @@ class Me {
   }
 
   textMessage(they_pubkey, msg) {
-    me.send(they_pubkey, 'textMessage', r([msg]))
+    me.send(they_pubkey, {method: 'textMessage', msg: msg})
   }
 
   // a generic interface to send a websocket message to some user or validator
-
-  sendJSON(m, method, tx) {
-    tx.method = method
-    let msg = bin(JSON.stringify(tx))
-
-    this.send(
-      m,
-      'JSON',
-      r([bin(me.id.publicKey), ec(msg, me.id.secretKey), msg])
-    )
-  }
-
   // accepts Buffer or valid Service object
-  send(m, method, tx) {
-    var msg = concat(bin([methodMap(method)]), tx)
+  send(m, json) {
+    if (typeof m == 'string') m = fromHex(m)
+
+    var msg = bin(JSON.stringify(json))
+
+    if (RPC.requireSig.includes(json.method)) {
+      msg = r([bin(me.id.publicKey), ec(msg, me.id.secretKey), msg])
+    } else {
+      msg = r([null, null, msg])
+    }
+
+    msg = concat(bin([methodMap('JSON')]), msg)
 
     // regular pubkey
     if (m instanceof Buffer) {
@@ -378,13 +376,10 @@ class Me {
       }
       me.sockets[m.pubkey].onopen = function(e) {
         if (me.id) {
-          me.sockets[m.pubkey].send(
-            concat(bin(methodMap('auth')), me.envelope(methodMap('auth'))),
-            l
-          )
+          me.send(m.pubkey, {method: 'auth', data: ts()})
         }
 
-        me.sockets[m.pubkey].send(msg, wscb)
+        //me.sockets[m.pubkey].send(msg, wscb)
       }
 
       me.sockets[m.pubkey].open(m.location)

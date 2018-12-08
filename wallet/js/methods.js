@@ -163,8 +163,8 @@ module.exports = {
       )
     ) {
       app.call('withChannel', {
+        method: 'requestInsurance',
         they_pubkey: ch.d.they_pubkey,
-        op: 'requestInsurance',
         asset: asset
       })
     }

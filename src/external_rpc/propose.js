@@ -1,6 +1,6 @@
-module.exports = async (args) => {
-  let [pubkey, sig, header, ordered_tx_body] = args
-  let m = Validators.find((f) => f.block_pubkey.equals(pubkey))
+module.exports = async (pubkey, json, ws) => {
+  let [pubkey_propose, sig, header, ordered_tx_body] = r(fromHex(json.propose))
+  let m = Validators.find((f) => f.block_pubkey.equals(pubkey_propose))
 
   if (me.status != 'propose' || !m) {
     return l(`${me.status} not propose`)
@@ -16,7 +16,7 @@ module.exports = async (args) => {
     return l(`You ${m.id} are not the current proposer ${proposer.id}`)
   }
 
-  if (!ec.verify(header, sig, pubkey)) {
+  if (!ec.verify(header, sig, pubkey_propose)) {
     return l('Invalid proposer sig')
   }
 
@@ -35,7 +35,7 @@ module.exports = async (args) => {
   // consensus operations are in-memory for now
   //l('Saving proposed block')
   me.proposed_block = {
-    proposer: pubkey,
+    proposer: pubkey_propose,
     sig: sig,
 
     header: bin(header),
