@@ -64,19 +64,19 @@ module.exports = async (a) => {
       let parts = path.split('_')
 
       let args = {
-        their_block: parseInt(parts[1]),
+        start_block: parseInt(parts[1]),
         limit: parseInt(parts[2])
       }
 
       // respond with raw chain as a file to save
-      let raw_chain = await getChain(args)
+      let raw_chain = r(await getChain(args))
       l('Dump chain: ', args, raw_chain.length)
 
       res.writeHead(200, {
         'Content-Type': 'binary',
         'Content-Length': raw_chain.length,
         'Content-Disposition': `attachment; filename=Fair_blocks_${
-          args.their_block
+          args.start_block
         }_${args.limit}`
       })
 
@@ -100,7 +100,7 @@ module.exports = async (a) => {
             rm -rf data${nextPort};
             mkdir data${nextPort}; 
             cp -r data/onchain data${nextPort}/onchain;
-            pm2 start --name f${nextPort} fair.js -- --wallet-dist --datadir=data${nextPort} -p${nextPort} --s > /dev/null;`
+            pm2 start --name f${nextPort} fair.js -- --wallet-dist --datadir=data${nextPort} -p${nextPort} -s > /dev/null;`
             )
             .toString()
         )

@@ -9,17 +9,21 @@ module.exports = async (ws, msg) => {
 
   // sanity checks
   if (msgb.length > 50000000) {
-    l(`too long input ${msgb.length}`)
+    l(`External_rpc, long input ${msgb.length}`)
     return false
   }
 
   // we have no control over potentially malicious user input, so ignore all errors
   try {
-    let contentType = methodMap(msgb[0])
-    let content = msgb.slice(1)
+    let content = r(msgb)
+
+    let contentType = methodMap(readInt(content[0]))
 
     if (contentType == 'JSON') {
-      var [pubkey, sig, body] = r(content)
+      let pubkey = content[1]
+      let sig = content[2]
+      let body = content[3]
+
       let json = parse(body.toString())
 
       if (
@@ -29,6 +33,8 @@ module.exports = async (ws, msg) => {
         l('Invalid sig in external_rpc')
         return false
       }
+
+      if (trace) l(`From ${trim(pubkey)}:`, json)
 
       if (json.method == 'auth') {
         require('./auth')(pubkey, json, ws)
@@ -43,7 +49,7 @@ module.exports = async (ws, msg) => {
           'requestInsurance',
           'requestCredit',
           'giveWithdrawal',
-          'requestWithdawal',
+          'requestWithdrawal',
           'testnet'
         ].includes(json.method)
       ) {
@@ -51,26 +57,29 @@ module.exports = async (ws, msg) => {
       } else if (json.method == 'add_batch') {
         require('./add_batch')(json, ws)
       } else if (json.method == 'requestChain') {
-        let raw_chain = await getChain({
-          their_block: parseInt(json.their_block),
-          limit: parseInt(json.limit)
-        })
+        let raw_chain = await getChain(json)
 
         //l('Returning chain ', raw_chain.length)
-        if (raw_chain.length > 3) {
-          ws.send(concat(bin(methodMap('returnChain')), raw_chain), wscb)
+        if (raw_chain.length > 0) {
+          ws.send(r([methodMap('returnChain'), raw_chain]), wscb)
         } else {
-          //l('No blocks to sync after ')
+          //me.textMessage()
+          //l('No blocks to sync for ', json)
         }
       } else if (json.method == 'textMessage') {
         react({confirm: json.msg})
+      } else if (json.method == 'onchainFaucet') {
+        me.batchAdd('deposit', [
+          json.asset,
+          [json.amount, fromHex(json.pubkey), 0]
+        ])
       }
 
       return
     } else if (contentType == 'returnChain') {
       // the only method that is not json to avoid serialization overhead
 
-      return me.processChain(r(content))
+      return me.processChain(content[1])
     }
   } catch (e) {
     l('External RPC error', e)

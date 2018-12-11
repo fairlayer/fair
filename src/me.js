@@ -22,11 +22,15 @@ class Me {
 
     this.show_empty_blocks = true
 
+    this.last_react = ts()
+    this.last_sync_changes = 0
+    this.last_sync_chain = 0
+
     // generic metric boilerplate: contains array of averages over time
     let getMetric = () => {
       return {
         max: 0,
-        started: new Date(),
+        started: ts(),
         total: 0,
         current: 0,
         last_avg: 0,
@@ -63,10 +67,6 @@ class Me {
     this.block_pubkey = bin(this.block_keypair.publicKey).toString('hex')
 
     this.box = nacl.box.keyPair.fromSecretKey(this.seed)
-
-    this.last_react = new Date()
-    this.last_sync_changes = 0
-    this.last_sync_chain = 0
 
     PK.username = username
     PK.seed = seed.toString('hex')
@@ -324,16 +324,19 @@ class Me {
     var msg = bin(JSON.stringify(json))
 
     if (RPC.requireSig.includes(json.method)) {
-      msg = r([bin(me.id.publicKey), ec(msg, me.id.secretKey), msg])
+      msg = r([
+        methodMap('JSON'),
+        bin(me.id.publicKey),
+        bin(ec(msg, me.id.secretKey)),
+        msg
+      ])
     } else {
-      msg = r([null, null, msg])
+      msg = r([methodMap('JSON'), null, null, msg])
     }
-
-    msg = concat(bin([methodMap('JSON')]), msg)
 
     // regular pubkey
     if (m instanceof Buffer) {
-      //if (method == 'update') l(`Sending to ${trim(m)} `, toHex(sha3(tx)))
+      //if (json.method == 'update') l(`Sending to ${trim(m)} `, toHex(sha3(tx)))
 
       if (me.sockets[m]) {
         me.sockets[m].send(msg, wscb)
@@ -359,8 +362,7 @@ class Me {
       return
     }
 
-    // validator object
-    //l(`Invoking ${method} in validator ${m.id}`)
+    if (trace) l(`Send ${m.id}`, json)
 
     if (me.sockets[m.pubkey]) {
       return me.sockets[m.pubkey].send(msg, wscb)

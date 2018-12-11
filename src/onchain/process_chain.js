@@ -4,13 +4,6 @@ module.exports = async (args) => {
   return await section('onchain', async () => {
     //l('Start process chain')
 
-    if (!cached_result.sync_started_at) {
-      cached_result.sync_started_at = K.total_blocks
-      cached_result.sync_tx_started_at = K.total_tx
-      cached_result.sync_progress = 0
-      var startHrtime = hrtime()
-    }
-
     if (argv.nocrypto) {
       var original_state = await onchain_state()
     }
@@ -37,11 +30,7 @@ module.exports = async (args) => {
         // hash of next header
         our_prev_hash = sha3(block[1])
       } else {
-        l(
-          `Not properly cross-linked chain: ${K.total_blocks} ${readInt(
-            total_blocks
-          )}`
-        )
+        l(`Outdated chain: ${K.total_blocks} ${readInt(total_blocks)}`)
         return
       }
     }
@@ -71,6 +60,13 @@ module.exports = async (args) => {
 
     if (shares < K.majority) {
       return l(`Not enough precommits on entire chain: ${shares}`)
+    }
+
+    if (!cached_result.sync_started_at) {
+      cached_result.sync_started_at = K.total_blocks
+      cached_result.sync_tx_started_at = K.total_tx
+      cached_result.sync_progress = 0
+      var startHrtime = hrtime()
     }
 
     // step 3: if entire chain is precommited, process blocks one by one
@@ -112,28 +108,8 @@ module.exports = async (args) => {
 
     end()
 
-    if (K.total_blocks - cached_result.sync_started_at <= 0) {
-      return
-    }
-
-    // dirty hack to not backup k.json until all blocks are synced
-    if (args.length >= K.sync_limit) {
-      //return
-    }
-
-    // are we completely synced now?
-    if (K.ts + K.blocktime * 2 > ts()) {
-      if (
-        cached_result.sync_started_at &&
-        K.total_blocks - cached_result.sync_started_at > 100
-      ) {
-        react({confirm: 'New blocks synced and validated!'})
-      }
-      cached_result.sync_started_at = false
-      cached_result.sync_tx_started_at = false
-    } else {
-      l('So many blocks. Syncing one more time')
-    }
+    cached_result.sync_started_at = false
+    cached_result.sync_tx_started_at = false
 
     react({})
 

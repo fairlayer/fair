@@ -150,7 +150,7 @@
               <p>
                 <p v-for="subch in ch.d.subchannels">
                   <button class="btn btn-outline-info" @click="mod={shown:true, ch:ch, subch: subch, credit: commy(subch.credit), rebalance: commy(subch.rebalance)}">{{to_ticker(subch.asset)}}: {{commy(ch.derived[subch.asset].available)}}</button>&nbsp;
-                  <VisualChannel :derived="ch.derived[subch.asset]"></VisualChannel>
+
                 </p>
               </p>
               <p v-if="record">
@@ -391,7 +391,7 @@
       <div style="min-width:70%;" class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">Asset {{to_ticker(mod.subch.asset)}} in bank {{to_user(mod.ch.partner)}}</h5>
+            <h5 class="modal-title">Asset {{to_ticker(mod.subch.asset)}} with {{to_user(mod.ch.partner)}}</h5>
             <button @click="mod.shown=false" type="button" class="close" data-dismiss="modal" aria-label="Close">
               <span aria-hidden="true">&times;</span>
             </button>
@@ -400,20 +400,61 @@
             <div class="container-fluid">
               <div class="row">
                 <div class="col-md-6">
-                  <h4>Information</h4>
-                  <p>Available: {{commy(derived.available)}} <span class="badge badge-success bank-faucet" @click="call('withChannel', {they_pubkey: mod.ch.d.they_pubkey, method: 'testnet', action: 'faucet', asset: mod.subch.asset, amount:10000 })">Use faucet</span></p>
-                  <p>Receivable: {{commy(derived.they_available)}}</p>
-                  <p>Insured: {{commy(derived.insured)}} <span v-if="record" class="badge badge-danger" @click="a=prompt(`How much to withdraw to onchain?`);if (a) {call('withChannel', {they_pubkey: mod.ch.d.they_pubkey, asset: mod.subch.asset, method: 'withdraw', amount: uncommy(a)})};">Withdraw</span>&nbsp;<span v-if="record" class="badge badge-danger" @click="mod.shown=false;outward.address=address;updateRoutes();outward.type='onchain';outward.asset=mod.subch.asset;outward.bank = mod.ch.partner;">Deposit</span>
-                  </p>
-                  <p v-if="mod.subch.withdrawal_amount > 0">Pending withdrawal from you: {{commy(mod.subch.withdrawal_amount)}}</p>
-                  <p v-if="mod.subch.they_withdrawal_amount > 0">Pending withdrawal from them: {{commy(mod.subch.they_withdrawal_amount)}}</p>
-                  <p>Uninsured: {{commy(derived.uninsured)}} <span class="badge badge-danger" @click="requestInsurance(mod.ch, mod.subch.asset)">Request Insurance</span>
-                    <dotsloader v-if="derived.subch.requested_insurance"></dotsloader>
-                  </p>
-                  <p v-if="false"><span class="badge badge-danger" @click="call('withChannel', {they_pubkey: mod.ch.d.they_pubkey, asset: mod.subch.asset, method: 'requestCredit', amount: 1})">Request Credit</span>
-                  </p>
+
+        <table class="table">
+          <thead class="thead-dark">
+            <tr>
+              <th scope="col"></th>
+              <th scope="col">You</th>
+              <th scope="col">{{to_user(mod.ch.partner)}}</th>
+            </tr>
+          </thead>
+
+                  <tbody>
+                    <tr>
+                    <td>Available</td><td>{{commy(derived.available)}}</td><td>{{commy(derived.they_available)}}</td>
+                    </tr>
+
+                    <tr>
+                    <td>Hold</td><td>{{commy(derived.outwards_hold)}}</td><td>{{commy(derived.inwards_hold)}}</td>
+                    </tr>
+                    
+                    <tr>
+                    <td>Insured</td><td>{{commy(derived.insured)}}</td><td>{{commy(derived.they_insured)}}</td>
+                    </tr>
+
+                    <tr>
+                    <td>Uninsured</td><td>{{commy(derived.uninsured)}}</td><td>{{commy(derived.they_uninsured)}}</td>
+                    </tr>
+
+                    <tr>
+                    <td>Credit</td><td>{{commy(mod.subch.credit)}}</td><td>{{commy(mod.subch.they_credit)}}</td>
+                    </tr>
+
+
+
+                  </tbody>
+                  </table>
+
+
                 </div>
                 <div class="col-md-6">
+
+
+<span class="badge badge-success bank-faucet" @click="call('withChannel', {they_pubkey: mod.ch.d.they_pubkey, method: 'testnet', action: 'faucet', asset: mod.subch.asset, amount:10000 })">Use faucet</span>
+
+
+<span v-if="record" class="badge badge-danger" @click="a=prompt(`How much to withdraw to onchain?`);if (a) {call('withChannel', {they_pubkey: mod.ch.d.they_pubkey, asset: mod.subch.asset, method: 'withdraw', amount: uncommy(a)})};">Withdraw</span>&nbsp;<span v-if="record" class="badge badge-danger" @click="mod.shown=false;outward.address=address;updateRoutes();outward.type='onchain';outward.asset=mod.subch.asset;outward.bank = mod.ch.partner;">Deposit</span>
+
+
+
+                  <span class="badge badge-danger" @click="requestInsurance(mod.ch, mod.subch.asset)">Request Insurance</span>
+                    <dotsloader v-if="derived.subch.requested_insurance"></dotsloader>
+
+                  <p v-if="false"><span class="badge badge-danger" @click="call('withChannel', {they_pubkey: mod.ch.d.they_pubkey, asset: mod.subch.asset, method: 'requestCredit', amount: 1})">Request Credit</span>
+                  </p>
+
+                  
                   <h4>Set credit</h4>
                   <p>Maximum uninsured balance</p>
                   <p>
@@ -484,10 +525,9 @@ import Tutorial from './Tutorial'
 import Event from './Event'
 
 import Dotsloader from './Dotsloader'
-import VisualChannel from './VisualChannel'
+//import VisualChannel from './VisualChannel'
 
 
-console.log(VisualChannel)
 
 export default {
   components: {
@@ -495,8 +535,7 @@ export default {
     Home,
     Tutorial,
     Event,
-    Dotsloader,
-    VisualChannel
+    Dotsloader
   },
   mounted() {
     window.app = this

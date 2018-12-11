@@ -16,11 +16,11 @@ react = async (result) => {
     return //l('No working me.browser')
   }
 
-  if (new Date() - me.last_react < 500) {
+  if (ts() - me.last_react < 500) {
     //l('reacting too often is bad for performance')
     //return false
   }
-  me.last_react = new Date()
+  me.last_react = ts()
 
   if (isHeadless()) {
     //l('headless')

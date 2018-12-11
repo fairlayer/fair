@@ -270,31 +270,9 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
         //await section(['use', nextHop], async () => {
         let dest_ch = await Channel.get(nextHop)
 
-        // is next hop online? Is available?
-
-        if (dest_ch.d.status == 'disputed') {
-          inward_hl.outcome_type = 'outcomeDisputed'
+        if (!dest_ch) {
+          return l('invalid channel')
         }
-
-        if (!me.sockets[dest_ch.d.they_pubkey]) {
-          //inward_hl.outcome_type = 'outcomeOffline'
-        }
-
-        if (inward_hl.outcome_type) {
-          l('Failed to mediate')
-          inward_hl.outcome = `${me.record.id}`
-          // fail right now
-          inward_hl.type = 'del'
-          //t[0] == 'add' ? 'del' : 'delrisk'
-          inward_hl.status = 'new'
-
-          me.metrics.fail.current++
-
-          await inward_hl.save()
-          return
-        }
-
-        // otherwise mediate
 
         var outward_hl = Payment.build({
           channelId: dest_ch.d.id,
@@ -332,6 +310,8 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
       var [asset, hash, outcome_type, outcome] = t[1]
       hash = fromHex(hash)
 
+      l('del', t[1])
+
       // try to parse outcome as secret and check its hash
       if (
         outcome_type == 'outcomeSecret' &&
@@ -341,6 +321,7 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
       } else {
         // otherwise it is a reason why mediation failed
         var valid = false
+        l('Failing hashlock ', t)
       }
 
       refresh(ch)
@@ -354,6 +335,7 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
         fatal('no such hashlock')
         return
       }
+
       let subch = ch.d.subchannels.by('asset', asset)
       if (valid && t[0] == 'del') {
         // secret was provided - remove & apply hashlock on offdelta

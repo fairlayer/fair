@@ -35,10 +35,36 @@ module.exports = async (pubkey, opportunistic) => {
     }
     let all = []
 
+    // fail all
+    if (!me.sockets[ch.d.they_pubkey] || ch.d.status == 'disputed') {
+      for (let t of ch.payments) {
+        if (t.type + t.status == 'addnew') {
+          t.type = 'del'
+          t.status = 'ack'
+          t.outcome_type = 'fail'
+          await t.save()
+
+          if (t.inward_pubkey) {
+            inward_ch = await Channel.get(t.inward_pubkey)
+
+            let to_fail = inward_ch.payments.find((p) => p.hash.equals(t.hash))
+            to_fail.type = 'del'
+            to_fail.status = 'new'
+            to_fail.outcome_type = 'outcomeCapacity'
+            to_fail.outcome = 'outcomeCapacity'
+            await to_fail.save()
+
+            me.metrics.fail.current++
+          }
+        }
+      }
+      return l('this channel is offline')
+    }
+
     if (ch.d.status == 'sent') {
       if (trace) l(`End flush ${trim(pubkey)}, in sent`)
 
-      if (ch.d.ack_requested_at < new Date() - 4000) {
+      if (ch.d.ack_requested_at < ts() - 4000) {
         //me.send(ch.d.they_pubkey, 'update', ch.d.pending)
       }
       return
@@ -91,7 +117,7 @@ module.exports = async (pubkey, opportunistic) => {
         } else if (t.type == 'add' || t.type == 'addrisk') {
           if (
             t.lazy_until &&
-            t.lazy_until > new Date() &&
+            t.lazy_until > ts() &&
             t.amount > derived.uninsured
           ) {
             l('Still lazy, wait')
@@ -212,7 +238,7 @@ module.exports = async (pubkey, opportunistic) => {
 
     if (transitions.length > 0) {
       // if there were any transitions, we need an ack on top
-      ch.d.ack_requested_at = new Date()
+      ch.d.ack_requested_at = ts()
       //l('Set ack request ', ch.d.ack_requested_at, trim(pubkey))
       ch.d.pending = stringify(data)
       ch.d.status = 'sent'

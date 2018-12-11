@@ -147,7 +147,7 @@ module.exports = async (opts) => {
       is_inward: false,
       asset: asset,
 
-      lazy_until: opts.lazy ? +new Date() + 30000 : null,
+      lazy_until: opts.lazy ? ts() + 30000 : null,
 
       amount: amount,
       hash: bin(hash),

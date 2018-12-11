@@ -15,9 +15,7 @@ module.exports = async () => {
         return
       }
 
-      let missed_ack = ch.d.ack_requested_at
-        ? new Date() - ch.d.ack_requested_at
-        : 0
+      let missed_ack = ch.d.ack_requested_at ? ts() - ch.d.ack_requested_at : 0
 
       if (
         // already disputed

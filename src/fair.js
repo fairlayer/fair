@@ -168,15 +168,14 @@ startFairlayer = async () => {
   }
 
   // start syncing as soon as the node is started
-  //Periodical.syncChain()
-  setInterval(() => {
+  /*setInterval(() => {
     // propose step means last block was just finalized K.step_latency * 3
     //if (ts() % K.blocktime < 3) {
     Periodical.syncChain()
     //}
-  }, 200)
+  }, 200)*/
 
-  //Periodical.schedule('syncChain', K.blocktime * 2)
+  Periodical.schedule('syncChain', 200)
 
   l(`\n${note('Welcome to Fair REPL!')}`)
   repl = require('repl').start(note(''))

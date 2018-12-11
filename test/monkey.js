@@ -56,39 +56,12 @@ let run = async () => {
     Periodical.schedule('broadcast', K.blocktime)
   }
 
-  /*
-  let stubs = [
-    'Chase Bank',
-    'Bank of America',
-    'Barclays',
-    'BNP Paribas',
-    'Capital One',
-    'Citibank',
-    'Deutsche Bank',
-    'HSBC',
-    'UBS'
-  ]
-
-  if (base_port > 8000 && base_port <= 8003) {
-    let loc = on_server
-      ? `wss://fairlayer.com:${base_port + 100}`
-      : `ws://${localhost}:${base_port + 100}`
-    require('../src/internal_rpc/create_bank')({
-      fee_bps: 5,
-      handle: stubs[base_port - 8001],
-      location: loc,
-      box_pubkey: bin(me.box.publicKey),
-      add_routes: '1,2,3,4'
-    })
-  }
-  */
-
   if (base_port > 8000 && base_port < 8500) {
     monkeys.splice(monkeys.indexOf(me.getAddress()), 1) // *except our addr
 
     setTimeout(async () => {
       // ensure 1st bank node is up already
-      await sleep(1000)
+      await sleep(3000)
 
       await require('../src/internal_rpc/with_channel')({
         method: 'setLimits',
@@ -98,9 +71,9 @@ let run = async () => {
         credit: K.credit
       })
 
-      await sleep(1000)
+      await sleep(3000)
 
-      me.send(K.banks[0], {
+      me.send(K.banks[0].pubkey, {
         method: 'testnet',
         action: 'faucet',
         asset: 1,
@@ -178,12 +151,6 @@ let run = async () => {
       if ((await Block.count()) < 2) failed.push('blocks')
       if ((await Channel.count()) < 5) failed.push('deltas')
 
-      /* not in MVP
-
-      if ((await Asset.count()) < 4) failed.push('assets')
-      if ((await Order.count()) < 1) failed.push('orders')
-        */
-
       let e2e = 'e2e: ' + (failed.length == 0 ? 'success' : failed.join(', '))
       l(e2e)
 
@@ -206,9 +173,6 @@ let run = async () => {
       if (pubkey.length < 6) pubkey = readInt(pubkey)
       me.batchAdd('deposit', [1, [1000000, pubkey, 0]])
     }
-
-    // creating an initial FRB sell for FRD
-    //me.batchAdd('createOrder', [2, 10000000, 1, 0.001 * 1000000])
   }
 
   if (me.record.id == 4) {
@@ -223,21 +187,7 @@ let run = async () => {
         asset: 1
       })
     }, 12000)
-
-    // create an asset
-    //me.batchAdd('createAsset', ['TESTCOIN', 13371337, 'Test coin', 'No goal'])
   }
-
-  /*
-  if (me.record.id == 3) {
-    // just to make sure there's no leaky unescaped injection
-    var xss = 'XSSCOIN' //\'"><img src=x onerror=alert(0)>'
-    me.batchAdd('createAsset', ['XSS', 10000000, xss, xss])
-
-    // buying bunch of FRB for $4
-    me.batchAdd('createOrder', [1, 400, 2, 0.001 * 1000000])
-  }
-  */
 }
 
 if (argv.monkey) {

@@ -164,10 +164,6 @@ module.exports = async (pubkey, json, ws) => {
         }
 
         await me.payChannel(pay)
-      } else if (json.action == 'onchainFaucet') {
-        let faucet = [json.asset, [json.amount, fromHex(json.pubkey), 0]]
-        l('Added ', faucet)
-        me.batchAdd('deposit', faucet)
       }
     }
   })

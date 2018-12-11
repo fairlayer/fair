@@ -111,7 +111,7 @@ RPC = {
     'requestInsurance',
     'requestCredit',
     'giveWithdrawal',
-    'requestWithdawal',
+    'requestWithdrawal',
     'testnet'
   ]
 }

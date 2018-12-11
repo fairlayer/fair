@@ -1,6 +1,8 @@
 module.exports = (i) => {
     const methodMap = [
         'placeholder',
+        'returnChain',
+        'JSON',
 
         // consensus
         'propose', // same word used to propose smart updates
@@ -16,10 +18,7 @@ module.exports = (i) => {
         'dispute', // defines signed state (balance proof). Used only as last resort!
 
         'revealSecrets', // reveal secrets if partner has not acked our del settle
-        'vote',
-
-        'JSON',
-        'returnChain'
+        'vote'
     ]
 
     if (typeof i === 'string') {
