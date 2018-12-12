@@ -118,7 +118,7 @@ module.exports = async (args) => {
       const raw = fromHex(PK.pending_batch)
       if (trace) l('Rebroadcasting pending tx ', raw.length)
       react({
-        alert: "Transaction wasn't included, rebroadcasting...",
+        alert: 'Rebroadcasting...',
         force: true
       })
 

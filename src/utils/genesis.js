@@ -222,7 +222,7 @@ module.exports = async (datadir) => {
     fee_bps: 10,
     createdAt: ts(),
 
-    handle: 'Temporary'
+    handle: 'Demobank'
   })
 
   // similar to https://en.wikipedia.org/wiki/Nostro_and_vostro_accounts

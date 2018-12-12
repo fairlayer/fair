@@ -6,7 +6,7 @@ prettyState = (state) => {
 
   state[2].map((subch) => {
     subch[0] = readInt(subch[0])
-    subch[1] = readInt(subch[1])
+    subch[1] = readInt(subch[1], true) //signed
 
     // amount and exp, except the hash
     subch[2].map((h) => {

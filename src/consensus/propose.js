@@ -19,6 +19,10 @@ module.exports = async () => {
   if (me.proposed_block.locked) {
     l(`We precommited to previous block, keep proposing it`)
     ;({header, ordered_tx_body} = me.proposed_block)
+
+    let parsed_header = r(header)
+    parsed_header[4] = ts()
+    header = r(parsed_header)
   } else {
     // otherwise build new block from your mempool
     let total_size = 0
@@ -37,10 +41,12 @@ module.exports = async () => {
         ordered_tx.push(candidate)
         total_size += candidate.length
       } else {
-        //l(`Bad tx in mempool`, result, candidate)
+        l(`Bad tx in mempool`, result, candidate)
         // punish submitter ip
       }
     }
+
+    l(`Mempool ${me.mempool.length} vs ${ordered_tx.length}`)
 
     // flush it or pass leftovers to next validator
     me.mempool = []

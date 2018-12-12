@@ -6,7 +6,7 @@ module.exports = async (opts) => {
     let hash = sha3(secret)
     let asset = parseInt(opts.asset)
 
-    //l('paying ', opts.destination.length, toHex(opts.destination))
+    l('paying ', opts)
 
     if (!opts.address) {
       l('Error: No address ', opts)
@@ -19,14 +19,6 @@ module.exports = async (opts) => {
       l('Invalid address')
       return 'Invalid address'
     }
-
-    /* for offchain rebalancing 
-
-    if (addr.address == me.getAddress()) {
-      react({alert: `Cannot pay to yourself`})
-      return
-    }
-    */
 
     // use user supplied private message, otherwise generate random tag
     // invoice inside the address takes priority

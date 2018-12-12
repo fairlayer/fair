@@ -168,7 +168,7 @@ refresh = function(ch) {
 
     ch.state[2].push([
       subch.asset,
-      subch.offdelta,
+      encodeSignedInt(subch.offdelta),
       out[ch.d.isLeft() ? 'inwards' : 'outwards'].map((t) => paymentToLock(t)),
       out[ch.d.isLeft() ? 'outwards' : 'inwards'].map((t) => paymentToLock(t))
     ])

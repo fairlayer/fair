@@ -20,10 +20,31 @@ module.exports = async (pubkey, json, ws) => {
     return l('Invalid proposer sig')
   }
 
+  let parsed_header = r(header)
+
+  // this is protection from a replay attack
+
+  let new_ts = readInt(parsed_header[4])
+  let theirs = Math.round(new_ts / K.blocktime)
+  let ours = Math.round(ts() / K.blocktime)
+
+  if (theirs != ours) {
+    return l(`Bad round ${theirs} not ${ours}`)
+  }
+
   if (me.proposed_block.locked) {
-    return l(
-      `Still locked: ${toHex(me.proposed_block.header)} ${toHex(header)}`
-    )
+    let old_parsed_header = r(me.proposed_block.header)
+    old_parsed_header[4] = new_ts
+    me.proposed_block.header = r(old_parsed_header)
+    header = me.proposed_block.header
+
+    me.proposed_block.uptodate = true
+
+    /*
+    return */
+
+    l(`Still locked: ${toHex(me.proposed_block.header)} ${toHex(header)}`)
+    return
   }
 
   // no precommits means dry run
@@ -37,6 +58,9 @@ module.exports = async (pubkey, json, ws) => {
   me.proposed_block = {
     proposer: pubkey_propose,
     sig: sig,
+
+    uptodate: true,
+    locked: false,
 
     header: bin(header),
     ordered_tx_body: ordered_tx_body

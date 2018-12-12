@@ -46,11 +46,11 @@ module.exports = async (s, header, ordered_tx_body) => {
   }
 
   if (timestamp < K.ts) {
-    return l('New block from the past')
+    return l('New block older than current block')
   }
 
-  if (timestamp > ts() + 3600000) {
-    return l('Block from far future (1hr+)?')
+  if (timestamp > ts() + 60000) {
+    return l('Block from far future')
   }
 
   if (!sha3(ordered_tx_body).equals(tx_root)) {
@@ -101,7 +101,7 @@ module.exports = async (s, header, ordered_tx_body) => {
 
   K.prev_hash = toHex(sha3(header))
 
-  if (K.total_blocks % 50 == 0 && cached_result.sync_started_at) {
+  if (K.total_blocks % 100 == 0 && cached_result.sync_started_at) {
     l(
       `${base_port}: Block ${K.total_blocks} by ${built_by}. tx: ${
         ordered_tx.length

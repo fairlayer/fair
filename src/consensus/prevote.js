@@ -2,7 +2,10 @@ module.exports = () => {
   me.status = 'prevote'
 
   // gossip your prevotes for block or nil
-  const prevotable = me.proposed_block ? me.proposed_block.header : 0
+  const prevotable =
+    me.proposed_block && me.proposed_block.uptodate
+      ? me.proposed_block.header
+      : 0
 
   setTimeout(() => {
     me.sendAllValidators({

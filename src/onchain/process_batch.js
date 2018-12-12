@@ -76,7 +76,7 @@ module.exports = async (s, batch) => {
     batch_nonce,
     gaslimit,
     gasprice
-  ].map(readInt)
+  ].map((val) => readInt(val))
 
   if (methodMap(methodId) != 'batch') {
     return {error: 'Only batched tx are supported'}
@@ -177,6 +177,7 @@ module.exports = async (s, batch) => {
       //l('Added to chain')
       //react({confirm: 'Your onchain transaction has been added!'}, false)
       PK.pending_batch = null
+      me.batch = []
     }
   }
 

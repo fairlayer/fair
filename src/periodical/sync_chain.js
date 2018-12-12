@@ -30,8 +30,9 @@ module.exports = () => {
   if (
     !cached_result.sync_started_at &&
     K.ts + K.blocktime + 2000 < now &&
-    me.last_sync_chain + 2000 < now
+    me.last_sync_chain + 5000 < now
   ) {
+    // await returnChain from now on
     me.last_sync_chain = now
     return sendSync()
   }

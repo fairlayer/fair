@@ -20,7 +20,10 @@ module.exports = () => {
   })
 
   if (shares < K.majority) {
-    if (!me.proposed_block.locked) {
+    if (me.proposed_block.locked) {
+      // this round failed, expire timestamp in header
+      me.proposed_block.uptodate = false
+    } else {
       me.proposed_block = {}
     }
 

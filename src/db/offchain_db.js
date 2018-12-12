@@ -64,6 +64,11 @@ const defineModels = (sequelize) => {
         defaultValue: null
       },
 
+      could_rebalance: {
+        type: Sequelize.BOOLEAN,
+        defaultValue: false
+      },
+
       last_online: Sequelize.DATE,
       withdrawal_requested_at: Sequelize.DATE,
 

@@ -20,7 +20,11 @@ General recommendations:
 
 const withdraw = require('../offchain/withdraw')
 
-const rebalance = async function(asset) {
+module.exports = async function() {
+  if (PK.pending_batch || me.batch.length > 0) {
+    return //l('There are pending tx')
+  }
+
   var deltas = await Channel.findAll()
 
   // we request withdrawals and check in few seconds for them
@@ -29,114 +33,104 @@ const rebalance = async function(asset) {
 
   let minRisk = 500
 
-  for (let d of deltas) {
-    await section(['use', d.they_pubkey], async () => {
-      let ch = await Channel.get(d.they_pubkey)
-      let derived = ch.derived[asset]
-      let subch = ch.d.subchannels.by('asset', asset)
+  for (let asset = 1; asset <= 2; asset++) {
+    for (let d of deltas) {
+      await section(['use', d.they_pubkey], async () => {
+        let ch = await Channel.get(d.they_pubkey)
+        let derived = ch.derived[asset]
+        let subch = ch.d.subchannels.by('asset', asset)
 
-      if (!derived) {
-        l('No derived', ch)
-      }
-
-      // finding who has uninsured balances AND
-      // requests insurance OR gone beyond soft limit
-      if (
-        derived.they_uninsured > 0 &&
-        (subch.they_requested_insurance ||
-          (subch.they_rebalance > 0 &&
-            derived.they_uninsured >= subch.they_rebalance))
-      ) {
-        //l('Adding output for our promise ', ch.d.they_pubkey)
-        netReceivers.push(ch)
-      } else if (derived.insured >= minRisk) {
-        if (me.sockets[ch.d.they_pubkey]) {
-          // they either get added in this rebalance or next one
-          //l('Request withdraw withdraw: ', derived)
-          netSpenders.push(withdraw(ch, subch, derived.insured))
-        } else if (subch.withdrawal_requested_at == null) {
-          l('Delayed pull')
-          subch.withdrawal_requested_at = ts()
-        } else if (subch.withdrawal_requested_at + 600000 < ts()) {
-          l('User is offline for too long, or tried to cheat')
-          me.batchAdd('dispute', await startDispute(ch))
+        if (!derived) {
+          l('No derived', ch)
         }
-      }
-    })
-  }
 
-  // checking on all withdrawals we expected to get, then rebalance
-  netSpenders = await Promise.all(netSpenders)
-
-  // 1. how much we own of this asset
-
-  let weOwn = me.record ? userAsset(me.record, asset) : 0
-
-  // 2. add all withdrawals we received
-  for (let ch of netSpenders) {
-    let subch = ch.derived[asset].subch
-    if (subch.withdrawal_sig) {
-      weOwn += subch.withdrawal_amount
-      let user = await User.findOne({
-        where: {pubkey: ch.d.they_pubkey},
-        include: [Balance]
+        // finding who has uninsured balances AND
+        // requests insurance OR gone beyond soft limit
+        if (
+          derived.they_uninsured > 0 &&
+          (subch.they_requested_insurance ||
+            (subch.they_rebalance > 0 &&
+              derived.they_uninsured >= subch.they_rebalance))
+        ) {
+          //l('Adding output for our promise ', ch.d.they_pubkey)
+          netReceivers.push(ch)
+        } else if (derived.insured >= minRisk) {
+          if (me.sockets[ch.d.they_pubkey]) {
+            // they either get added in this rebalance or next one
+            //l('Request withdraw withdraw: ', derived)
+            netSpenders.push(withdraw(ch, subch, derived.insured))
+          } else if (subch.withdrawal_requested_at == null) {
+            l('Delayed pull')
+            subch.withdrawal_requested_at = ts()
+          } else if (subch.withdrawal_requested_at + 600000 < ts()) {
+            l('User is offline for too long, or tried to cheat')
+            me.batchAdd('dispute', await startDispute(ch))
+          }
+        }
       })
-
-      me.batchAdd('withdraw', [
-        subch.asset,
-        [subch.withdrawal_amount, user.id, subch.withdrawal_sig]
-      ])
-    } else {
-      // offline? dispute
-      subch.withdrawal_requested_at = ts()
     }
-  }
 
-  // 3. debts will be enforced on us (if any), so let's deduct them beforehand
-  let debts = await me.record.getDebts({where: {asset: asset}})
-  for (let d of debts) {
-    weOwn -= d.amount_left
-  }
+    // checking on all withdrawals we expected to get, then rebalance
+    netSpenders = await Promise.all(netSpenders)
 
-  // sort receivers, larger ones are given priority
-  netReceivers.sort(
-    (a, b) => b.derived[asset].they_uninsured - a.derived[asset].they_uninsured
-  )
+    // 1. how much we own of this asset
 
-  // dont let our FRD onchain balance go lower than that
-  let safety = asset == 1 ? K.bank_standalone_balance : 0
+    let weOwn = me.record ? userAsset(me.record, asset) : 0
 
-  // 4. now do our best to cover net receivers
-  for (let ch of netReceivers) {
-    weOwn -= ch.derived[asset].they_uninsured
-    if (weOwn >= safety) {
-      me.batchAdd('deposit', [
-        asset,
-        [ch.derived[asset].they_uninsured, me.record.id, ch.d.they_pubkey, 0]
-      ])
+    // 2. add all withdrawals we received
+    for (let ch of netSpenders) {
+      let subch = ch.derived[asset].subch
+      if (subch.withdrawal_sig) {
+        weOwn += subch.withdrawal_amount
+        let user = await User.findOne({
+          where: {pubkey: ch.d.they_pubkey},
+          include: [Balance]
+        })
 
-      // nullify their insurance request
-      ch.derived[asset].subch.they_requested_insurance = false
-    } else {
-      l(
-        `Run out of funds for asset ${asset}, own ${weOwn} need ${
-          ch.derived[asset].they_uninsured
-        }`
-      )
-      break
+        me.batchAdd('withdraw', [
+          subch.asset,
+          [subch.withdrawal_amount, user.id, subch.withdrawal_sig]
+        ])
+      } else {
+        // offline? dispute
+        subch.withdrawal_requested_at = ts()
+      }
     }
-  }
-}
 
-module.exports = () => {
-  if (PK.pending_batch || me.batch.length > 0) {
-    return //l('There are pending tx')
-  }
+    // 3. debts will be enforced on us (if any), so let's deduct them beforehand
+    let debts = await me.record.getDebts({where: {asset: asset}})
+    for (let d of debts) {
+      weOwn -= d.amount_left
+    }
 
-  //l('Starting rebalance')
-  // we iterate over all assets in existance and rebalance each separately
-  //K.assets_created
-  for (let i = 1; i <= 2; i++) {
-    rebalance(i)
+    // sort receivers, larger ones are given priority
+    netReceivers.sort(
+      (a, b) =>
+        b.derived[asset].they_uninsured - a.derived[asset].they_uninsured
+    )
+
+    // dont let our FRD onchain balance go lower than that
+    let safety = asset == 1 ? K.bank_standalone_balance : 0
+
+    // 4. now do our best to cover net receivers
+    for (let ch of netReceivers) {
+      weOwn -= ch.derived[asset].they_uninsured
+      if (weOwn >= safety) {
+        me.batchAdd('deposit', [
+          asset,
+          [ch.derived[asset].they_uninsured, me.record.id, ch.d.they_pubkey, 0]
+        ])
+
+        // nullify their insurance request
+        ch.derived[asset].subch.they_requested_insurance = false
+      } else {
+        l(
+          `Run out of funds for asset ${asset}, own ${weOwn} need ${
+            ch.derived[asset].they_uninsured
+          }`
+        )
+        break
+      }
+    }
   }
 }

@@ -9,11 +9,13 @@ const payMonkey = async (on_server, counter = 1) => {
   }
 
   // offchain payment
-  await me.payChannel({
-    address: parsedAddress.address,
-    amount: 100 + Math.round(Math.random() * 200),
-    asset: 1
-  })
+  console.log(
+    await me.payChannel({
+      address: parsedAddress.address,
+      amount: 100 + Math.round(Math.random() * 200),
+      asset: 1
+    })
+  )
 
   const reg = await getUserByIdOrKey(parsedAddress.pubkey)
 
@@ -61,7 +63,7 @@ let run = async () => {
 
     setTimeout(async () => {
       // ensure 1st bank node is up already
-      await sleep(3000)
+      await sleep(2000)
 
       await require('../src/internal_rpc/with_channel')({
         method: 'setLimits',
@@ -71,7 +73,7 @@ let run = async () => {
         credit: K.credit
       })
 
-      await sleep(3000)
+      await sleep(2000)
 
       me.send(K.banks[0].pubkey, {
         method: 'testnet',
@@ -111,11 +113,11 @@ let run = async () => {
 
       me.payChannel({
         address:
-          'BummAd9FuuYvjGWemSNfnMKVbTCQcfq2ZymYLt9NxxbLELj5cunk4iyTGqr5ya5GsD31HvZysH5241VaKeeycaJzDZKT56fs#DOOMEDTOFAIL',
+          'BummA99ygBEKX5pwxQdjgwLuBWUe1J3y83PgG4UUPRVeBLcq9z1MvbGwCVywazybHj3cazHohFMkhxhako7xmRU4t7cZSSSC#FAIL',
         amount: 100,
         asset: 1
-      })
-    }, 23000)
+      }).then(console.log)
+    }, 20000)
   }
 
   // below go pre-registred users

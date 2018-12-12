@@ -13,8 +13,8 @@ module.exports = async (pubkey, json, ws) => {
     return //
   }
 
-  if (!me.proposed_block.header) {
-    l(`${m.id}:${json.method}. We have no block`)
+  if (!me.proposed_block.header || !me.proposed_block.uptodate) {
+    l(`${m.id}:${json.method}. We have no uptodate header`)
     return
   }
 

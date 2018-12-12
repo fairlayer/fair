@@ -37,7 +37,7 @@ const parseAddress = async (address) => {
 
   try {
     parts = r(base58.decode(addr))
-    if (parts[2]) parts[2] = parts[2].map(readInt)
+    if (parts[2]) parts[2] = parts[2].map((val) => readInt(val))
   } catch (e) {}
 
   if (parts[0] && parts[0].length <= 6) {
@@ -355,7 +355,7 @@ const insuranceResolve = async (ins) => {
     let subchannels = r(ins.dispute_state)
     for (let subch of subchannels) {
       let asset = readInt(subch[0])
-      let offdelta = readInt(subch[1])
+      let offdelta = readInt(subch[1], true) //signed
 
       // revealed in time hashlocks are applied to offdelta
       offdelta += await findRevealed(subch[2])

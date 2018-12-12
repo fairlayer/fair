@@ -3,7 +3,7 @@ module.exports = async (s, args) => {
   return
 
   // onchain exchange to sell an asset for another one.
-  let [assetId, amount, buyAssetId, raw_rate] = args.map(readInt)
+  let [assetId, amount, buyAssetId, raw_rate] = args.map((val) => readInt(val))
   const round = Math.round
   const rate = raw_rate / 1000000 // convert back from integer
 

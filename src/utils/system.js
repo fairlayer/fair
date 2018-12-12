@@ -187,7 +187,8 @@ r = function(a) {
     try {
       return rlp.encode(a)
     } catch (e) {
-      return new Buffer([])
+      l(e)
+      return new Buffer.from([])
     }
   }
 }
@@ -260,15 +261,22 @@ onchain_state = async () => {
 
 localhost = '127.0.0.1'
 
-readInt = (i) => {
+readInt = (i, signed = false) => {
   // reads signed integer from RLP encoded buffer
 
   if (i.length > 0) {
     var num = i.readUIntBE(0, i.length)
-    return num % 2 == 1 ? -(num - 1) / 2 : num / 2
+    if (signed) {
+      return num % 2 == 1 ? -(num - 1) / 2 : num / 2
+    } else {
+      return num
+    }
   } else {
     return 0
   }
+}
+encodeSignedInt = (i) => {
+  return Math.abs(i) * 2 + (i < 0 ? 1 : 0)
 }
 
 toHex = (inp) => Buffer.from(inp).toString('hex')

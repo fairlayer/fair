@@ -13,6 +13,10 @@ module.exports = async (ws, msg) => {
     return false
   }
 
+  if (msgb.length > 10000) {
+    l(`Long input: ${msgb.length}`)
+  }
+
   // we have no control over potentially malicious user input, so ignore all errors
   try {
     let content = r(msgb)

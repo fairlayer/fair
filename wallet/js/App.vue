@@ -7,12 +7,14 @@
       bottom:0px;
       width:100%;
       background-color: #FFFDDE; border:thin solid #EDDD00">
-        <p v-if="PK.pending_batch" style='margin: 25px;text-align:center'>
-          Wait for tx to be included in next block...
-          <dotsloader></dotsloader>
-        </p>
-        <p v-else style='margin: 10px;text-align:center'>
+       
+        <p style='margin: 10px;text-align:center'>
           <span v-html="prettyBatch(batch)"></span>
+
+          <template v-if="PK.pending_batch">
+            Wait for validation...<dotsloader></dotsloader>
+          </template>
+          <template v-else>
           <span>
             <input style="width: 80px" type="number" v-model="gasprice">
      (gas price) * {{batch_estimate.size}} (gas) = fee {{commy(gasprice * batch_estimate.size)}}
@@ -21,7 +23,9 @@
               <input type="range" min="1" max="100" class="slider" v-model="gasprice">
             </div>-->
           <span v-if="getAsset(1) - gasprice * batch_estimate.size >= 100"><button type="button" class="btn btn-outline-danger" @click="call('broadcast', {gasprice: parseInt(gasprice)})">Sign & Broadcast</button> or <a class="dotted" @click="call('clearBatch')">clear batch</a></span>
-          <span v-else>Not enough FRD in {{onchain}}</span>
+          <span v-else>Not enough FRD onchain</span>
+          </template>
+
         </p>
       </div>
     </template>
@@ -111,9 +115,6 @@
           </tbody>
         </table>
       </div>
-
-
-
       <div v-else-if="tab=='settings'">
         <pre>Auth link: {{getAuthLink()}}</pre>
         <p>
@@ -123,11 +124,7 @@
           <button type="button" class="btn btn-outline-danger" @click="call('logout')">Graceful Shutdown
           </button>
         </p>
-
-
-      
       </div>
-
       <div v-else-if="tab=='wallet'">
         <template v-if="pubkey">
           <ul class="nav nav-pills nav-fill">
@@ -150,7 +147,6 @@
               <p>
                 <p v-for="subch in ch.d.subchannels">
                   <button class="btn btn-outline-info" @click="mod={shown:true, ch:ch, subch: subch, credit: commy(subch.credit), rebalance: commy(subch.rebalance)}">{{to_ticker(subch.asset)}}: {{commy(ch.derived[subch.asset].available)}}</button>&nbsp;
-
                 </p>
               </p>
               <p v-if="record">
@@ -180,9 +176,7 @@
             </h3>
             </div>
             <div v-else>
-              <h4 style="display:inline-block">
-              {{onchain}}: not registered <span class="badge badge-success layer-faucet" @click="call('onchainFaucet', {amount: 10000, asset: 1 })">faucet</span>
-            </h4>
+              <span class="badge badge-success layer-faucet" @click="call('onchainFaucet', {amount: 10000, asset: 1 })">faucet</span>
             </div>
           </template>
           <p>
@@ -381,82 +375,53 @@
         </div>
       </div>
     </div>
-    
-
-
-
-
-<div v-if="mod.shown" class="modal-backdrop fade show"></div>
+    <div v-if="mod.shown" class="modal-backdrop fade show"></div>
     <div @click.self="mod.shown=false" class="modal fade bd-example-modal-lg" v-if="mod.shown" v-bind:style="{display: mod.shown ? 'block' : 'none'}" v-bind:class="{show: mod.shown}">
       <div style="min-width:70%;" class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Asset {{to_ticker(mod.subch.asset)}} with {{to_user(mod.ch.partner)}}</h5>
-            <button @click="mod.shown=false" type="button" class="close" data-dismiss="modal" aria-label="Close">
-              <span aria-hidden="true">&times;</span>
-            </button>
-          </div>
           <div class="modal-body">
             <div class="container-fluid">
               <div class="row">
                 <div class="col-md-6">
-
-        <table class="table">
-          <thead class="thead-dark">
-            <tr>
-              <th scope="col"></th>
-              <th scope="col">You</th>
-              <th scope="col">{{to_user(mod.ch.partner)}}</th>
-            </tr>
-          </thead>
-
-                  <tbody>
-                    <tr>
-                    <td>Available</td><td>{{commy(derived.available)}}</td><td>{{commy(derived.they_available)}}</td>
-                    </tr>
-
-                    <tr>
-                    <td>Hold</td><td>{{commy(derived.outwards_hold)}}</td><td>{{commy(derived.inwards_hold)}}</td>
-                    </tr>
-                    
-                    <tr>
-                    <td>Insured</td><td>{{commy(derived.insured)}}</td><td>{{commy(derived.they_insured)}}</td>
-                    </tr>
-
-                    <tr>
-                    <td>Uninsured</td><td>{{commy(derived.uninsured)}}</td><td>{{commy(derived.they_uninsured)}}</td>
-                    </tr>
-
-                    <tr>
-                    <td>Credit</td><td>{{commy(mod.subch.credit)}}</td><td>{{commy(mod.subch.they_credit)}}</td>
-                    </tr>
-
-
-
-                  </tbody>
+                  <table class="table">
+                    <thead class="thead-dark">
+                      <tr>
+                        <th scope="col"></th>
+                        <th scope="col">You</th>
+                        <th scope="col">{{to_user(mod.ch.partner)}}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>Available {{to_ticker(mod.subch.asset)}}</td>
+                        <td>{{commy(derived.available)}}</td>
+                        <td>{{commy(derived.they_available)}}</td>
+                      </tr>
+                      <tr>
+                        <td>Hold</td>
+                        <td>{{commy(derived.outwards_hold)}}</td>
+                        <td>{{commy(derived.inwards_hold)}}</td>
+                      </tr>
+                      <tr>
+                        <td>Insured</td>
+                        <td>{{commy(derived.insured)}}</td>
+                        <td>{{commy(derived.they_insured)}}</td>
+                      </tr>
+                      <tr>
+                        <td>Uninsured</td>
+                        <td>{{commy(derived.uninsured)}}</td>
+                        <td>{{commy(derived.they_uninsured)}}</td>
+                      </tr>
+                      <tr>
+                        <td>Credit</td>
+                        <td>{{commy(mod.subch.credit)}}</td>
+                        <td>{{commy(mod.subch.they_credit)}}</td>
+                      </tr>
+                    </tbody>
                   </table>
-
-
                 </div>
                 <div class="col-md-6">
-
-
-<span class="badge badge-success bank-faucet" @click="call('withChannel', {they_pubkey: mod.ch.d.they_pubkey, method: 'testnet', action: 'faucet', asset: mod.subch.asset, amount:10000 })">Use faucet</span>
-
-
-<span v-if="record" class="badge badge-danger" @click="a=prompt(`How much to withdraw to onchain?`);if (a) {call('withChannel', {they_pubkey: mod.ch.d.they_pubkey, asset: mod.subch.asset, method: 'withdraw', amount: uncommy(a)})};">Withdraw</span>&nbsp;<span v-if="record" class="badge badge-danger" @click="mod.shown=false;outward.address=address;updateRoutes();outward.type='onchain';outward.asset=mod.subch.asset;outward.bank = mod.ch.partner;">Deposit</span>
-
-
-
-                  <span class="badge badge-danger" @click="requestInsurance(mod.ch, mod.subch.asset)">Request Insurance</span>
-                    <dotsloader v-if="derived.subch.requested_insurance"></dotsloader>
-
-                  <p v-if="false"><span class="badge badge-danger" @click="call('withChannel', {they_pubkey: mod.ch.d.they_pubkey, asset: mod.subch.asset, method: 'requestCredit', amount: 1})">Request Credit</span>
-                  </p>
-
-                  
-                  <h4>Set credit</h4>
-                  <p>Maximum uninsured balance</p>
+                  <p>Credit (maximum uninsured balance)</p>
                   <p>
                     <input type="text" class="form-control" v-model="mod.credit">
                   </p>
@@ -467,6 +432,13 @@
                   <p>
                     <button type="button" class="btn btn-outline-success" @click="call('withChannel', {they_pubkey: mod.ch.d.they_pubkey, asset: mod.subch.asset, method: 'setLimits', credit: uncommy(mod.credit), rebalance: uncommy(mod.rebalance)})" href="#">Update Credit Limits</button>
                   </p>
+                  <p>
+                    <span class="badge badge-success bank-faucet" @click="call('withChannel', {they_pubkey: mod.ch.d.they_pubkey, method: 'testnet', action: 'faucet', asset: mod.subch.asset, amount:10000 })">Use faucet</span>
+                    <span v-if="record" class="badge badge-danger" @click="a=prompt(`How much to withdraw to onchain?`);if (a) {call('withChannel', {they_pubkey: mod.ch.d.they_pubkey, asset: mod.subch.asset, method: 'withdraw', amount: uncommy(a)})};">Withdraw</span>
+                    <span v-if="record" class="badge badge-danger" @click="mod.shown=false;outward.address=address;updateRoutes();outward.type='onchain';outward.asset=mod.subch.asset;outward.bank = mod.ch.partner;">Deposit</span>
+                    <span class="badge badge-danger" @click="requestInsurance(mod.ch, mod.subch.asset)">Request Insurance</span>
+                    <dotsloader v-if="derived.subch.requested_insurance"></dotsloader>
+                  </p>
                 </div>
               </div>
             </div>
@@ -474,7 +446,6 @@
         </div>
       </div>
     </div>
-    
   </div>
 </template>
 

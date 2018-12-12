@@ -36,7 +36,5 @@ module.exports = async function(opts) {
       me.send(nextValidator(true), 'add_batch', r([estimated.signed_batch]))
     }
     */
-
-    me.batch = []
   })
 }

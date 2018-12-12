@@ -310,8 +310,6 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
       var [asset, hash, outcome_type, outcome] = t[1]
       hash = fromHex(hash)
 
-      l('del', t[1])
-
       // try to parse outcome as secret and check its hash
       if (
         outcome_type == 'outcomeSecret' &&
@@ -321,7 +319,7 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
       } else {
         // otherwise it is a reason why mediation failed
         var valid = false
-        l('Failing hashlock ', t)
+        //l('Failing hashlock ', t)
       }
 
       refresh(ch)
@@ -471,7 +469,7 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
     ch.d.CHEAT_profitable_sig = ch.d.sig
   }
   let profitable = r(ch.d.CHEAT_profitable_state)
-  let o = readInt(profitable[2][0][1])
+  let o = readInt(profitable[2][0][1], true)
   let subch1 = ch.d.subchannels.by('asset', 1)
   if (
     (ch.d.isLeft() && subch1.offdelta > o) ||
