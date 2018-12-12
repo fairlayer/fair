@@ -173,11 +173,11 @@ module.exports = async (s, batch) => {
   s.meta['parsed_tx'].push(s.parsed_tx)
 
   if (me.is_me(s.signer.pubkey)) {
-    if (PK.pending_batch == toHex(batch)) {
+    if (PK.pendingBatchHex == toHex(batch)) {
       //l('Added to chain')
       //react({confirm: 'Your onchain transaction has been added!'}, false)
-      PK.pending_batch = null
-      me.batch = []
+      PK.pendingBatchHex = null
+      me.pendingBatch = []
     }
   }
 

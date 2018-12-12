@@ -21,7 +21,7 @@ General recommendations:
 const withdraw = require('../offchain/withdraw')
 
 module.exports = async function() {
-  if (PK.pending_batch || me.batch.length > 0) {
+  if (PK.pendingBatchHex || me.batch.length > 0) {
     return //l('There are pending tx')
   }
 

@@ -73,7 +73,8 @@ module.exports = async (force = false) => {
               built_by: readInt(built_by),
               timestamp: readInt(timestamp),
               meta: JSON.parse(b.meta),
-              total_tx: b.total_tx
+              total_tx: b.total_tx,
+              round: b.round
             }
           })
           return true

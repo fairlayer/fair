@@ -82,7 +82,7 @@ const loadPKFile = (datadir) => {
     // used to authenticate browser sessions to this daemon
     return {
       auth_code: toHex(crypto.randomBytes(32)),
-      pending_batch: null
+      pendingBatchHex: null
     }
   }
 

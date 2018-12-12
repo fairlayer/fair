@@ -78,7 +78,10 @@ react = async (result) => {
 
     result.address = me.getAddress()
     result.pubkey = toHex(me.pubkey)
+
     result.batch = me.batch
+    result.pendingBatch = me.pendingBatch
+
     result.batch_estimate = await me.batch_estimate()
   }
 

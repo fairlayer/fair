@@ -21,14 +21,14 @@ module.exports = async (s, args) => {
       return
     }
 
-    const deposit = await getUserByIdOrKey(output[1])
-    if (!deposit) return
+    const target = await getUserByIdOrKey(output[1])
+    if (!target) return
 
     const withPartner =
       output[2].length == 0 ? false : await getUserByIdOrKey(output[2])
 
     // here we ensure both parties are registred (have id), and take needed fees
-    if (!deposit.id) {
+    if (!target.id) {
       // you must be registered first using asset 1
       if (asset != 1) {
         l('Not 1 asset')
@@ -38,10 +38,10 @@ module.exports = async (s, args) => {
       if (!withPartner) {
         if (amount < K.account_creation_fee) return
 
-        userAsset(deposit, asset, amount - K.account_creation_fee)
+        userAsset(target, asset, amount - K.account_creation_fee)
         userAsset(s.signer, asset, -amount)
 
-        if (me.is_me(deposit.pubkey)) {
+        if (me.is_me(target.pubkey)) {
           me.addEvent({
             type: 'fee',
             amount: -K.account_creation_fee,
@@ -61,12 +61,12 @@ module.exports = async (s, args) => {
         const fee = K.standalone_balance + K.account_creation_fee
         if (amount < fee) return
 
-        userAsset(deposit, asset, K.standalone_balance)
+        userAsset(target, asset, K.standalone_balance)
         amount -= fee
         //userAsset(s.signer, asset, -fee)
       }
 
-      await deposit.save()
+      await saveId(target)
 
       K.collected_fees += K.account_creation_fee
     } else {
@@ -90,12 +90,12 @@ module.exports = async (s, args) => {
           /*
           if (me.is_me(withPartner.pubkey)) {
             await me.addHistory(
-              deposit.pubkey,
+              target.pubkey,
               -K.account_creation_fee,
               'Account creation fee'
             )
             await me.addHistory(
-              deposit.pubkey,
+              target.pubkey,
               -K.standalone_balance,
               'Minimum global balance'
             )
@@ -103,21 +103,22 @@ module.exports = async (s, args) => {
           */
         }
       } else {
-        if (deposit.id == s.signer.id) {
+        if (target.id == s.signer.id) {
           l('Trying to deposit to your onchain balance is pointless')
           return
         }
-        userAsset(deposit, asset, amount)
+        userAsset(target, asset, amount)
+        //l('Deposited now: ', target)
         userAsset(s.signer, asset, -amount)
-        await deposit.save()
+        await saveId(target)
       }
     }
 
     if (withPartner && withPartner.id) {
-      const compared = Buffer.compare(deposit.pubkey, withPartner.pubkey)
+      const compared = Buffer.compare(target.pubkey, withPartner.pubkey)
       if (compared == 0) return
 
-      const ins = await getInsuranceBetween(deposit, withPartner)
+      const ins = await getInsuranceBetween(target, withPartner)
 
       let subins = ins.subinsurances.by('asset', asset)
       if (!subins) {
@@ -129,7 +130,7 @@ module.exports = async (s, args) => {
       }
 
       subins.balance += amount
-      if (deposit.id == ins.leftId) subins.ondelta += amount
+      if (target.id == ins.leftId) subins.ondelta += amount
 
       // user is paying themselves for registration
       const regfees = original_amount - amount
@@ -155,11 +156,11 @@ module.exports = async (s, args) => {
 
       //await saveId(subins)
 
-      if (me.is_me(deposit.pubkey) || me.is_me(withPartner.pubkey)) {
+      if (me.is_me(target.pubkey) || me.is_me(withPartner.pubkey)) {
         // hot reload
         // todo ensure it's in memory yet
         const ch = await Channel.get(
-          me.is_me(withPartner.pubkey) ? deposit.pubkey : withPartner.pubkey
+          me.is_me(withPartner.pubkey) ? target.pubkey : withPartner.pubkey
         )
 
         // rebalance happened, nullify
@@ -172,7 +173,7 @@ module.exports = async (s, args) => {
       /*
       if (me.is_me(withPartner.pubkey)) {
         await me.addHistory(
-          deposit.pubkey,
+          target.pubkey,
           -reimburse_txfee,
           'Rebalance fee',
           true
@@ -194,15 +195,15 @@ module.exports = async (s, args) => {
         amount: -amount,
         asset: asset,
         public_invoice: public_invoice.toString(),
-        userId: deposit.id,
+        userId: target.id,
 
-        desc: `Sent to ${deposit.id}`
+        desc: `Sent to ${target.id}`
       })
     }
 
     // sent onchain to us
-    if (me.is_me(deposit.pubkey)) {
-      me.record = deposit
+    if (me.is_me(target.pubkey)) {
+      //me.record = target
 
       // TODO: hook into SDK
       me.addEvent({
@@ -219,7 +220,7 @@ module.exports = async (s, args) => {
     s.parsed_tx.events.push([
       'deposit',
       amount,
-      deposit.id,
+      target.id,
       withPartner ? withPartner.id : false,
       public_invoice ? toHex(public_invoice) : false
     ])

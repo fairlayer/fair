@@ -263,7 +263,7 @@ module.exports = async (s) => {
   // Other validators managed to commit a block, therefore delete lock and proceed
   // Tendermint uses 2/3+ prevotes as "proof of lock change"
   if (me.locked_block) {
-    l('Unlocked at ' + K.total_blocks)
+    //l('Unlocked at ' + K.total_blocks)
     me.locked_block = null
     me.proposed_block = null
   }

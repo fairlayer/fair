@@ -73,7 +73,7 @@ let run = async () => {
         credit: K.credit
       })
 
-      await sleep(2000)
+      await sleep(3000)
 
       me.send(K.banks[0].pubkey, {
         method: 'testnet',
@@ -95,7 +95,6 @@ let run = async () => {
           asset: 1,
           amount: 1234
         })
-        l('Withdrawn ', withdrawn)
 
         require('../src/internal_rpc/external_deposit')({
           asset: 1,

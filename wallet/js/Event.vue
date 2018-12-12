@@ -16,7 +16,7 @@ export default {
   methods: {
     str: function(){
       let o = JSON.parse(this.ev.data)
-      l(o)
+      //l(o)
 
       if (o.type == 'received') {
         return `Received ${app.commy(o.amount)} ${app.to_ticker(o.asset)} from ${o.userId}`

@@ -44,7 +44,7 @@ module.exports = async () => {
       }
     }
 
-    l(`Mempool ${me.mempool.length} vs ${ordered_tx.length}`)
+    //l(`Mempool ${me.mempool.length} vs ${ordered_tx.length}`)
 
     // flush it or pass leftovers to next validator
     me.mempool = []

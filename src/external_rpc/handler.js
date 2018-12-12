@@ -73,10 +73,14 @@ module.exports = async (ws, msg) => {
       } else if (json.method == 'textMessage') {
         react({confirm: json.msg})
       } else if (json.method == 'onchainFaucet') {
-        me.batchAdd('deposit', [
-          json.asset,
-          [json.amount, fromHex(json.pubkey), 0]
-        ])
+        let pubkey = fromHex(json.pubkey)
+        let msg = 'Unavailable faucet'
+
+        if (me.batchAdd('deposit', [json.asset, [json.amount, pubkey, 0]])) {
+          msg = 'Expect onchain faucet soon...'
+        }
+
+        me.textMessage(pubkey, msg)
       }
 
       return

@@ -11,19 +11,19 @@ module.exports = () => {
     }
   })
 
+  // lock on this block. Unlock only if another block gets 2/3+
   if (shares >= K.majority) {
-    // lock on this block. Unlock only if another block gets 2/3+
     me.locked_block = me.proposed_block
   }
 
   let proof = me.block_envelope(
     methodMap('precommit'),
-    shares >= K.majority ? me.proposed_block.header : 0,
+    me.locked_block ? me.locked_block.header : 0,
     me.current_round
   )
 
   if (me.CHEAT_dontprecommit) {
-    //l('We are in CHEAT and dont precommit ever')
+    l('We are in CHEAT and dont precommit ever')
     return
   }
 

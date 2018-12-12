@@ -71,11 +71,10 @@ module.exports = async (ws, json) => {
       break
 
     case 'onchainFaucet':
-      json.params.pubkey = toHex(me.pubkey)
+      json.params.pubkey = me.pubkey
       json.params.method = 'onchainFaucet'
 
       me.send(K.banks[0], json.params)
-      react({confirm: 'Await onchain faucet'})
 
       break
 

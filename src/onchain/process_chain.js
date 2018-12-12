@@ -17,10 +17,11 @@ module.exports = async (args) => {
     let our_prev_hash = fromHex(K.prev_hash)
     for (const block of args) {
       // cast all rounds to integer
-      if (typeof block[0] != 'integer') {
+      if (typeof block[0] != 'number') {
         block[0] = readInt(block[0])
       }
 
+      // parse header
       let [
         methodId,
         built_by,
@@ -50,17 +51,15 @@ module.exports = async (args) => {
     let last_block = args[args.length - 1]
 
     let shares = 0
+    let precommits = last_block[1]
 
-    let precommit_body = r([
-      methodMap('precommit'),
-      last_block[2],
-      last_block[0]
-    ])
+    let precommit_body = [methodMap('precommit'), last_block[2], last_block[0]]
+
     for (let i = 0; i < Validators.length; i++) {
       if (
-        last_block[1][i] &&
-        last_block[1][i].length == 64 &&
-        ec.verify(precommit_body, last_block[1][i], Validators[i].block_pubkey)
+        precommits[i] &&
+        precommits[i].length == 64 &&
+        ec.verify(r(precommit_body), precommits[i], Validators[i].block_pubkey)
       ) {
         shares += Validators[i].shares
       } else {
@@ -69,7 +68,7 @@ module.exports = async (args) => {
     }
 
     if (shares < K.majority) {
-      return l(`Not enough precommits on entire chain: ${shares}`)
+      return l(`Not enough precommits on entire chain: ${shares} `, args)
     }
 
     if (!cached_result.sync_started_at) {
@@ -128,8 +127,8 @@ module.exports = async (args) => {
     react({})
 
     // Ensure our last broadcasted batch was added
-    if (PK.pending_batch) {
-      const raw = fromHex(PK.pending_batch)
+    if (PK.pendingBatchHex) {
+      const raw = fromHex(PK.pendingBatchHex)
       if (trace) l('Rebroadcasting pending tx ', raw.length)
       react({
         alert: 'Rebroadcasting...',

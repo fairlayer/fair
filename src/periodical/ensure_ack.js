@@ -3,7 +3,7 @@
 // that's why we must go to blockchain asap to reveal the secret to hashlock
 module.exports = async () => {
   //l('Checking who has not ack')
-  if (PK.pending_batch) return l('Pending batch')
+  if (PK.pendingBatchHex) return l('Pending batch')
 
   var deltas = await Channel.findAll()
 

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <template v-if="PK.pending_batch || (batch && batch.length > 0)">
+    <template v-if="pendingBatch.length + batch.length > 0">
       <div style="position:fixed;
       z-index:1500;
       opacity:0.9;
@@ -9,9 +9,9 @@
       background-color: #FFFDDE; border:thin solid #EDDD00">
        
         <p style='margin: 10px;text-align:center'>
-          <span v-html="prettyBatch(batch)"></span>
+          <span v-html="prettyBatch(pendingBatch ? pendingBatch : batch)"></span>
 
-          <template v-if="PK.pending_batch">
+          <template v-if="pendingBatch">
             Wait for validation...<dotsloader></dotsloader>
           </template>
           <template v-else>
@@ -324,7 +324,7 @@
               <th scope="col">#</th>
               <th scope="col">Prev Hash</th>
               <th scope="col">Hash</th>
-              <th scope="col">Relayed By</th>
+              <th scope="col">Relayed By (round, ts)</th>
               <th scope="col">Total Tx</th>
             </tr>
           </thead>
@@ -334,7 +334,7 @@
                 <td>{{b.id}}</td>
                 <td>{{b.prev_hash.substr(0,10)}}</td>
                 <td>{{b.hash.substr(0,10)}}</td>
-                <td>{{b.built_by}} ({{(new Date(b.timestamp)).toLocaleString()}})</td>
+                <td>{{b.built_by}} ({{b.round}}, {{(new Date(b.timestamp)).toLocaleString()}})</td>
                 <td>{{b.total_tx}}</td>
               </tr>
               <tr v-for="batch in (b.meta && b.meta.parsed_tx)">

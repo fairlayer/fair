@@ -110,6 +110,7 @@ class Me {
     })
   }
 
+  //add a transaction to next batch
   batchAdd(method, args) {
     if (!me.record) {
       react({alert: "You can't do onchain tx if you are not registred"})
@@ -145,6 +146,8 @@ class Me {
     } else {
       me.batch.push([method, args])
     }
+
+    return true
   }
 
   // compiles signed tx from current batch, not state changing

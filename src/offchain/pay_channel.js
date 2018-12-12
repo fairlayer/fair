@@ -6,7 +6,7 @@ module.exports = async (opts) => {
     let hash = sha3(secret)
     let asset = parseInt(opts.asset)
 
-    l('paying ', opts)
+    //l('Paying ', opts)
 
     if (!opts.address) {
       l('Error: No address ', opts)

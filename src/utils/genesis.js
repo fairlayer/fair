@@ -297,7 +297,7 @@ module.exports = async (datadir) => {
     seed: bankSeed.toString('hex'),
     auth_code: toHex(crypto.randomBytes(32)),
 
-    pending_batch: null,
+    pendingBatchHex: null,
 
     usedBanks: [1],
     usedAssets: [1, 2]
