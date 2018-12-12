@@ -11,13 +11,16 @@ module.exports = () => {
     }
   })
 
-  let precommitable = 0
   if (shares >= K.majority) {
-    precommitable = me.proposed_block.header
-
     // lock on this block. Unlock only if another block gets 2/3+
-    me.proposed_block.locked = true
+    me.locked_block = me.proposed_block
   }
+
+  let proof = me.block_envelope(
+    methodMap('precommit'),
+    shares >= K.majority ? me.proposed_block.header : 0,
+    me.current_round
+  )
 
   if (me.CHEAT_dontprecommit) {
     //l('We are in CHEAT and dont precommit ever')
@@ -27,7 +30,7 @@ module.exports = () => {
   setTimeout(() => {
     me.sendAllValidators({
       method: 'precommit',
-      proof: me.block_envelope(methodMap('precommit'), precommitable)
+      proof: proof
     })
   }, K.gossip_delay)
 }

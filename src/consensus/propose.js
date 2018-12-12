@@ -1,5 +1,7 @@
 module.exports = async () => {
   me.status = 'propose'
+  // this is protection from a prevote replay attack
+  me.current_round = Math.floor(ts() / K.blocktime)
 
   //l('Next round', nextValidator().id)
   if (me.my_validator != nextValidator()) {
@@ -16,13 +18,9 @@ module.exports = async () => {
   let header = false
   let ordered_tx_body
 
-  if (me.proposed_block.locked) {
+  if (me.locked_block) {
     l(`We precommited to previous block, keep proposing it`)
-    ;({header, ordered_tx_body} = me.proposed_block)
-
-    let parsed_header = r(header)
-    parsed_header[4] = ts()
-    header = r(parsed_header)
+    ;({header, ordered_tx_body} = me.locked_block)
   } else {
     // otherwise build new block from your mempool
     let total_size = 0

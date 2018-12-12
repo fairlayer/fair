@@ -1,6 +1,7 @@
 module.exports = async (pubkey, json, ws) => {
   let [proof_pubkey, sig, body] = r(fromHex(json.proof))
   let [method, header] = r(body)
+
   let m = Validators.find((f) => f.block_pubkey.equals(proof_pubkey))
 
   if (me.status != json.method || !m) {
@@ -13,14 +14,14 @@ module.exports = async (pubkey, json, ws) => {
     return //
   }
 
-  if (!me.proposed_block.header || !me.proposed_block.uptodate) {
-    l(`${m.id}:${json.method}. We have no uptodate header`)
+  if (!me.proposed_block) {
+    l(`${m.id}:${json.method}.`)
     return
   }
 
   if (
     ec.verify(
-      r([methodMap(json.method), me.proposed_block.header]),
+      r([methodMap(json.method), me.proposed_block.header, me.current_round]),
       sig,
       proof_pubkey
     )

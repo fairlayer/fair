@@ -52,7 +52,8 @@ class Me {
     cached_result.metrics = this.metrics
 
     // used to store current block to be added to chain
-    this.proposed_block = {}
+    this.proposed_block = null
+    this.locked_block = null
   }
 
   // derives needed keys from the seed, saves creds into pk.json

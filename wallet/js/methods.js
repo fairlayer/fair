@@ -394,9 +394,11 @@ module.exports = {
     let r = ''
     for (let tx of batch) {
       if (['withdraw', 'deposit'].includes(tx[0])) {
-        r += `<span class="badge badge-danger">${tx[1][1].length} ${
-          tx[0]
-        } (in ${app.to_ticker(tx[1][0])})</span>&nbsp;`
+        r += Array(tx[1][1].length + 1).join(
+          `<span class="badge badge-danger">${app.to_ticker(tx[1][0])} ${
+            tx[0]
+          }</span>&nbsp;`
+        )
       } else {
         r += `<span class="badge badge-danger">${tx[0]}</span>&nbsp;`
       }

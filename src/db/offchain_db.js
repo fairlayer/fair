@@ -243,6 +243,8 @@ const defineModels = (sequelize) => {
 
       // sigs that authorize block
       precommits: Sequelize.BLOB,
+      // at what round the block has been commited
+      round: Sequelize.INTEGER,
 
       // header with merkle roots in it
       header: Sequelize.BLOB,

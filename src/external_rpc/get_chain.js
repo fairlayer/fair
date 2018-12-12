@@ -5,7 +5,7 @@ module.exports = async (json, ws) => {
   if (limit > 1000) limit = 1000
 
   let block_records = await Block.findAll({
-    attributes: ['id', 'precommits', 'header', 'ordered_tx_body'],
+    attributes: ['id', 'round', 'precommits', 'header', 'ordered_tx_body'],
     where: {
       id: {[Op.gt]: start}
     },
@@ -17,6 +17,7 @@ module.exports = async (json, ws) => {
     return block_records.map((b, index) => {
       // include precommits in the last one, not in each
       return [
+        b.round,
         json.include_precommits || index + 1 == block_records.length
           ? r(b.precommits)
           : null,

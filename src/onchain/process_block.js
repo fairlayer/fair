@@ -1,10 +1,15 @@
 // Block processing code. Verifies precommits sigs then executes tx in it one by one
-module.exports = async (s, header, ordered_tx_body) => {
-  if (header.length < 64 || header.length > 200) {
-    return l('Invalid header length: ', s.precommits, header, ordered_tx_body)
+module.exports = async (s) => {
+  if (s.header.length < 64 || s.header.length > 200) {
+    return l(
+      'Invalid header length: ',
+      s.precommits,
+      s.header,
+      s.ordered_tx_body
+    )
   }
 
-  if (ordered_tx_body.length > K.blocksize) {
+  if (s.ordered_tx_body.length > K.blocksize) {
     return l('Too long block')
   }
 
@@ -18,7 +23,7 @@ module.exports = async (s, header, ordered_tx_body) => {
     timestamp,
     tx_root,
     db_hash
-  ] = r(header)
+  ] = r(s.header)
 
   total_blocks = readInt(total_blocks)
   timestamp = readInt(timestamp)
@@ -53,7 +58,7 @@ module.exports = async (s, header, ordered_tx_body) => {
     return l('Block from far future')
   }
 
-  if (!sha3(ordered_tx_body).equals(tx_root)) {
+  if (!sha3(s.ordered_tx_body).equals(tx_root)) {
     return l('Invalid tx_root')
   }
 
@@ -83,7 +88,7 @@ module.exports = async (s, header, ordered_tx_body) => {
 
   // >>> Given block is considered valid and final after this point <<<
 
-  let ordered_tx = r(ordered_tx_body)
+  let ordered_tx = r(s.ordered_tx_body)
 
   K.ts = timestamp
 
@@ -99,7 +104,7 @@ module.exports = async (s, header, ordered_tx_body) => {
     end()
   }
 
-  K.prev_hash = toHex(sha3(header))
+  K.prev_hash = toHex(sha3(s.header))
 
   if (K.total_blocks % 100 == 0 && cached_result.sync_started_at) {
     l(
@@ -122,7 +127,7 @@ module.exports = async (s, header, ordered_tx_body) => {
   }
 
   // todo: define what is considered a "usable" block
-  if (ordered_tx_body.length < K.blocksize - 10000) {
+  if (s.ordered_tx_body.length < K.blocksize - 10000) {
     K.usable_blocks++
     var is_usable = true
   } else {
@@ -130,7 +135,7 @@ module.exports = async (s, header, ordered_tx_body) => {
   }
 
   K.total_tx += ordered_tx.length
-  K.total_bytes += ordered_tx_body.length
+  K.total_bytes += s.ordered_tx_body.length
   K.blocks_since_last_snapshot += 1
 
   // When "tail" gets too long, create new snapshot
@@ -235,11 +240,12 @@ module.exports = async (s, header, ordered_tx_body) => {
       id: K.total_blocks,
 
       prev_hash: fromHex(prev_hash),
-      hash: sha3(header),
+      hash: sha3(s.header),
 
+      round: s.round,
       precommits: r(s.precommits), // pack them in rlp for storage
-      header: header,
-      ordered_tx_body: ordered_tx_body,
+      header: s.header,
+      ordered_tx_body: s.ordered_tx_body,
 
       total_tx: ordered_tx.length,
 
@@ -254,20 +260,12 @@ module.exports = async (s, header, ordered_tx_body) => {
     })
   }
 
-  // In case we are validator && locked on this prev_hash, unlock to ensure liveness
-  // Tendermint uses 2/3+ prevotes as "proof of lock change", but we don't see need in that
-  if (me.proposed_block.locked) {
-    let locked_prev_hash = r(me.proposed_block.header)[3]
-    let height = r(me.proposed_block.header)[2]
-
-    if (prev_hash == toHex(locked_prev_hash)) {
-      l(
-        `Just unlocked from previous proposed block: ${readInt(height)} vs ${
-          K.total_blocks
-        }`
-      )
-      me.proposed_block = {}
-    }
+  // Other validators managed to commit a block, therefore delete lock and proceed
+  // Tendermint uses 2/3+ prevotes as "proof of lock change"
+  if (me.locked_block) {
+    l('Unlocked at ' + K.total_blocks)
+    me.locked_block = null
+    me.proposed_block = null
   }
 
   // only validators do snapshots, as they require extra computations

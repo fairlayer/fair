@@ -20,26 +20,25 @@ module.exports = () => {
   })
 
   if (shares < K.majority) {
-    if (me.proposed_block.locked) {
-      // this round failed, expire timestamp in header
-      me.proposed_block.uptodate = false
-    } else {
-      me.proposed_block = {}
-    }
-
     l(
       `Failed to commit #${K.total_blocks}, ${shares}/${K.majority}`,
       K.total_blocks
     )
 
     // go sync immediately, went out of sync?
-    Periodical.syncChain()
+    //Periodical.syncChain()
   } else if (me.proposed_block.header) {
     // adding to our external queue to avoid race conditions
     // we don't call processBlock directly to avoid races
     me.processChain([
-      [precommits, me.proposed_block.header, me.proposed_block.ordered_tx_body]
+      [
+        me.current_round,
+        precommits,
+        me.proposed_block.header,
+        me.proposed_block.ordered_tx_body
+      ]
     ])
-    me.proposed_block = {}
   }
+
+  me.proposed_block = null
 }

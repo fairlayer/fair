@@ -16,6 +16,11 @@ module.exports = async (args) => {
 
     let our_prev_hash = fromHex(K.prev_hash)
     for (const block of args) {
+      // cast all rounds to integer
+      if (typeof block[0] != 'integer') {
+        block[0] = readInt(block[0])
+      }
+
       let [
         methodId,
         built_by,
@@ -24,11 +29,11 @@ module.exports = async (args) => {
         timestamp,
         tx_root,
         db_hash
-      ] = r(block[1])
+      ] = r(block[2])
 
       if (prev_hash.equals(our_prev_hash)) {
         // hash of next header
-        our_prev_hash = sha3(block[1])
+        our_prev_hash = sha3(block[2])
       } else {
         l(`Outdated chain: ${K.total_blocks} ${readInt(total_blocks)}`)
         return
@@ -45,12 +50,17 @@ module.exports = async (args) => {
     let last_block = args[args.length - 1]
 
     let shares = 0
-    let precommit_body = r([methodMap('precommit'), last_block[1]])
+
+    let precommit_body = r([
+      methodMap('precommit'),
+      last_block[2],
+      last_block[0]
+    ])
     for (let i = 0; i < Validators.length; i++) {
       if (
-        last_block[0][i] &&
-        last_block[0][i].length == 64 &&
-        ec.verify(precommit_body, last_block[0][i], Validators[i].block_pubkey)
+        last_block[1][i] &&
+        last_block[1][i].length == 64 &&
+        ec.verify(precommit_body, last_block[1][i], Validators[i].block_pubkey)
       ) {
         shares += Validators[i].shares
       } else {
@@ -71,8 +81,12 @@ module.exports = async (args) => {
 
     // step 3: if entire chain is precommited, process blocks one by one
     for (const block of args) {
-      s.precommits = block[0]
-      if (!(await me.processBlock(s, block[1], block[2]))) {
+      s.round = block[0]
+      s.precommits = block[1]
+      s.header = block[2]
+      s.ordered_tx_body = block[3]
+
+      if (!(await me.processBlock(s))) {
         l('Bad chain?')
         break
       }
