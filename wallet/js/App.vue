@@ -9,9 +9,9 @@
       background-color: #FFFDDE; border:thin solid #EDDD00">
        
         <p style='margin: 10px;text-align:center'>
-          <span v-html="prettyBatch(pendingBatch ? pendingBatch : batch)"></span>
+          <span v-html="prettyBatch(pendingBatch.length > 0 ? pendingBatch : batch)"></span>
 
-          <template v-if="pendingBatch">
+          <template v-if="pendingBatch.length > 0">
             Wait for validation...<dotsloader></dotsloader>
           </template>
           <template v-else>
@@ -421,7 +421,7 @@
                   </table>
                 </div>
                 <div class="col-md-6">
-                  <p>Credit (maximum uninsured balance)</p>
+                  <p>Credit limit (maximum uninsured balance)</p>
                   <p>
                     <input type="text" class="form-control" v-model="mod.credit">
                   </p>

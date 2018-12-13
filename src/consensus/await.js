@@ -19,6 +19,8 @@ module.exports = () => {
     c.precommit = null
   })
 
+  //me.current_round++
+
   if (shares < K.majority) {
     l(
       `Failed to commit #${K.total_blocks}, ${shares}/${K.majority}`,
@@ -39,6 +41,7 @@ module.exports = () => {
         me.proposed_block.ordered_tx_body
       ]
     ])
+    //me.current_round = 0
   }
 
   me.proposed_block = null

@@ -1,7 +1,9 @@
 module.exports = async () => {
   me.status = 'propose'
+
+  let epoch = (i) => Math.floor(i / K.blocktime)
   // this is protection from a prevote replay attack
-  me.current_round = Math.floor(ts() / K.blocktime)
+  me.current_round = epoch(ts()) - epoch(K.ts) - 1
 
   //l('Next round', nextValidator().id)
   if (me.my_validator != nextValidator()) {

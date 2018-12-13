@@ -9,13 +9,12 @@ const payMonkey = async (on_server, counter = 1) => {
   }
 
   // offchain payment
-  console.log(
-    await me.payChannel({
-      address: parsedAddress.address,
-      amount: 100 + Math.round(Math.random() * 200),
-      asset: 1
-    })
-  )
+
+  await me.payChannel({
+    address: parsedAddress.address,
+    amount: 100 + Math.round(Math.random() * 200),
+    asset: 1
+  })
 
   const reg = await getUserByIdOrKey(parsedAddress.pubkey)
 
