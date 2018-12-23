@@ -1,6 +1,12 @@
 // This method receives set of transitions by another party and applies it
 // banks normally pass forward payments, end users normally decode payloads and unlock hashlocks
-module.exports = async (pubkey, ackSig, transitions, debug) => {
+module.exports = async (
+  pubkey,
+  ackState,
+  ackSig,
+  transitions,
+  theirSignedState
+) => {
   let ch = await Channel.get(pubkey)
   ch.last_used = ts()
 
@@ -27,11 +33,8 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
   prettyState(ourSignedState)
 
   // decode from hex and unpack
-  let theirSignedState = debug[0] ? r(fromHex(debug[0])) : false
+  theirSignedState = theirSignedState ? r(fromHex(theirSignedState)) : false
   prettyState(theirSignedState)
-
-  let theirState = debug[1] ? r(fromHex(debug[1])) : false
-  prettyState(theirState)
 
   let mismatch = (reason, lastState) => {
     l(`=========${reason}. Rollback ${ch.d.rollback_nonce}
@@ -42,7 +45,7 @@ module.exports = async (pubkey, ackSig, transitions, debug) => {
   ${ascii_state(ourSignedState)}
 
   Their current state
-  ${theirState ? ascii_state(theirState) : '-'}
+  ${ackState ? ascii_state(ackState) : '-'}
   ${lastState ? ascii_state(lastState) : '-'}
 
   Their signed state

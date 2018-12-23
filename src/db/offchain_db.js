@@ -319,7 +319,7 @@ const defineModels = (sequelize) => {
 
 const productionDBConfig = (datadir, dbtoken, dbpool) => {
   const logger = (str, time) => {
-    if (parseInt(time) > 300) {
+    if (parseInt(time) > 900) {
       loff(time + ' (on) ' + str)
     }
   }

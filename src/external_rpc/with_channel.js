@@ -177,9 +177,10 @@ module.exports = async (pubkey, json, ws) => {
       //loff(`--- Start update ${trim(pubkey)} - ${transitions.length}`)
       return me.updateChannel(
         pubkey,
+        r(fromHex(json.ackState)),
         fromHex(json.ackSig),
         json.transitions,
-        json.debug
+        json.signedState
       )
     })
 

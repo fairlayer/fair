@@ -79,7 +79,8 @@ module.exports = async (pubkey, opportunistic) => {
       return
     }
 
-    let ackSig = ec(r(refresh(ch)), me.id.secretKey)
+    let ackState = r(refresh(ch))
+    let ackSig = ec(ackState, me.id.secretKey)
 
     // array of actions to apply to canonical state
     let transitions = []
@@ -222,25 +223,23 @@ module.exports = async (pubkey, opportunistic) => {
       if (trace) l('In merge, no transactions can be added')
     }
 
-    //only for debug, can be heavy
-    let debug = [
-      ch.d.signed_state, // signed state we have
-      r(ch.state)
-    ]
-
     // transitions: method, args, sig, new state
     let data = {
       method: 'update',
+
+      ackState: ackState,
       ackSig: ackSig,
-      transitions: transitions,
-      debug: debug
+
+      signedState: ch.d.signed_state,
+
+      transitions: transitions
     }
 
     if (transitions.length > 0) {
       // if there were any transitions, we need an ack on top
       ch.d.ack_requested_at = ts()
       //l('Set ack request ', ch.d.ack_requested_at, trim(pubkey))
-      ch.d.pending = stringify(data)
+      //ch.d.pending = stringify(data)
       ch.d.status = 'sent'
       if (trace) l(`Flushing ${transitions.length} to ${trim(pubkey)}`)
     }
