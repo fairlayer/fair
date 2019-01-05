@@ -6,21 +6,21 @@ const nextValidator = (skip = false) => {
   const currentIndex = Math.floor(ts() / K.blocktime) % K.total_shares
 
   let searchIndex = 0
-  for (let i = 0; i < Validators.length; i++) {
-    const current = Validators[i]
+  for (let i = 0; i < K.validators.length; i++) {
+    const current = K.validators[i]
     searchIndex += current.shares
 
     if (searchIndex <= currentIndex) continue
     if (skip == false) return current
 
     // go back to 0
-    if (currentIndex + 1 == K.total_shares) return Validators[0]
+    if (currentIndex + 1 == K.total_shares) return K.validators[0]
 
     // same validator
     if (currentIndex + 1 < searchIndex) return current
 
     // next validator
-    return Validators[i + 1]
+    return K.validators[i + 1]
   }
 }
 
@@ -88,14 +88,6 @@ const loadPKFile = (datadir) => {
 
   const json = fs.readFileSync(pkFile)
   return JSON.parse(json)
-}
-
-const loadValidators = (validators) => {
-  return validators.map((m) => {
-    m.pubkey = Buffer.from(m.pubkey, 'hex')
-    m.block_pubkey = Buffer.from(m.block_pubkey, 'hex')
-    return m
-  })
 }
 
 const generateMonkeys = async () => {
@@ -499,7 +491,6 @@ module.exports = {
   parseAddress: parseAddress,
   loadKFile: loadKFile,
   loadPKFile: loadPKFile,
-  loadValidators: loadValidators,
   generateMonkeys: generateMonkeys,
   loadMonkeys: loadMonkeys,
   deltaVerify: deltaVerify,

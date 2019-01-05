@@ -11,7 +11,7 @@ const defineModels = (sequelize) => {
         primaryKey: true
       },
 
-      // Fair Names /^(\w){1,15}$/)
+      //  /^(\w){1,15}$/)
       username: Sequelize.STRING,
 
       // saves time to select Debts

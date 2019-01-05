@@ -2,7 +2,7 @@ module.exports = async (pubkey, json, ws) => {
   let [proof_pubkey, sig, body] = r(fromHex(json.proof))
   let [method, header] = r(body)
 
-  let m = Validators.find((f) => f.block_pubkey.equals(proof_pubkey))
+  let m = K.validators.find((f) => f.block_pubkey.equals(proof_pubkey))
 
   if (me.status != json.method || !m) {
     l(`${m.id}:${json.method}. in ${me.status}`)
@@ -26,7 +26,7 @@ module.exports = async (pubkey, json, ws) => {
       proof_pubkey
     )
   ) {
-    m[json.method] = sig
+    PK[json.method + '_' + m.id] = sig
     //l(`Received ${json.method} from ${m.id}`)
   } else {
     l(

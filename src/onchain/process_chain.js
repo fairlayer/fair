@@ -55,15 +55,19 @@ module.exports = async (args) => {
 
     let precommit_body = [methodMap('precommit'), last_block[2], last_block[0]]
 
-    for (let i = 0; i < Validators.length; i++) {
+    for (let i = 0; i < K.validators.length; i++) {
       if (
         precommits[i] &&
         precommits[i].length == 64 &&
-        ec.verify(r(precommit_body), precommits[i], Validators[i].block_pubkey)
+        ec.verify(
+          r(precommit_body),
+          precommits[i],
+          K.validators[i].block_pubkey
+        )
       ) {
-        shares += Validators[i].shares
+        shares += K.validators[i].shares
       } else {
-        s.missed_validators.push(Validators[i].id)
+        s.missed_validators.push(K.validators[i].id)
       }
     }
 

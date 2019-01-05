@@ -93,7 +93,7 @@ Op = Sequelize.Op
 // globals
 K = false
 me = false
-Validators = false
+
 // Private Key value
 PK = {}
 

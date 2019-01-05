@@ -6,17 +6,17 @@ module.exports = () => {
   // if have 2/3+ precommits, commit the block and share
   let shares = 0
   const precommits = []
-  Validators.map((c, index) => {
-    if (c.precommit) {
+  K.validators.map((c, index) => {
+    if (PK['precommit_' + c.id]) {
       shares += c.shares
-      precommits[index] = c.precommit
+      precommits[index] = PK['precommit_' + c.id]
     } else {
       precommits[index] = 0
     }
 
     // flush sigs for next round
-    c.prevote = null
-    c.precommit = null
+    delete PK['prevote_' + c.id]
+    delete PK['precommit_' + c.id]
   })
 
   //me.current_round++

@@ -20,9 +20,9 @@ module.exports = async () => {
   let header = false
   let ordered_tx_body
 
-  if (me.locked_block) {
+  if (PK.locked_block) {
     l(`We precommited to previous block, keep proposing it`)
-    ;({header, ordered_tx_body} = me.locked_block)
+    ;({header, ordered_tx_body} = PK.locked_block)
   } else {
     // otherwise build new block from your mempool
     let total_size = 0

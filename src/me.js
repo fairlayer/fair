@@ -189,7 +189,7 @@ class Me {
 
   // tell all validators the same thing
   sendAllValidators(data) {
-    Validators.map((c) => {
+    K.validators.map((c) => {
       me.send(c, data)
     })
   }
@@ -217,7 +217,7 @@ class Me {
     })
 
     if (me.record) {
-      me.my_validator = Validators.find((m) => m.id == me.record.id)
+      me.my_validator = K.validators.find((m) => m.id == me.record.id)
       me.my_bank = K.banks.find((m) => m.id == me.record.id)
     }
 
@@ -231,7 +231,7 @@ class Me {
     }
 
     if (me.my_validator) {
-      for (var m of Validators) {
+      for (var m of K.validators) {
         if (me.my_validator != m) {
           // we need to have connections ready to all validators
           me.send(m, {method: 'auth', data: ts()})
@@ -239,7 +239,7 @@ class Me {
       }
     } else {
       // keep connection to all banks
-      Validators.map((m) => {
+      K.validators.map((m) => {
         if (me.my_validator != m) {
           me.send(m, {method: 'auth', data: ts()})
 
@@ -347,7 +347,7 @@ class Me {
         return true
       } else {
         // try to find by this pubkey among validators/banks
-        var validator = Validators.find((f) => f.pubkey.equals(m))
+        var validator = K.validators.find((f) => f.pubkey.equals(m))
         var bank = K.banks.find((f) => fromHex(f.pubkey).equals(m))
         if (validator) {
           m = validator

@@ -5,20 +5,20 @@ module.exports = () => {
 
   // do we have enough prevotes?
   let shares = 0
-  Validators.map((c, index) => {
-    if (c.prevote) {
+  K.validators.map((c, index) => {
+    if (PK['prevote_' + c.id]) {
       shares += c.shares
     }
   })
 
   // lock on this block. Unlock only if another block gets 2/3+
   if (shares >= K.majority) {
-    me.locked_block = me.proposed_block
+    PK.locked_block = me.proposed_block
   }
 
   let proof = me.block_envelope(
     methodMap('precommit'),
-    me.locked_block ? me.locked_block.header : 0,
+    PK.locked_block ? PK.locked_block.header : 0,
     me.current_round
   )
 

@@ -23,7 +23,7 @@ base_port = argv.p ? parseInt(argv.p) : 8001
 trace = !!argv.trace
 node_started_at = ts()
 
-process.title = 'Fair ' + base_port
+process.title = 'Fairlayer ' + base_port
 
 cache = {
   ins: {},
@@ -96,8 +96,20 @@ startFairlayer = async () => {
   }
 
   K = loadKFile(datadir)
-  Validators = loadValidators(K.validators)
+  // unpack hex
+  K.validators.map((m) => {
+    m.pubkey = Buffer.from(m.pubkey, 'hex')
+    m.block_pubkey = Buffer.from(m.block_pubkey, 'hex')
+  })
+
   PK = loadPKFile(datadir)
+  // it's important to not lose block we precommited to.
+  if (PK.locked_block) {
+    PK.locked_block.proposer = fromHex(PK.locked_block.proposer)
+    PK.locked_block.sig = fromHex(PK.locked_block.sig)
+    PK.locked_block.header = fromHex(PK.locked_block.header)
+    PK.locked_block.ordered_tx_body = fromHex(PK.locked_block.ordered_tx_body)
+  }
 
   await promise_writeFile(datadir + '/offchain/pk.json', JSON.stringify(PK))
 
@@ -177,7 +189,7 @@ startFairlayer = async () => {
 
   Periodical.schedule('syncChain', 200)
 
-  l(`\n${note('Welcome to Fair REPL!')}`)
+  l(`\n${note('Welcome to Fairlayer!')}`)
   repl = require('repl').start(note(''))
   repl.context.me = me
 }

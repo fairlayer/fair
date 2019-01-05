@@ -1,6 +1,6 @@
 module.exports = async (pubkey, json, ws) => {
   let [pubkey_propose, sig, header, ordered_tx_body] = r(fromHex(json.propose))
-  let m = Validators.find((f) => f.block_pubkey.equals(pubkey_propose))
+  let m = K.validators.find((f) => f.block_pubkey.equals(pubkey_propose))
 
   if (me.status != 'propose' || !m) {
     return l(`${me.status} not propose`)
@@ -20,8 +20,8 @@ module.exports = async (pubkey, json, ws) => {
     return l('Invalid proposer sig')
   }
 
-  if (me.locked_block && me.locked_block.header.equals(header)) {
-    me.proposed_block = me.locked_block
+  if (PK.locked_block && PK.locked_block.header.equals(header)) {
+    me.proposed_block = PK.locked_block
 
     l(`Proposed our locked ${toHex(me.proposed_block.header)}`)
     return

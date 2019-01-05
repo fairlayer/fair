@@ -77,7 +77,7 @@ module.exports = async (ws, msg) => {
         let msg = 'Unavailable faucet'
 
         if (me.batchAdd('deposit', [json.asset, [json.amount, pubkey, 0]])) {
-          msg = 'Expect onchain faucet soon...'
+          msg = `Expect onchain faucet for ${json.pubkey}...`
         }
 
         me.textMessage(pubkey, msg)

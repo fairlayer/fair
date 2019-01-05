@@ -6,8 +6,8 @@ module.exports = () => {
   const sendSync = () => {
     // if we're validator then sync from anyone except us
     const usableSet = me.my_validator
-      ? Validators.filter((m) => m != me.my_validator)
-      : Validators
+      ? K.validators.filter((m) => m != me.my_validator)
+      : K.validators
     const randomChosenValidator = usableSet.randomElement()
 
     //l('Sync from ', randomChosenValidator.location)
