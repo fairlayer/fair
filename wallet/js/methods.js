@@ -292,13 +292,17 @@ module.exports = {
     }
   },
 
-  dispute_outcome: (prefix, ins, parts) => {
+  dispute_outcome: (prefix, ins, outcomes) => {
     let c = app.commy
     let o = ''
 
     var sep = ' | '
 
-    if (parts) {
+    if (outcomes) {
+      for (let parts of outcomes) {
+        o += ` ${app.to_ticker(parts.asset)}: `
+
+
       if (parts.uninsured > 0) {
         o += `${c(parts.insured)} + ${c(parts.uninsured)}${sep}`
       } else if (parts.they_uninsured > 0) {
@@ -308,6 +312,8 @@ module.exports = {
           parts.they_insured > 0 ? c(parts.they_insured) : ''
         }`
       }
+            }
+
     }
 
     return `${prefix} (${app.to_user(ins.leftId)}) ${o} (${app.to_user(

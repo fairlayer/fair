@@ -140,14 +140,17 @@
           <h4 class="alert alert-primary" v-if="my_validator">This node is a validator: {{my_validator.username}}</h4>
           <p style="word-wrap: break-word">Your address: <b>{{address}}</b></p>
           <template v-if="outward.type == 'offchain'">
-            <div class="alert alert-outline-info" v-for="ch in channels">
+            <div class="alert alert-secondary" v-for="ch in channels">
               <h2>
                 {{pubkeyToUser(ch.d.they_pubkey)}}
               </h2>
               <p>
-                <p v-for="subch in ch.d.subchannels">
-                  <button class="btn btn-outline-info" @click="mod={shown:true, ch:ch, subch: subch, credit: commy(subch.credit), rebalance: commy(subch.rebalance)}">{{to_ticker(subch.asset)}}: {{commy(ch.derived[subch.asset].available)}}</button>&nbsp;
-                </p>
+                <h3 v-for="subch in ch.d.subchannels">
+                  <a class="dotted" @click="mod={shown:true, ch:ch, subch: subch, credit: commy(subch.credit), rebalance: commy(subch.rebalance)}">{{to_ticker(subch.asset)}}: {{commy(ch.derived[subch.asset].available)}} (insured {{commy(ch.derived[subch.asset].insured)}})</a>&nbsp;
+
+                  <span class="badge badge-success bank-faucet" @click="call('withChannel', {they_pubkey: ch.d.they_pubkey, method: 'testnet', action: 'faucet', asset: subch.asset, amount: 10000 })">faucet</span>
+
+                </h3>
               </p>
               <p v-if="record">
                 <span v-if="ch.ins && ch.ins.dispute_delayed">
@@ -341,7 +344,7 @@
               </tr>
               <tr v-for="batch in (b.meta && b.meta.parsed_tx)">
                 <td colspan="7">
-                  <span class="badge badge-warning">By {{to_user(batch.signer.id)}} ({{batch.gas}}*{{commy(batch.gasprice, true, false)}}={{commy(batch.txfee)}} fee):</span>&nbsp;
+                  <span class="badge badge-warning">{{to_user(batch.signer.id)}} ({{batch.gas}}*{{commy(batch.gasprice, true, false)}}=${{commy(batch.txfee)}})</span>&nbsp;
                   <template v-for="d in batch.events">
                     &nbsp;
                     <span v-if="d[0]=='dispute'" class="badge badge-primary" v-html="dispute_outcome(d[2], d[3], d[4])">
@@ -435,7 +438,6 @@
                     <button type="button" class="btn btn-outline-success" @click="call('withChannel', {they_pubkey: mod.ch.d.they_pubkey, asset: mod.subch.asset, method: 'setLimits', credit: uncommy(mod.credit), rebalance: uncommy(mod.rebalance)})" href="#">Update Credit Limits</button>
                   </p>
                   <p>
-                    <span class="badge badge-success bank-faucet" @click="call('withChannel', {they_pubkey: mod.ch.d.they_pubkey, method: 'testnet', action: 'faucet', asset: mod.subch.asset, amount:10000 })">Use faucet</span>
                     <span v-if="record" class="badge badge-danger" @click="a=prompt(`How much to withdraw to onchain?`);if (a) {call('withChannel', {they_pubkey: mod.ch.d.they_pubkey, asset: mod.subch.asset, method: 'withdraw', amount: uncommy(a)})};">Withdraw</span>
                     <span v-if="record" class="badge badge-danger" @click="mod.shown=false;outward.address=address;updateRoutes();outward.type='onchain';outward.asset=mod.subch.asset;outward.bank = mod.ch.partner;">Deposit</span>
                     <span class="badge badge-danger" @click="requestInsurance(mod.ch, mod.subch.asset)">Request Insurance</span>

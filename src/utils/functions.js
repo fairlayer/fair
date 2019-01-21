@@ -403,6 +403,9 @@ const insuranceResolve = async (ins) => {
     await ins.save()
   }
 
+  await saveId(left)
+  await saveId(right)
+
   var withUs = me.is_me(left.pubkey)
     ? right
     : me.is_me(right.pubkey)
@@ -426,11 +429,12 @@ const insuranceResolve = async (ins) => {
     // reset disputed status and ack timestamp
     ch.d.status = 'master'
     ch.d.ack_requested_at = null
-    //await ch.d.save()
+    await ch.d.save()
 
     me.addEvent({
       type: 'disputeResolved',
-      resolved: allResolved
+      ins: ins,
+      outcomes: allResolved
     })
   }
 

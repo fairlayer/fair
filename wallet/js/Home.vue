@@ -19,7 +19,7 @@
 
             <p>Fairlayer: a Blockchain Alternative to Central Banking.</p>
 
-            <p><strong>Two Layers</strong>: globally shared onchain state and zero-overhead peer-to-peer offchain protocol. It repurposes the blockchain from daily payments to work as insurance and court layer for disputes, moving all payments to be processed instantly through the hubs.</p>
+            <p><strong>Two Layers</strong>: globally shared onchain state and zero-overhead peer-to-peer offchain protocol. It repurposes the blockchain from daily payments to work as insurance and court layer for disputes, moving all payments to be processed instantly through the banks.</p>
 
             <p><strong>Everyone is a Full Node</strong>. Full nodes of most blockchains become unusable on consumer devices when they get popular, and everyone moves to insecure light clients, destroying decentralization principles. Our full node is built to routinely run on any laptop with any Internet bandwidth: it processes very few insurance rebalances and requires negligible resources.</p>
 

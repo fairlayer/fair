@@ -200,14 +200,14 @@ window.render = (r) => {
     prefillUsername()
   }
 
-  // go add hubs if logged in & no channels exist
+  // go add banks if logged in & no channels exist
   if (
     firstLoad &&
     app.pubkey &&
     app.tab == 'wallet' &&
     app.channels.length == 0
   ) {
-    //app.go('hubs')
+    //app.go('banks')
   }
 
   if (r.history && window.riskcanvas) {
