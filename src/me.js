@@ -157,6 +157,9 @@ class Me {
       return false
     }
 
+    // reload to latest nonce
+    await me.record.reload()
+
     let by_first = (a, b) => b[0] - a[0]
 
     let merged = me.batch.map((m) => {

@@ -225,15 +225,17 @@
           </template>
           <template v-else>
             <div v-if="parsedAddress.banks">
-              <h5>Choose a bank or :</h5>
               <div class="radio">
                 <label>
                   <input type="radio" :value="0" v-model="outward.bank"> Deposit to {{onchain}}</label>
               </div>
-              <div class="radio" v-for="id in parsedAddress.banks">
-                <label>
-                  <input type="radio" :value="id" v-model="outward.bank"> {{to_user(id)}}</label>
-              </div>
+              <template v-if="parsedAddress.banks.length > 0">
+                <h5>Or choose a bank:</h5>              
+                <div class="radio" v-for="id in parsedAddress.banks">
+                  <label>
+                    <input type="radio" :value="id" v-model="outward.bank"> {{to_user(id)}}</label>
+                </div>
+              </template>
             </div>
             <p>
               <button v-if="record" type="button" class="btn btn-outline-success" @click="addExternalDeposit">Transfer 🌐</button>
@@ -266,7 +268,7 @@
       <div v-else-if="tab=='install'">
         <h4>Instant Full Node Demo</h4>
         <p><a href="/demoinstance">Try Fair Core for 1 hour without installing it on your computer.</a> Currently active sessions: {{busyPorts}}</p>
-        <h4>Install a Full Node (optimized for security)</h4>
+        <h4>Install a Full Node</h4>
         <p>Install <a href="https://nodejs.org/en/download/">Node.js</a> (9.6.0+) and copy paste this snippet into your Terminal app and press Enter:</p>
         <div style="background-color: #FFFDDE; padding-left: 10px;">
           <Highlight :white="true" lang="bash" :code="install_snippet"></Highlight>

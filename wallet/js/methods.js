@@ -298,15 +298,18 @@ module.exports = {
 
     var sep = ' | '
 
-    if (parts.uninsured > 0) {
-      o += `${c(parts.insured)} + ${c(parts.uninsured)}${sep}`
-    } else if (parts.they_uninsured > 0) {
-      o += `${sep}${c(parts.they_insured)} + ${c(parts.they_uninsured)}`
-    } else {
-      o += `${parts.insured > 0 ? c(parts.insured) : ''}${sep}${
-        parts.they_insured > 0 ? c(parts.they_insured) : ''
-      }`
+    if (parts) {
+      if (parts.uninsured > 0) {
+        o += `${c(parts.insured)} + ${c(parts.uninsured)}${sep}`
+      } else if (parts.they_uninsured > 0) {
+        o += `${sep}${c(parts.they_insured)} + ${c(parts.they_uninsured)}`
+      } else {
+        o += `${parts.insured > 0 ? c(parts.insured) : ''}${sep}${
+          parts.they_insured > 0 ? c(parts.they_insured) : ''
+        }`
+      }
     }
+
     return `${prefix} (${app.to_user(ins.leftId)}) ${o} (${app.to_user(
       ins.rightId
     )})`

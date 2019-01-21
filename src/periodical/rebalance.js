@@ -25,15 +25,13 @@ module.exports = async function() {
     return //l('There are pending tx')
   }
 
-  var deltas = await Channel.findAll()
-
-  // we request withdrawals and check in few seconds for them
-  let netSpenders = []
-  let netReceivers = []
-
-  let minRisk = 500
+  let deltas = await Channel.findAll()
 
   for (let asset = 1; asset <= 2; asset++) {
+    let minRisk = 500
+    let netSpenders = []
+    let netReceivers = []
+
     for (let d of deltas) {
       await section(['use', d.they_pubkey], async () => {
         let ch = await Channel.get(d.they_pubkey)

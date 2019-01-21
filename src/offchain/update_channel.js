@@ -43,17 +43,17 @@ module.exports = async (
 
   Our signed state
   ${ascii_state(ourSignedState)}
-
+~~~~~
   Their current state
   ${ackState ? ascii_state(ackState) : '-'}
   ${lastState ? ascii_state(lastState) : '-'}
 
   Their signed state
   ${ascii_state(theirSignedState)}
-
+~~~~~
   Transitions
   ${JSON.stringify(transitions, 2, 2)}
-
+~~~~~
   Pending
   ${ch.d.pending}
 =================
