@@ -293,7 +293,7 @@ const userPayDebts = async (user, asset, parsed_tx) => {
 
       parsed_tx.events.push(['enforceDebt', d.amount_left, u.id])
 
-      //await u.save()
+      await saveId(u)
       await d.destroy() // the debt was paid in full
     } else {
       d.amount_left -= chargable
@@ -302,7 +302,7 @@ const userPayDebts = async (user, asset, parsed_tx) => {
 
       parsed_tx.events.push(['enforceDebt', chargable, u.id])
 
-      //await u.save()
+      await saveId(u)
       await d.save()
 
       break
@@ -313,96 +313,100 @@ const userPayDebts = async (user, asset, parsed_tx) => {
   if ((await user.countDebts()) == 0) {
     user.has_debts = false
   }
+  await saveId(user)
+}
+
+let findRevealed = async (locks) => {
+  var final = 0
+  for (var lock of locks) {
+    var hl = await Hashlock.findOne({
+      where: {
+        hash: lock[1]
+      }
+    })
+
+    if (hl) {
+      if (hl.revealed_at <= readInt(lock[2])) {
+        final += readInt(lock[0])
+      } else {
+        l('Revealed too late ', lock)
+      }
+    } else {
+      l('Failed to unlock: ', lock)
+    }
+  }
+  return final
 }
 
 const insuranceResolve = async (ins) => {
-  let findRevealed = async (locks) => {
-    var final = 0
-    for (var lock of locks) {
-      var hl = await Hashlock.findOne({
-        where: {
-          hash: lock[1]
-        }
-      })
 
-      if (hl) {
-        if (hl.revealed_at <= readInt(lock[2])) {
-          final += readInt(lock[0])
-        } else {
-          l('Revealed too late ', lock)
-        }
-      } else {
-        l('Failed to unlock: ', lock)
-      }
-    }
-    return final
+  if (!ins.dispute_state) {
+    return l("No dispute_state to resolve")
   }
+
 
   var left = await getUserByIdOrKey(ins.leftId)
   var right = await getUserByIdOrKey(ins.rightId)
   var allResolved = []
 
-  if (ins.dispute_state) {
-    // processing actual subchannels
-    let subchannels = r(ins.dispute_state)
-    for (let subch of subchannels) {
-      let asset = readInt(subch[0])
-      let offdelta = readInt(subch[1], true) //signed
+  // processing actual subchannels
+  let subchannels = r(ins.dispute_state)
+  for (let subch of subchannels) {
+    let asset = readInt(subch[0])
+    let offdelta = readInt(subch[1], true) //signed
 
-      // revealed in time hashlocks are applied to offdelta
-      offdelta += await findRevealed(subch[2])
-      offdelta -= await findRevealed(subch[3])
+    // revealed in time hashlocks are applied to offdelta
+    offdelta += await findRevealed(subch[2])
+    offdelta -= await findRevealed(subch[3])
 
-      let subins = ins.subinsurances.by('asset', asset)
+    let subins = ins.subinsurances.by('asset', asset)
 
-      var resolved = resolveChannel(
-        subins ? subins.balance : 0,
-        (subins ? subins.ondelta : 0) + offdelta,
-        true
-      )
+    var resolved = resolveChannel(
+      subins ? subins.balance : 0,
+      (subins ? subins.ondelta : 0) + offdelta,
+      true
+    )
 
-      // splitting insurance between users
-      userAsset(left, asset, resolved.insured)
-      userAsset(right, asset, resolved.they_insured)
+    // splitting insurance between users
+    userAsset(left, asset, resolved.insured)
+    userAsset(right, asset, resolved.they_insured)
 
-      // anybody owes to anyone?
-      if (resolved.they_uninsured > 0 || resolved.uninsured > 0) {
-        var d = await Debt.create({
-          asset: asset,
-          userId: resolved.they_uninsured > 0 ? left.id : right.id,
-          oweTo: resolved.they_uninsured > 0 ? right.id : left.id,
-          amount_left:
-            resolved.they_uninsured > 0
-              ? resolved.they_uninsured
-              : resolved.uninsured
-        })
+    // anybody owes to anyone?
+    if (resolved.they_uninsured > 0 || resolved.uninsured > 0) {
+      var d = await Debt.create({
+        asset: asset,
+        userId: resolved.they_uninsured > 0 ? left.id : right.id,
+        oweTo: resolved.they_uninsured > 0 ? right.id : left.id,
+        amount_left:
+          resolved.they_uninsured > 0
+            ? resolved.they_uninsured
+            : resolved.uninsured
+      })
 
-        // optimization flag
-        if (resolved.they_uninsured > 0) {
-          left.has_debts = true
-        } else {
-          right.has_debts = true
-        }
+      // optimization flag
+      if (resolved.they_uninsured > 0) {
+        left.has_debts = true
+      } else {
+        right.has_debts = true
       }
-
-      if (subins) {
-        // zeroify now
-        await subins.destroy()
-      }
-
-      resolved.asset = asset
-
-      allResolved.push(resolved)
     }
-    ins.dispute_delayed = null
-    ins.dispute_state = null
-    ins.dispute_left = null
 
-    //ins.dispute_nonce = null
+    if (subins) {
+      // zeroify now
+      await subins.destroy()
+    }
 
-    await ins.save()
+    resolved.asset = asset
+
+    allResolved.push(resolved)
   }
+  ins.dispute_delayed = null
+  ins.dispute_state = null
+  ins.dispute_left = null
 
+  //ins.dispute_nonce = null
+
+  await saveId(ins)
   await saveId(left)
   await saveId(right)
 
@@ -424,12 +428,14 @@ const insuranceResolve = async (ins) => {
       subch.credit = 0
       subch.they_rebalance = 0
       subch.they_credit = 0
+
+      await subch.save()
     }
 
     // reset disputed status and ack timestamp
     ch.d.status = 'master'
     ch.d.ack_requested_at = null
-    await ch.d.save()
+    await saveId(ch.d)
 
     me.addEvent({
       type: 'disputeResolved',

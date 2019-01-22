@@ -146,7 +146,7 @@
               </h2>
               <p>
                 <h3 v-for="subch in ch.d.subchannels">
-                  <a class="dotted" @click="mod={shown:true, ch:ch, subch: subch, credit: commy(subch.credit), rebalance: commy(subch.rebalance)}">{{to_ticker(subch.asset)}}: {{commy(ch.derived[subch.asset].available)}} (insured {{commy(ch.derived[subch.asset].insured)}})</a>&nbsp;
+                  <a class="dotted" @click="mod={shown:true, ch:ch, subch: subch, credit: commy(subch.credit), rebalance: commy(subch.rebalance)}">{{to_ticker(subch.asset)}}: {{commy(ch.derived[subch.asset].available)}}<span v-if="ch.derived[subch.asset].uninsured>0"> (uninsured {{commy(ch.derived[subch.asset].uninsured)}})</span></a>&nbsp;
 
                   <span class="badge badge-success bank-faucet" @click="call('withChannel', {they_pubkey: ch.d.they_pubkey, method: 'testnet', action: 'faucet', asset: subch.asset, amount: 10000 })">faucet</span>
 
@@ -347,7 +347,7 @@
                   <span class="badge badge-warning">{{to_user(batch.signer.id)}} ({{batch.gas}}*{{commy(batch.gasprice, true, false)}}=${{commy(batch.txfee)}})</span>&nbsp;
                   <template v-for="d in batch.events">
                     &nbsp;
-                    <span v-if="d[0]=='dispute'" class="badge badge-primary" v-html="dispute_outcome(d[2], d[3], d[4])">
+                    <span v-if="d[0]=='dispute'" class="badge badge-primary" v-html="d[2] + ' '+dispute_outcome( d[3], d[4])">
                     </span>
                     <span v-else-if="d[0]=='setAsset'" class="badge badge-dark">{{d[1]}} {{to_ticker(d[2])}}</span>
                     <span v-else-if="d[0]=='withdraw'" class="badge badge-danger">{{commy(d[1])}} from {{to_user(d[2])}}</span>
@@ -365,7 +365,7 @@
                 <td v-if="b.meta.cron.length + b.meta.missed_validators.length > 0" colspan="7">
                   <template v-if="b.meta.cron.length > 0" v-for="m in b.meta.cron">
                     <span v-if="m[0] == 'maturity'" class="badge badge-primary">🎉 Maturity day! All FRB balances are copied to FRD balances.</span>
-                    <span v-else-if="m[0] == 'resolved'" class="badge badge-primary" v-html="dispute_outcome(m[0], m[1], m[2])"></span>
+                    <span v-else-if="m[0] == 'resolved'" class="badge badge-primary" v-html="m[0]+' '+dispute_outcome(m[1], m[2])"></span>
                     <span v-else-if="m[0] == 'snapshot'" class="badge badge-primary">Generated a new snapshot at #{{m[1]}}</span>
                     <span v-else-if="m[0] == 'executed'" class="badge badge-primary">Proposal {{m[1]}} gained majority vote and was executed</span> &nbsp;
                   </template>

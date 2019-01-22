@@ -28,9 +28,8 @@ export default {
       } else if (o.type == 'onchainfee') {
         return `Onchain tx fee ${app.commy(o.amount)}`
       } else if (o.type == 'disputeResolved') {
-        let str = app.dispute_outcome(o.type, o.ins, o.outcomes)
+        return 'Dispute resolved: '+app.dispute_outcome(o.ins, o.outcomes)
 
-        return str
       }
     }
   }

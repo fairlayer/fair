@@ -292,7 +292,7 @@ module.exports = {
     }
   },
 
-  dispute_outcome: (prefix, ins, outcomes) => {
+  dispute_outcome: (ins, outcomes) => {
     let c = app.commy
     let o = ''
 
@@ -300,23 +300,26 @@ module.exports = {
 
     if (outcomes) {
       for (let parts of outcomes) {
-        o += ` ${app.to_ticker(parts.asset)}: `
+        // skip if nothing happened
+        if (parts.uninsured + parts.they_uninsured + parts.insured+parts.they_insured == 0) continue
+
+        o += ` ${app.to_ticker(parts.asset)} `
 
 
-      if (parts.uninsured > 0) {
-        o += `${c(parts.insured)} + ${c(parts.uninsured)}${sep}`
-      } else if (parts.they_uninsured > 0) {
-        o += `${sep}${c(parts.they_insured)} + ${c(parts.they_uninsured)}`
-      } else {
-        o += `${parts.insured > 0 ? c(parts.insured) : ''}${sep}${
-          parts.they_insured > 0 ? c(parts.they_insured) : ''
-        }`
+        if (parts.uninsured > 0) {
+          o += `${c(parts.insured)} + ${c(parts.uninsured)}${sep}0`
+        } else if (parts.they_uninsured > 0) {
+          o += `0${sep}${c(parts.they_insured)} + ${c(parts.they_uninsured)}`
+        } else {
+          o += `${parts.insured > 0 ? c(parts.insured) : '0'}${sep}${
+            parts.they_insured > 0 ? c(parts.they_insured) : '0'
+          }`
+        }
       }
-            }
 
     }
 
-    return `${prefix} (${app.to_user(ins.leftId)}) ${o} (${app.to_user(
+    return `(${app.to_user(ins.leftId)}) ${o} (${app.to_user(
       ins.rightId
     )})`
   },
