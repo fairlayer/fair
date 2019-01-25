@@ -141,14 +141,24 @@
           <p style="word-wrap: break-word">Your address: <b>{{address}}</b></p>
           <template v-if="outward.type == 'offchain'">
             <div class="alert alert-secondary" v-for="ch in channels">
-              <h2>
+              <h1>
                 {{pubkeyToUser(ch.d.they_pubkey)}}
-              </h2>
+              </h1>
               <p>
                 <h3 v-for="subch in ch.d.subchannels">
-                  <a class="dotted" @click="mod={shown:true, ch:ch, subch: subch, credit: commy(subch.credit), rebalance: commy(subch.rebalance)}">{{to_ticker(subch.asset)}}: {{commy(ch.derived[subch.asset].available)}}<span v-if="ch.derived[subch.asset].uninsured>0"> (uninsured {{commy(ch.derived[subch.asset].uninsured)}})</span></a>&nbsp;
+                  <a class="dotted" @click="mod={shown:true, ch:ch, subch: subch, credit: commy(subch.credit), rebalance: commy(subch.rebalance)}">{{to_ticker(subch.asset)}}: {{commy(ch.derived[subch.asset].available)}}{{elaborateAvailable(ch.derived[subch.asset])}}</a>&nbsp;
 
-                  <span class="badge badge-success bank-faucet" @click="call('withChannel', {they_pubkey: ch.d.they_pubkey, method: 'testnet', action: 'faucet', asset: subch.asset, amount: 10000 })">faucet</span>
+                  <span class="badge badge-success bank-faucet" @click="call('withChannel', {they_pubkey: ch.d.they_pubkey, method: 'testnet', action: 'faucet', asset: subch.asset, amount: 10000 })">Faucet</span>
+
+
+                  <span v-if="subch.requested_insurance"  class="badge badge-danger">Await Insurance <dotsloader ></dotsloader>
+                  </span>
+                  <span v-else-if="ch.derived[subch.asset].uninsured>0" class="badge badge-danger" @click="requestInsurance(ch, subch.asset)">Request Insurance</span>
+                  
+                  <span v-if="subch.withdrawal_sig" class="badge badge-danger">Pending withdrawal</span>
+                  <span v-else-if="record" class="badge badge-danger" @click="a=prompt(`How much to withdraw to onchain?`);if (a) {call('withChannel', {they_pubkey: ch.d.they_pubkey, asset: subch.asset, method: 'withdraw', amount: uncommy(a)})};">Withdraw</span>
+
+                  <span v-if="record" class="badge badge-danger" @click="outward.address=address;updateRoutes();outward.type='onchain';outward.asset=subch.asset;outward.bank = ch.partner;">Deposit</span>
 
                 </h3>
               </p>
@@ -159,7 +169,9 @@
                 <span v-else-if="ch.d.status=='dispute'">
                   Wait until your dispute tx is broadcasted
                 </span>
-                <button v-else type="button" class="btn btn-outline-danger" @click="call('startDispute', {they_pubkey: ch.d.they_pubkey})">Start a Dispute 🌐</button>
+
+
+                <a v-else class="dotted" @click="call('startDispute', {they_pubkey: ch.d.they_pubkey})">Start a Dispute 🌐</a>
               </p>
               <p v-if="devmode">
                 Status: {{ch.d.status}}, nonce {{ch.d.dispute_nonce}}
@@ -437,12 +449,7 @@
                   <p>
                     <button type="button" class="btn btn-outline-success" @click="call('withChannel', {they_pubkey: mod.ch.d.they_pubkey, asset: mod.subch.asset, method: 'setLimits', credit: uncommy(mod.credit), rebalance: uncommy(mod.rebalance)})" href="#">Update Credit Limits</button>
                   </p>
-                  <p>
-                    <span v-if="record" class="badge badge-danger" @click="a=prompt(`How much to withdraw to onchain?`);if (a) {call('withChannel', {they_pubkey: mod.ch.d.they_pubkey, asset: mod.subch.asset, method: 'withdraw', amount: uncommy(a)})};">Withdraw</span>
-                    <span v-if="record" class="badge badge-danger" @click="mod.shown=false;outward.address=address;updateRoutes();outward.type='onchain';outward.asset=mod.subch.asset;outward.bank = mod.ch.partner;">Deposit</span>
-                    <span class="badge badge-danger" @click="requestInsurance(mod.ch, mod.subch.asset)">Request Insurance</span>
-                    <dotsloader v-if="derived.subch.requested_insurance"></dotsloader>
-                  </p>
+
                 </div>
               </div>
             </div>

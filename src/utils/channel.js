@@ -91,6 +91,10 @@ refresh = function(ch) {
       inwards_hold: subch.they_withdrawal_amount,
       outwards_hold: subch.withdrawal_amount,
       asset: subch.asset,
+
+      credit: subch.credit,
+      they_credit: subch.they_credit,
+
       subch: subch
     }
     // find the according subinsurance for subchannel
@@ -129,37 +133,38 @@ refresh = function(ch) {
     // otherwise the attacker can get a huge withdrawal proof, then send money offchain,
     // then steal the rest with withdrawal proof onchain, doubling their money
     // what we are about to withdraw and they are about to withdraw
-    let ins_balance = subins.balance
-    //ins_balance -= subch.withdrawal_amount + subch.they_withdrawal_amount
+    out.insurance = subins.balance
 
     // TODO: is it correct?
     //delta minus what Left one is about to withdraw (it's either we or they)
-    let delta = subins.ondelta + subch.offdelta
+    out.delta = subins.ondelta + subch.offdelta
     /*
     delta -= ch.d.isLeft()
       ? subch.withdrawal_amount
       : subch.they_withdrawal_amount*/
 
-    Object.assign(out, resolveChannel(ins_balance, delta, ch.d.isLeft()))
+    Object.assign(out, resolveChannel(out.insurance, out.delta, ch.d.isLeft()))
+
+    // what's left credit
+    out.available_credit = out.they_credit - out.they_uninsured
+    out.they_available_credit = out.credit - out.uninsured
 
     // inputs are like bearer cheques and can be used any minute, so we deduct them
     out.available =
-      out.insured +
-      out.uninsured +
-      subch.they_credit -
-      out.they_uninsured -
-      out.outwards_hold
+      out.insured + out.uninsured + out.available_credit - out.outwards_hold
 
     out.they_available =
       out.they_insured +
       out.they_uninsured +
-      subch.credit -
-      out.uninsured -
+      out.they_available_credit -
       out.inwards_hold
+
+    // total channel capacity: insurance + credit on both sides
+    out.capacity = out.insurance + out.credit + out.they_credit
 
     if (out.available < 0 || out.they_available < 0) {
       l('Invalid availables', JSON.stringify(out, null, 4))
-      //fatal('invalid outs')
+      fatal('invalid outs')
     }
 
     // All stuff we show in the progress bar in the wallet

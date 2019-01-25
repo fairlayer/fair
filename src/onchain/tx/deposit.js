@@ -166,6 +166,7 @@ module.exports = async (s, args) => {
         // rebalance happened, nullify
         let subch = ch.d.subchannels.by('asset', asset)
         subch.requested_insurance = false
+        subch.they_requested_insurance = false
         await subch.save()
       }
 

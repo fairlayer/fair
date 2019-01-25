@@ -91,13 +91,6 @@ module.exports = async (s, args) => {
     // preventing double spend with same withdrawal
     ins.withdrawal_nonce++
 
-    await saveId(ins)
-    await ins.save()
-
-    // for blockchain explorer
-    s.parsed_tx.events.push(['withdraw', amount, partner.id])
-    s.meta.inputs_volume += amount // todo: asset-specific
-
     // was this input related to us?
     if (me.record && [partner.id, s.signer.id].includes(me.record.id)) {
       const ch = await Channel.get(
@@ -115,5 +108,12 @@ module.exports = async (s, args) => {
 
       await subch.save()
     }
+
+    // do it AFTER removing they_withdrawal_amount
+    await saveId(ins)
+
+    // for blockchain explorer
+    s.parsed_tx.events.push(['withdraw', amount, partner.id])
+    s.meta.inputs_volume += amount // todo: asset-specific
   }
 }

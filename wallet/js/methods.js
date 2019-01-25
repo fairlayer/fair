@@ -292,6 +292,27 @@ module.exports = {
     }
   },
 
+  elaborateAvailable: (obj) => {
+    let str = []
+    let c = app.commy
+
+    if (obj.available_credit > 0)
+      str.push('available credit ' + c(obj.available_credit))
+    if (obj.insured > 0) str.push('insured ' + c(obj.insured))
+    if (obj.uninsured > 0) str.push('uninsured ' + c(obj.uninsured))
+
+    if (str.length > 0) {
+      // show insured+uninsured+available credit
+      str = str.join(' + ')
+      // add -hold amount
+      if (obj.outwards_hold > 0) str += ' - hold ' + c(obj.outwards_hold)
+
+      return ` (${str})`
+    } else {
+      return ''
+    }
+  },
+
   dispute_outcome: (ins, outcomes) => {
     let c = app.commy
     let o = ''
@@ -301,10 +322,16 @@ module.exports = {
     if (outcomes) {
       for (let parts of outcomes) {
         // skip if nothing happened
-        if (parts.uninsured + parts.they_uninsured + parts.insured+parts.they_insured == 0) continue
+        if (
+          parts.uninsured +
+            parts.they_uninsured +
+            parts.insured +
+            parts.they_insured ==
+          0
+        )
+          continue
 
         o += ` ${app.to_ticker(parts.asset)} `
-
 
         if (parts.uninsured > 0) {
           o += `${c(parts.insured)} + ${c(parts.uninsured)}${sep}0`
@@ -316,12 +343,9 @@ module.exports = {
           }`
         }
       }
-
     }
 
-    return `(${app.to_user(ins.leftId)}) ${o} (${app.to_user(
-      ins.rightId
-    )})`
+    return `(${app.to_user(ins.leftId)}) ${o} (${app.to_user(ins.rightId)})`
   },
 
   uncommy: (str) => {
@@ -405,12 +429,24 @@ module.exports = {
   prettyBatch: (batch) => {
     let r = ''
     for (let tx of batch) {
+      l(tx)
       if (['withdraw', 'deposit'].includes(tx[0])) {
-        r += Array(tx[1][1].length + 1).join(
-          `<span class="badge badge-danger">${app.to_ticker(tx[1][0])} ${
-            tx[0]
-          }</span>&nbsp;`
-        )
+        let capital = tx[0][0].toUpperCase() + tx[0].slice(1)
+        r += `<span class="badge badge-dark">${capital} ${app.to_ticker(
+          tx[1][0]
+        )}</span>&nbsp;`
+
+        for (let o of tx[1][1]) {
+          if (tx[0] == 'withdraw') {
+            r += `<span class="badge badge-danger">${app.commy(
+              o[0]
+            )} from ${app.to_user(o[1])}</span>&nbsp;`
+          } else {
+            r += `<span class="badge badge-success">${app.commy(
+              o[0]
+            )} to ${app.to_user(o[1])}</span>&nbsp;`
+          }
+        }
       } else {
         r += `<span class="badge badge-danger">${tx[0]}</span>&nbsp;`
       }
