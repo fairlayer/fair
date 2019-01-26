@@ -5,13 +5,13 @@ window.t = function(str) {
     banks: ['Banks', `Банки`],
     explorers: [`Advanced`, `Прочее`],
 
-    blockchain_history: [`Blockchain History`, 'Блокчейн'],
-    insurances: [`Insurances Table`, `База страховок`],
-    accounts: [`Accounts Table`, `База аккаунтов`],
+    blockchain_history: [`Blockchain`, 'Блокчейн'],
+    insurances: [`Insurances`, `База страховок`],
+    accounts: [`Accounts`, `База аккаунтов`],
     validators: [`Validators`, `Валидаторы`],
     smart_updates: [`Smart Updates`, `Смарт Апдейты`],
     network_info: [`Network Info`, `Статистика сети`],
-    node_metrics: [`Node Metrics`, `Метрики`],
+    node_metrics: [`Metrics`, `Метрики`],
     docs: [`Docs`, `Документация`],
 
     bank_manager: [`Bank Manager`, 'Управление Банком'],

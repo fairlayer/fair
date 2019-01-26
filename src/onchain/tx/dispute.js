@@ -59,7 +59,7 @@ module.exports = async (s, args) => {
       let output = await insuranceResolve(ins)
       l('Resolved with counter proof')
 
-      s.parsed_tx.events.push(['dispute', partner.id, 'disputed', ins, output])
+      s.parsed_tx.events.push(['disputeResolved', partner.id, 'disputed', ins, output])
     } else {
       l('Old dispute_nonce or same counterparty')
     }
@@ -76,7 +76,7 @@ module.exports = async (s, args) => {
       : K.dispute_delay_for_users
     ins.dispute_delayed = K.usable_blocks + delay
 
-    s.parsed_tx.events.push(['dispute', partner.id, 'started', ins])
+    s.parsed_tx.events.push(['disputeStarted', partner.id, 'started', ins])
 
     await saveId(ins)
 

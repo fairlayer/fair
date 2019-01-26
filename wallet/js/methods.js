@@ -222,7 +222,7 @@ module.exports = {
     )
   },
 
-  to_ticker: (assetId) => {
+  toTicker: (assetId) => {
     let asset = app.assets ? app.assets.find((a) => a.id == assetId) : null
 
     return asset ? asset.ticker : 'N/A'
@@ -296,6 +296,13 @@ module.exports = {
     let str = []
     let c = app.commy
 
+    // shortcuts, to show if entire balance is [un]insured
+    if (obj.available == 0) return ''
+
+    if (obj.insured == obj.available) return ` (insured)`
+
+    if (obj.uninsured == obj.available) return ` (uninsured)`
+
     if (obj.available_credit > 0)
       str.push('available credit ' + c(obj.available_credit))
     if (obj.insured > 0) str.push('insured ' + c(obj.insured))
@@ -313,11 +320,14 @@ module.exports = {
     }
   },
 
-  dispute_outcome: (ins, outcomes) => {
+  elaborateDispute: (ins, outcomes) => {
     let c = app.commy
-    let o = ''
-
-    var sep = ' | '
+    let o = `<tr>
+      <td>Dispute resolved:</td>
+      <td>${app.to_user(ins.leftId)}</td>
+      <td>${app.to_user(ins.rightId)}</td>
+    </tr>
+    `
 
     if (outcomes) {
       for (let parts of outcomes) {
@@ -331,21 +341,23 @@ module.exports = {
         )
           continue
 
-        o += ` ${app.to_ticker(parts.asset)} `
+        o += `<tr><td>${app.toTicker(parts.asset)}</td>`
 
+        // first two may contain debts
+        let toDebt = (d)=>{return d ? ' <b>(debt)</b>' : ''}
         if (parts.uninsured > 0) {
-          o += `${c(parts.insured)} + ${c(parts.uninsured)}${sep}0`
+          o += `<td>${c(parts.insured)} + ${c(parts.uninsured)}${toDebt(parts.debt)}</td><td>0</td></tr>`
         } else if (parts.they_uninsured > 0) {
-          o += `0${sep}${c(parts.they_insured)} + ${c(parts.they_uninsured)}`
+          o += `<td>0</td><td>${c(parts.they_insured)} + ${c(parts.they_uninsured)}${toDebt(parts.they_debt)}</td></tr>`
         } else {
-          o += `${parts.insured > 0 ? c(parts.insured) : '0'}${sep}${
+          o += `<td>${parts.insured > 0 ? c(parts.insured) : '0'}</td><td>${
             parts.they_insured > 0 ? c(parts.they_insured) : '0'
-          }`
+          }</td></tr>`
         }
       }
     }
 
-    return `(${app.to_user(ins.leftId)}) ${o} (${app.to_user(ins.rightId)})`
+    return `<table>${o}</table>`
   },
 
   uncommy: (str) => {
@@ -429,10 +441,10 @@ module.exports = {
   prettyBatch: (batch) => {
     let r = ''
     for (let tx of batch) {
-      l(tx)
+
       if (['withdraw', 'deposit'].includes(tx[0])) {
         let capital = tx[0][0].toUpperCase() + tx[0].slice(1)
-        r += `<span class="badge badge-dark">${capital} ${app.to_ticker(
+        r += `<span class="badge badge-dark">${capital} ${app.toTicker(
           tx[1][0]
         )}</span>&nbsp;`
 

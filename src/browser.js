@@ -76,6 +76,16 @@ react = async (result) => {
 
     result.PK = PK
 
+    if (result.record) {
+      // both our debts and to us
+      let filters = [
+        {userId: result.record.id},
+        {oweTo: result.record.id}
+      ]
+      
+      result.debts = await Debt.findAll({where: {[Op.or]: filters}})
+    }
+
     result.address = me.getAddress()
     result.pubkey = toHex(me.pubkey)
 

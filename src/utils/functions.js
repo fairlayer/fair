@@ -353,50 +353,61 @@ const insuranceResolve = async (ins) => {
   let subchannels = r(ins.dispute_state)
   for (let subch of subchannels) {
     let asset = readInt(subch[0])
-    let offdelta = readInt(subch[1], true) //signed
-
-    // revealed in time hashlocks are applied to offdelta
-    offdelta += await findRevealed(subch[2])
-    offdelta -= await findRevealed(subch[3])
-
     let subins = ins.subinsurances.by('asset', asset)
+
+    let delta = (subins ? subins.ondelta : 0)
+    delta += readInt(subch[1], true) //offdelta
+
+    // revealed in time hashlocks are applied to delta
+    delta += await findRevealed(subch[2])
+    delta -= await findRevealed(subch[3])
+
 
     var resolved = resolveChannel(
       subins ? subins.balance : 0,
-      (subins ? subins.ondelta : 0) + offdelta,
+      delta,
       true
     )
+    resolved.asset = asset
 
     // splitting insurance between users
     userAsset(left, asset, resolved.insured)
     userAsset(right, asset, resolved.they_insured)
 
-    // anybody owes to anyone?
-    if (resolved.they_uninsured > 0 || resolved.uninsured > 0) {
-      var d = await Debt.create({
-        asset: asset,
-        userId: resolved.they_uninsured > 0 ? left.id : right.id,
-        oweTo: resolved.they_uninsured > 0 ? right.id : left.id,
-        amount_left:
-          resolved.they_uninsured > 0
-            ? resolved.they_uninsured
-            : resolved.uninsured
-      })
+    let debtor = false
 
-      // optimization flag
-      if (resolved.they_uninsured > 0) {
-        left.has_debts = true
+    let payOrDebt = async (asset, debtor, oweTo, amount_left) => {
+      // ensure FRD is not exhausted
+
+      if (userAsset(debtor, asset) >= amount_left) {
+        // pay now
+        userAsset(debtor, asset, -amount_left)
+        userAsset(oweTo, asset, amount_left)
+        return false
       } else {
-        right.has_debts = true
+        debtor.has_debts = true
+        return await Debt.create({
+          asset: asset,
+          userId: debtor.id,
+          oweTo: oweTo.id,
+          amount_left: amount_left
+        })
       }
     }
+
+    // anybody owes to anyone?
+    if (resolved.uninsured > 0) {
+      resolved.debt = await payOrDebt(asset, right, left, resolved.uninsured)
+    } else if (resolved.they_uninsured > 0) {
+      resolved.they_debt = await payOrDebt(asset, left, right, resolved.they_uninsured)      
+    }
+
 
     if (subins) {
       // zeroify now
       await subins.destroy()
     }
 
-    resolved.asset = asset
 
     allResolved.push(resolved)
   }

@@ -105,22 +105,34 @@ module.exports = async (pubkey, json, ws) => {
       let subch = ch.d.subchannels.by('asset', json.asset)
       let amount = parseInt(json.amount)
       let asset = parseInt(json.asset)
-      let available =
-        ch.derived[asset].they_insured + userAsset(me.record, asset)
+      // TODO: don't forget hold
+
+
+      // if we're bank, we let to withdraw from our onchain as well
+      // otherwise we let bank to withdraw only from their insured side
+      if (me.my_bank) {
+        var available = ch.derived[asset].they_available
+      } else {
+        // if we'd let banks to withdraw they_available, 
+        // their compromise would lead to a disaster of failed credit
+        var available = ch.derived[asset].they_insured - ch.derived[asset].inwards_hold
+      }
 
       if (amount > available) {
         me.textMessage(
           ch.d.they_pubkey,
           `Sorry, you can only withdraw up to ${available}`
         )
+
         return false
       }
 
-      if (amount == 0 || amount > ch.derived[asset].they_available) {
-        l(
-          `Partner asks for ${amount} but owns ${
-            ch.derived[asset].they_available
-          }`
+      // technically withdrawable: our onchain + insurance size
+      let withdrawable = ch.derived[asset].they_insured + userAsset(me.record, asset)
+      if (amount == 0 || amount > withdrawable) {
+        me.textMessage(
+          ch.d.they_pubkey,
+          `Sorry, you can only withdraw up to ${withdrawable}`
         )
         return false
       }
