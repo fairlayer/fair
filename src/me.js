@@ -388,7 +388,9 @@ class Me {
           me.send(m.pubkey, {method: 'auth', data: ts()})
         }
 
-        //me.sockets[m.pubkey].send(msg, wscb)
+        // first auth, then send actual message
+
+        me.sockets[m.pubkey].send(msg, wscb)
       }
 
       me.sockets[m.pubkey].open(m.location)

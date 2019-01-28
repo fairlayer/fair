@@ -362,6 +362,9 @@ module.exports = async (
       }
 
       me.metrics[valid ? 'settle' : 'fail'].current++
+      
+      refresh(ch)
+      outward_hl.resulting_balance = ch.derived[asset].available
 
       await outward_hl.save()
 
@@ -399,6 +402,10 @@ module.exports = async (
           pull_hl.outcome = outcome
           pull_hl.type = 'del'
           pull_hl.status = 'new'
+        
+          // todo
+          refresh(inward_ch)
+          pull_hl.resulting_balance = inward_ch.derived[asset].available
 
           await pull_hl.save()
 

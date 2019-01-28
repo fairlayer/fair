@@ -36,7 +36,7 @@ Periodical.schedule = function schedule(task, timeout) {
 Periodical.startValidator = () => {
   l('Starting validator ', me.my_validator)
   me.startExternalRPC(me.my_validator.location)
-  Periodical.schedule('consensus', 200)
+  Periodical.schedule('consensus', 250)
 }
 
 Periodical.startBank = () => {
@@ -44,7 +44,7 @@ Periodical.startBank = () => {
   l('Starting bank ', me.my_bank)
   me.startExternalRPC(me.my_bank.location)
 
-  Periodical.schedule('rebalance', 3 * K.blocktime)
+  Periodical.schedule('rebalance', K.blocktime * 3)
 
   // banks have to force react regularly
   Periodical.schedule('forceReact', K.blocktime)

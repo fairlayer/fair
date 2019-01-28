@@ -177,8 +177,9 @@ let run = async () => {
 
   if (me.record.id == 4) {
     // trigger the dispute from bank
+    
     //me.CHEAT_dontack = true
-    //me.CHEAT_dontwithdraw = true
+    me.CHEAT_dontwithdraw = true
 
     setTimeout(() => {
       me.payChannel({

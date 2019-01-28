@@ -51,19 +51,8 @@ module.exports = async (s, args) => {
           })
         }
       } else {
-        if (!withPartner.id) {
-          l("Both partners don't exist")
-          return
-        }
-        // todo: support usecase of paying to new account @bank
-        throw 'yolo'
-
-        const fee = K.standalone_balance + K.account_creation_fee
-        if (amount < fee) return
-
-        userAsset(target, asset, K.standalone_balance)
-        amount -= fee
-        //userAsset(s.signer, asset, -fee)
+        l('Cannot pay to a channel with unregistered user')
+        return
       }
 
       await saveId(target)

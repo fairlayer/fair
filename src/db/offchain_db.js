@@ -222,7 +222,11 @@ const defineModels = (sequelize) => {
       source_address: Sequelize.TEXT,
 
       // who caused us to make this payment (if we're bank)?
-      inward_pubkey: Sequelize.BLOB
+      inward_pubkey: Sequelize.BLOB,
+
+      // resulting balance
+      resulting_balance: Sequelize.INTEGER
+
     },
     {
       indexes: [

@@ -107,7 +107,7 @@ module.exports = {
       let bank = app.K.banks.find((h) => h.id == hop)
       if (bank) {
         //(${app.bpsToPercent(bank.fee_bps)})
-        info.push(`${app.to_user(bank.id)}`)
+        info.push(`${app.toUser(bank.id)}`)
       }
     }
 
@@ -228,9 +228,10 @@ module.exports = {
     return asset ? asset.ticker : 'N/A'
   },
 
-  to_user: (userId) => {
+  toUser: (userId) => {
     // returns either bank name or just id
     // todo: twitter-style tooltips with info on the user
+    if (userId.length > 20) return app.trim(userId)
 
     let h = app.K.banks.find((h) => h.id == userId)
     //`<span class="badge badge-success">${h.handle}</span>`
@@ -324,8 +325,8 @@ module.exports = {
     let c = app.commy
     let o = `<tr>
       <td>Dispute resolved:</td>
-      <td>${app.to_user(ins.leftId)}</td>
-      <td>${app.to_user(ins.rightId)}</td>
+      <td>${app.toUser(ins.leftId)}</td>
+      <td>${app.toUser(ins.rightId)}</td>
     </tr>
     `
 
@@ -452,11 +453,11 @@ module.exports = {
           if (tx[0] == 'withdraw') {
             r += `<span class="badge badge-danger">${app.commy(
               o[0]
-            )} from ${app.to_user(o[1])}</span>&nbsp;`
+            )} from ${app.toUser(o[1])}</span>&nbsp;`
           } else {
             r += `<span class="badge badge-success">${app.commy(
               o[0]
-            )} to ${app.to_user(o[1])}</span>&nbsp;`
+            )} to ${app.toUser(o[1])}</span>&nbsp;`
           }
         }
       } else {
@@ -475,9 +476,10 @@ module.exports = {
   },
 
   trim: (str) => {
+    // useful to cut long hex strings
     return str ? str.slice(0, 8) + '...' : ''
   },
-  payment_status: (t) => {
+  paymentStatus: (t) => {
     var s = ''
     if (t.type == 'del' || t.type == 'delrisk') {
       //outcomeSecret ✔

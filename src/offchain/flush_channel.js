@@ -186,6 +186,9 @@ module.exports = async (pubkey, opportunistic) => {
 
         t.status = 'sent'
 
+        refresh(ch)
+        t.resulting_balance = ch.derived[t.asset].available
+
         await t.save()
 
         if (t.status != 'sent') {

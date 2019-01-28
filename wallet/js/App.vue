@@ -14,10 +14,10 @@
           <template v-if="pendingBatch.length > 0">
             Wait for validation...<dotsloader></dotsloader>
           </template>
-          <template v-else>
+          <template v-else-if="batch_estimate.size > 0">
           <span>
             <input style="width: 80px" type="number" v-model="gasprice">
-     (gas price) * {{batch_estimate.size}} (gas) = fee {{commy(gasprice * batch_estimate.size)}}
+     * {{batch_estimate.size}} = fee {{commy(uncommy(gasprice) * batch_estimate.size)}}
             </span>
           <!--<div class="slidecontainer" style="display:inline-block;">
               <input type="range" min="1" max="100" class="slider" v-model="gasprice">
@@ -150,7 +150,7 @@
               </h1>
               <p>
                 <template v-for="subch in ch.d.subchannels">
-                  <a class="dotted" @click="mod={shown:true, ch:ch, subch: subch, credit: commy(subch.credit), rebalance: commy(subch.rebalance)}">{{toTicker(subch.asset)}}: {{commy(ch.derived[subch.asset].available)}}{{elaborateAvailable(ch.derived[subch.asset])}}</a>
+                  <h5><a class="dotted" @click="mod={shown:true, ch:ch, subch: subch, credit: commy(subch.credit), rebalance: commy(subch.rebalance)}">{{toTicker(subch.asset)}}: {{commy(ch.derived[subch.asset].available)}}{{elaborateAvailable(ch.derived[subch.asset])}}</a></h5>
 
                 <p>
 
@@ -191,18 +191,22 @@
           </template>
           <template v-else>
             <div v-if="record">
-              <h3 v-for="a in record.balances">
-              {{toTicker(a.asset)}}: {{commy(getAsset(a.asset))}} 
-              &nbsp;
-              <span class="badge badge-success layer-faucet" @click="call('onchainFaucet', {amount: 10000, asset: a.asset })">faucet</span>
 
               <template v-if="debts.length > 0">
-                <h3>Debts</h3>
-                <p v-for="d in debts">{{d.userId}} owes to {{d.oweTo}} {{toTicker(d.asset)}} {{commy(d.amount_left)}}</p>
+                <h5>Debts that are related to you:</h5>
+                <ul>
+                <li v-for="d in debts">{{toUser(d.userId)}} to {{toUser(d.oweTo)}}: {{commy(d.amount_left)}} {{toTicker(d.asset)}}</li>
+                </ul>
               </template>
 
 
-            </h3>
+              <h4 v-for="a in record.balances">
+              {{toTicker(a.asset)}}: {{commy(getAsset(a.asset))}} 
+              &nbsp;
+              <span class="badge badge-success layer-faucet" @click="call('onchainFaucet', {amount: 10000, asset: a.asset })">faucet</span>
+              </h4>
+
+
             </div>
             <div v-else>
               <span class="badge badge-success layer-faucet" @click="call('onchainFaucet', {amount: 10000, asset: 1 })">faucet</span>
@@ -247,17 +251,20 @@
               <thead><tr>
                 <td>Date</td>
                 <td>Details</td>
+                <td>Via</td>
                 <td>Amount</td>
-                <td>Result</td>
+                <td>Available</td>
               </tr></thead>
 
               <transition-group name="list" tag="tbody">
                 <tr v-bind:key="h.id" v-for="(h, index) in payments.slice(0, history_limit)">
                   <td width="10%" v-html="skipDate(h, index)"></td>
-                  <td @click="addr=(h.is_inward ? h.source_address : h.destination_address);if (addr){outward.address=addr+'#'+h.private_invoice; outward.amount=commy(h.amount);outward.asset = h.asset;}"><u class="dotted">{{paymentToDetails(h)}}</u>: {{h.invoice}} via {{to_user(channels.find(ch=>ch.d.id==h.channelId).partner)}}</td>
+                  <td width="50%" @click="addr=(h.is_inward ? h.source_address : h.destination_address);if (addr){outward.address=addr+'#'+h.private_invoice; outward.amount=commy(h.amount);outward.asset = h.asset;}"><u class="dotted">{{paymentToDetails(h)}}</u>: {{h.invoice}}</td>
 
-                  <td width="15%"><span v-bind:class="['badge', h.amount > 0 ? 'badge-success' : 'badge-danger']">{{toTicker(h.asset)}} {{commy(h.is_inward ? h.amount : -h.amount)}}</span> {{payment_status(h)}}</td>
-                  <td>{{commy(h.result)}}</td>
+                  <td>{{toUser(channels.find(ch=>ch.d.id==h.channelId).partner)}}</td>
+
+                  <td width="15%"><span v-bind:class="['badge', h.is_inward ? 'badge-success' : 'badge-danger']">{{toTicker(h.asset)}} {{commy(h.is_inward ? h.amount : -h.amount)}}</span> {{paymentStatus(h)}}</td>
+                  <td>{{commy(h.resulting_balance)}}</td>
                 </tr>
               </transition-group>
               <tr v-if="payments.length > history_limit">
@@ -274,11 +281,12 @@
               <template v-if="parsedAddress.banks.length > 0">
                 <div class="radio" v-for="id in parsedAddress.banks">
                   <label>
-                    <input type="radio" :value="id" v-model="outward.bank"> {{to_user(id)}}</label>
+                    <input type="radio" :value="id" v-model="outward.bank"> {{toUser(id)}}</label>
                 </div>
               </template>
             </div>
 
+            <p><b v-if="uncommy(outward.amount) > getAsset(outward.asset)" class="badge badge-danger" style="">You do not have enough on your onchain balance. Make sure you also withdraw to onchain in the same batch.</b></p>
 
             <p>
               <button v-if="record" type="button" class="btn btn-outline-success" @click="addExternalDeposit">Transfer 🌐</button>
@@ -340,7 +348,7 @@
         </p>
         <div v-for="p in proposals">
           <h4>#{{p.id}}: {{p.desc}}</h4>
-          <small>Proposed by {{to_user(p.user.id)}}</small>
+          <small>Proposed by {{toUser(p.user.id)}}</small>
           <Highlight lang="javascript" :code="p.code"></Highlight>
           <div v-if="p.patch">
             <div style="line-height:15px; font-size:12px;">
@@ -348,7 +356,7 @@
             </div>
           </div>
           <p v-for="u in p.voters">
-            <b>{{u.vote.approval ? 'Approved' : 'Denied'}}</b> by {{to_user(u.id)}}: {{u.vote.rationale ? u.vote.rationale : '(no rationale)'}}
+            <b>{{u.vote.approval ? 'Approved' : 'Denied'}}</b> by {{toUser(u.id)}}: {{u.vote.rationale ? u.vote.rationale : '(no rationale)'}}
           </p>
           <small>To be executed at {{p.delayed}} usable block</small>
           <div v-if="record">
@@ -362,7 +370,7 @@
       <div v-else-if="tab=='blockchain_history'">
         <h1>Blockchain Explorer</h1>
         <p>These transactions were publicly broadcasted and executed on every full node, including yours. Blockchain space is reserved for insurance rebalances, disputes and other high-level settlement actions.</p>
-        <p v-if="nextValidator">Next validator: {{to_user(nextValidator.id)}}</p>
+        <p v-if="nextValidator">Next validator: {{toUser(nextValidator.id)}}</p>
         <table v-if="blocks.length>0" class="table">
           <thead class="thead-dark">
             <tr>
@@ -384,17 +392,17 @@
               </tr>
               <tr v-for="batch in (b.meta && b.meta.parsed_tx)">
                 <td colspan="7">
-                  <span class="badge badge-warning">{{to_user(batch.signer.id)}} ({{batch.gas}}*{{commy(batch.gasprice, true, false)}}=${{commy(batch.txfee)}})</span>&nbsp;
+                  <span class="badge badge-warning">{{toUser(batch.signer.id)}} ({{batch.gas}}*{{commy(batch.gasprice, true, false)}}=${{commy(batch.txfee)}})</span>&nbsp;
                   <template v-for="d in batch.events">
                     &nbsp;
                     <div v-if="d[0]=='disputeResolved'" v-html="elaborateDispute(d[3], d[4])">
                     </div>
                     <span v-else-if="d[0]=='disputeStarted'" class="badge badge-dark">started dispute {{d[1]}}</span>
                     <span v-else-if="d[0]=='setAsset'" class="badge badge-dark">{{d[1]}} {{toTicker(d[2])}}</span>
-                    <span v-else-if="d[0]=='withdraw'" class="badge badge-danger">{{commy(d[1])}} from {{to_user(d[2])}}</span>
+                    <span v-else-if="d[0]=='withdraw'" class="badge badge-danger">{{commy(d[1])}} from {{toUser(d[2])}}</span>
                     <span v-else-if="d[0]=='revealSecrets'" class="badge badge-danger">Reveal: {{trim(d[1])}}</span>
-                    <span v-else-if="d[0]=='enforceDebt'" class="badge badge-dark">{{commy(d[1])}} debt to {{to_user(d[2])}}</span>
-                    <span v-else-if="d[0]=='deposit'" class="badge badge-success">{{commy(d[1])}} to {{d[3] ? ((d[2] == batch.signer.id ? '': to_user(d[2]))+'@'+to_user(d[3])) : to_user(d[2])}}{{d[4] ? ' for '+d[4] : ''}}</span>
+                    <span v-else-if="d[0]=='enforceDebt'" class="badge badge-dark">{{commy(d[1])}} debt to {{toUser(d[2])}}</span>
+                    <span v-else-if="d[0]=='deposit'" class="badge badge-success">{{commy(d[1])}} to {{d[3] ? ((d[2] == batch.signer.id ? '': toUser(d[2]))+'@'+toUser(d[3])) : toUser(d[2])}}{{d[4] ? ' for '+d[4] : ''}}</span>
                     <span v-else-if="d[0]=='createOrder'" class="badge badge-dark">Created order {{commy(d[2])}} {{toTicker(d[1])}} for {{toTicker(d[3])}}</span>
                     <span v-else-if="d[0]=='cancelOrder'" class="badge badge-dark">Cancelled order {{d[1]}}</span>
                     <span v-else-if="d[0]=='createAsset'" class="badge badge-dark">Created {{commy(d[2])}} of asset {{d[1]}}</span>
@@ -434,7 +442,7 @@
                       <tr>
                         <th scope="col"></th>
                         <th scope="col">You</th>
-                        <th scope="col">{{to_user(mod.ch.partner)}}</th>
+                        <th scope="col">{{toUser(mod.ch.partner)}}</th>
                       </tr>
                     </thead>
                     <tbody>
