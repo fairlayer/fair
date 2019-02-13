@@ -293,27 +293,28 @@ module.exports = {
     }
   },
 
-  elaborateAvailable: (obj) => {
+  elaborateAvailable: (o) => {
     let str = []
     let c = app.commy
 
-    // shortcuts, to show if entire balance is [un]insured
-    if (obj.available == 0) return ''
+    // shortcuts if no hold, to show if entire balance is of one specific type
+    if (o.outwards_hold == 0) {
+      if (o.insured == o.available) return ` (insured)`
+      if (o.uninsured == o.available) return ` (uninsured)`
+      if (o.available_credit == o.available) return ` (available credit)`  
+      if (o.available == 0) return ''
+    } 
 
-    if (obj.insured == obj.available) return ` (insured)`
-
-    if (obj.uninsured == obj.available) return ` (uninsured)`
-
-    if (obj.available_credit > 0)
-      str.push('available credit ' + c(obj.available_credit))
-    if (obj.insured > 0) str.push('insured ' + c(obj.insured))
-    if (obj.uninsured > 0) str.push('uninsured ' + c(obj.uninsured))
+    if (o.available_credit > 0)
+      str.push('available credit ' + c(o.available_credit))
+    if (o.insured > 0) str.push('insured ' + c(o.insured))
+    if (o.uninsured > 0) str.push('uninsured ' + c(o.uninsured))
 
     if (str.length > 0) {
       // show insured+uninsured+available credit
       str = str.join(' + ')
       // add -hold amount
-      if (obj.outwards_hold > 0) str += ' - hold ' + c(obj.outwards_hold)
+      if (o.outwards_hold > 0) str += ' - hold ' + c(o.outwards_hold)
 
       return ` (${str})`
     } else {

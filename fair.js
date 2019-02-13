@@ -1,2 +1,2 @@
 #!/usr/bin/env node
-require('./src/fair')
+require('./built/src/index')

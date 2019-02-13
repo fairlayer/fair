@@ -1,5 +1,5 @@
 module.exports = async (pubkey, json, ws) => {
-  // json.data is ts()
+  // json.data is Date.now()
 
   // wrap in custom WebSocketClient if it is a raw ws object
   if (ws.instance) {

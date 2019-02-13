@@ -5,7 +5,7 @@ module.exports = (p) => {
     // for some reason execSync throws but gives result
     try {
       // exclude all non-JS files for now
-      p[2] = child_process.execSync(
+      p[2] = require('child_process').execSync(
         'diff  -Naur --exclude=*{.cache,data,dist,node_modules,private,spec,.git}  ../8001 . '
       )
     } catch (err) {

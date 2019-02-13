@@ -25,7 +25,7 @@ module.exports = () => {
   //if (me.my_validator) {
   //  return sendSync()
   //}
-  let now = ts()
+  let now = Date.now()
   // is there new block expected & we didn't request for a while
   if (
     !cached_result.sync_started_at &&

@@ -18,7 +18,7 @@
     "finalhandler": "1.1.1",
     "js-sha3": "0.7.0",
     "mysql2": "1.5.3",
-    "npm": "^6.2.0",
+    "npm": "^6.7.0",
     "pg": "7.4.3",
     "pm2": "3.0.3",
     "prettier": "1.14.2",
@@ -37,10 +37,12 @@
     "ws": "5.1.1"
   },
   "devDependencies": {
+    "@types/node": "^10.12.20",
+    "@types/sequelize": "^4.27.34",
     "babel-plugin-transform-es2015-modules-strip": "0.1.1",
     "http-proxy": "1.17.0",
     "jasmine": "3.2.0",
-    "parcel-bundler": "1.8.1",
+    "parcel-bundler": "^1.11.0",
     "vue-hot-reload-api": "2.3.0",
     "vue-template-compiler": "^2.5.17"
   },

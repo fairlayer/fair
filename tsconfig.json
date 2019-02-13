@@ -1,0 +1,19 @@
+{
+    "compilerOptions": {
+        "outDir": "./built",
+        "allowJs": true,
+        "target": "es5",
+        "module": "commonjs", 
+        //"removeComments": true,
+        //"sourceMap": true,
+        //"declaration": true,
+        //strictNullChecks
+
+        "lib": ["es2015", "es2017", "dom"],
+        //"noEmitOnError": true
+    },
+    "include": [
+        "./src/**/*"
+    ]
+    //"exclude": ["./lib", "./test"]
+}

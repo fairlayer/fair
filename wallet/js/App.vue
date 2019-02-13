@@ -171,14 +171,14 @@
               </p>
               <p v-if="record">
                 <span v-if="ch.ins && ch.ins.dispute_delayed">
-                  <b>Blocks left until dispute resolution: {{ch.ins.dispute_delayed - K.usable_blocks}}</b>
+                  <b>Blocks left until dispute resolution: {{ch.ins.dispute_delayed - K.usable_blocks}}. Your assets will be returned to onchain.</b>
                 </span>
                 <span v-else-if="ch.d.status=='dispute'">
                   Wait until your dispute tx is broadcasted
                 </span>
 
 
-                <a v-else class="dotted" @click="call('startDispute', {they_pubkey: ch.d.they_pubkey})">Start a Dispute 🌐</a>
+                <button v-else class="btn btn-outline-danger" @click="call('startDispute', {they_pubkey: ch.d.they_pubkey})">Start a Dispute (withdraw everything onchain) 🌐</a>
               </p>
               <p v-if="devmode">
                 Status: {{ch.d.status}}, nonce {{ch.d.dispute_nonce}}
