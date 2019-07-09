@@ -40,19 +40,17 @@ Object.defineProperty(exports, "__esModule", { value: true });
 // Also implements validator and bank functionality
 var getChain = require('./get_chain');
 var utils_1 = require("../utils");
-module.exports.requireSig = [
-    'auth',
-    'propose',
-    'prevote',
-    'precommit',
-    'update',
-    'setLimits',
-    'requestInsurance',
-    'requestCredit',
-    'giveWithdrawal',
-    'requestWithdrawal',
-    'testnet'
-];
+/*
+
+
+  'propose',
+  'prevote',
+  'precommit',
+
+
+  'authSocket',
+
+  */
 module.exports = function (ws, rawMessage) { return __awaiter(_this, void 0, void 0, function () {
     var msg, content, contentType, pubkey, sig, body, json, raw_chain, pubkey_1, msg_1, e_1;
     return __generator(this, function (_a) {

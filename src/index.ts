@@ -15,15 +15,20 @@ import Sequelize = require('sequelize');
 import onchainModels from './db/onchain_db';
 import offchainModels from './db/offchain_db';
 
+
+
+
 async function startFairlayer() {
   const c: any = new Context
 
+  console.log(process.argv)
 
-  /*
-  let argv = minimist(process.argv.slice(2), {
+
+  let argv = require('minimist')(process.argv.slice(2), {
     string: ['username', 'password']
   })
-
+  
+  /*
   c.setArgv(argv)
 
   try {

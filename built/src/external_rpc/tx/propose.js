@@ -1,4 +1,3 @@
-"use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
@@ -34,58 +33,34 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-Object.defineProperty(exports, "__esModule", { value: true });
-var context_1 = require("./context");
-var utils_1 = require("./utils");
-var Sequelize = require("sequelize");
-var onchain_db_1 = require("./db/onchain_db");
-var offchain_db_1 = require("./db/offchain_db");
-function startFairlayer() {
-    return __awaiter(this, void 0, void 0, function () {
-        var c, argv, repl;
-        return __generator(this, function (_a) {
-            c = new context_1.default;
-            console.log(process.argv);
-            argv = require('minimist')(process.argv.slice(2), {
-                string: ['username', 'password']
-            });
-            /*
-            c.setArgv(argv)
-          
-            try {
-              l('Setting up ' + datadir)
-              fs.mkdirSync('./' + datadir)
-              fs.mkdirSync('./' + datadir + '/onchain')
-              fs.mkdirSync('./' + datadir + '/offchain')
-            } catch(e){}*/
-            c.onchainDB = new Sequelize('db', 'username', 'password', {
-                dialect: 'sqlite',
-                storage: c.datadir + '/onchain/db.sqlite',
-                define: { timestamps: false },
-                operatorsAliases: false,
-                benchmark: true
-            });
-            onchain_db_1.default(c.onchainDB);
-            c.offchainDB = new Sequelize('data', 'root', '123123', {
-                dialect: 'sqlite',
-                storage: c.datadir + '/offchain/db.sqlite',
-                define: { timestamps: true },
-                operatorsAliases: false,
-                retry: {
-                    max: 20
-                },
-                pool: {
-                    max: 10,
-                    min: 0,
-                    acquire: 10000,
-                    idle: 10000
-                }
-            });
-            offchain_db_1.default(c.offchainDB);
-            repl = require('repl').start();
-            Object.assign(repl.context, { c: c, rlp: utils_1.rlp });
+var _this = this;
+module.exports = function (s, args) { return __awaiter(_this, void 0, void 0, function () {
+    var execute_on, new_proposal;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0: 
+            // temporary protection
+            // if (s.signer.id != 1)
             return [2 /*return*/];
-        });
+            case 1:
+                new_proposal = _a.sent();
+                state.events.push(['propose', new_proposal]);
+                if (!(s.signer.id == 1)) return [3 /*break*/, 5];
+                if (!(me.record && me.record.id != 1)) return [3 /*break*/, 3];
+                // root doesnt need to apply
+                return [4 /*yield*/, proposalExecute(new_proposal)];
+            case 2:
+                // root doesnt need to apply
+                _a.sent();
+                _a.label = 3;
+            case 3: return [4 /*yield*/, new_proposal.destroy()];
+            case 4:
+                _a.sent();
+                _a.label = 5;
+            case 5:
+                l("Added new proposal!");
+                K.proposals_created++;
+                return [2 /*return*/];
+        }
     });
-}
-startFairlayer();
+}); };

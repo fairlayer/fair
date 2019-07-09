@@ -6,22 +6,19 @@ import {
   rlp,
 } from '../utils'
 
-module.exports.requireSig = [
-  'auth',
+
+
+/*
+
+
   'propose',
   'prevote',
   'precommit',
 
-  'update',
-  'setLimits',
-  'requestInsurance',
-  'requestCredit',
-  'giveWithdrawal',
-  'requestWithdrawal',
-  'testnet'
-]
 
+  'authSocket',
 
+  */
 
 module.exports = async (ws, rawMessage) => {
   // uws gives ArrayBuffer, we create a view

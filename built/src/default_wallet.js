@@ -46,7 +46,7 @@ module.exports = function (a) { return __awaiter(_this, void 0, void 0, function
                 path = require('path');
                 cb = function (req, res) {
                     return __awaiter(this, void 0, void 0, function () {
-                        var _a, path, query, file, stat, fReadStream, parts, args, raw_chain, _b, startingPort, i, nextPort, instanceLog, auth_code, queryData;
+                        var _a, path, query, parts, args, raw_chain, _b, startingPort, i, nextPort, instanceLog, auth_code, queryData;
                         return __generator(this, function (_c) {
                             switch (_c.label) {
                                 case 0:
@@ -54,32 +54,6 @@ module.exports = function (a) { return __awaiter(_this, void 0, void 0, function
                                     res.setHeader('X-Frame-Options', 'DENY');
                                     _a = req.url.split('?'), path = _a[0], query = _a[1];
                                     if (!path.match(/^\/Fair-([0-9]+|latest)\.tar\.gz$/)) return [3 /*break*/, 1];
-                                    // the snapshot may have been deleted meanwhile
-                                    try {
-                                        file = './' +
-                                            datadir +
-                                            '/offchain' +
-                                            (req.url == '/Fair-latest.tar.gz'
-                                                ? '/Fair-' + K.last_snapshot_height + '.tar.gz'
-                                                : req.url);
-                                        stat = fs.statSync(file);
-                                        res.writeHeader(200, { 'Content-Length': stat.size });
-                                        fReadStream = fs.createReadStream(file);
-                                        fReadStream.on('data', function (chunk) {
-                                            if (!res.write(chunk)) {
-                                                fReadStream.pause();
-                                            }
-                                        });
-                                        fReadStream.on('end', function () {
-                                            res.end();
-                                        });
-                                        res.on('drain', function () {
-                                            fReadStream.resume();
-                                        });
-                                    }
-                                    catch (e) {
-                                        l(e);
-                                    }
                                     return [3 /*break*/, 8];
                                 case 1:
                                     if (!path.startsWith('/blocks')) return [3 /*break*/, 3];

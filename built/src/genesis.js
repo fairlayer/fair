@@ -37,35 +37,29 @@ var _this = this;
 // this file is only used during genesis to set initial K params and create first validators
 var derive = require('./derive');
 var createValidator = function (username, pw, loc, website) { return __awaiter(_this, void 0, void 0, function () {
-    var seed, me, user, validator;
+    var seed, user, validator;
     return __generator(this, function (_a) {
         switch (_a.label) {
-            case 0:
-                l(username + " : " + pw + " at " + loc);
-                return [4 /*yield*/, derive(username, pw)];
+            case 0: return [4 /*yield*/, derive(username, pw)];
             case 1:
                 seed = _a.sent();
-                me = new Me();
-                return [4 /*yield*/, me.init(username, seed)];
-            case 2:
-                _a.sent();
                 return [4 /*yield*/, User.create({
                         pubkey: me.pubkey,
                         username: username
                     })];
-            case 3:
+            case 2:
                 user = _a.sent();
                 return [4 /*yield*/, user.createBalance({
                         asset: 1,
                         balance: 10000000000
                     })];
-            case 4:
+            case 3:
                 _a.sent();
                 return [4 /*yield*/, user.createBalance({
                         asset: 2,
                         balance: 10000000000
                     })];
-            case 5:
+            case 4:
                 _a.sent();
                 validator = {
                     id: user.id,
@@ -82,32 +76,11 @@ var createValidator = function (username, pw, loc, website) { return __awaiter(_
         }
     });
 }); };
-var writeGenesisOnchainConfig = function (k, datadir) { return __awaiter(_this, void 0, void 0, function () {
-    return __generator(this, function (_a) {
-        switch (_a.label) {
-            case 0: return [4 /*yield*/, promise_writeFile('./' + datadir + '/onchain/k.json', stringify(k))];
-            case 1:
-                _a.sent();
-                return [2 /*return*/];
-        }
-    });
-}); };
-var writeGenesisOffchainConfig = function (pk, datadir) { return __awaiter(_this, void 0, void 0, function () {
-    return __generator(this, function (_a) {
-        switch (_a.label) {
-            case 0: return [4 /*yield*/, promise_writeFile('./' + datadir + '/offchain/pk.json', stringify(pk))];
-            case 1:
-                _a.sent();
-                return [2 /*return*/];
-        }
-    });
-}); };
 module.exports = function (datadir) { return __awaiter(_this, void 0, void 0, function () {
-    var sec, K, local, base_rpc, base_web, _a, bankValidator, bankSeed, _i, _b, i, _c, validator_1, _1, left, ins, Router, addBank, data, routes, _loop_1, _d, routes_1, route, PK;
-    return __generator(this, function (_e) {
-        switch (_e.label) {
+    var sec, K, local, base_rpc, base_web, _a, bankValidator, bankSeed, _i, _b, i, _c, validator_1, _1, PK;
+    return __generator(this, function (_d) {
+        switch (_d.label) {
             case 0:
-                l('Start genesis');
                 sec = 1000;
                 K = {
                     // Things that are different in testnet vs mainnet
@@ -173,7 +146,6 @@ module.exports = function (datadir) { return __awaiter(_this, void 0, void 0, fu
                 };
                 // Defines global Byzantine tolerance parameter
                 // 0 would require 1 validator, 1 - 4, 2 - 7.
-                // Long term goal is 3333 tolerance with 10,000 validators
                 K.tolerance = 1;
                 K.total_shares = K.tolerance * 3 + 1;
                 K.majority = K.total_shares - K.tolerance;
@@ -182,34 +154,22 @@ module.exports = function (datadir) { return __awaiter(_this, void 0, void 0, fu
                 base_web = local ? 'http://127.0.0.1' : 'https://fairlayer.com';
                 return [4 /*yield*/, createValidator('root', toHex(crypto.randomBytes(16)), base_rpc + ":8100", local ? 'http://127.0.0.1:8433' : 'https://fairlayer.com')];
             case 1:
-                _a = _e.sent(), bankValidator = _a[0], bankSeed = _a[1];
+                _a = _d.sent(), bankValidator = _a[0], bankSeed = _a[1];
                 K.validators.push(bankValidator);
                 _i = 0, _b = [8001, 8002, 8003];
-                _e.label = 2;
+                _d.label = 2;
             case 2:
-                if (!(_i < _b.length)) return [3 /*break*/, 6];
+                if (!(_i < _b.length)) return [3 /*break*/, 5];
                 i = _b[_i];
                 return [4 /*yield*/, createValidator(i.toString(), 'password', base_rpc + ":" + (i + 100), base_web + ":" + i)];
             case 3:
-                _c = _e.sent(), validator_1 = _c[0], _1 = _c[1];
-                left = Buffer.compare(fromHex(validator_1.pubkey), fromHex(bankValidator.pubkey)) == -1;
+                _c = _d.sent(), validator_1 = _c[0], _1 = _c[1];
                 K.validators.push(validator_1);
-                return [4 /*yield*/, Insurance.create({
-                        leftId: left ? validator_1.id : 1,
-                        rightId: left ? 1 : validator_1.id
-                    })];
+                _d.label = 4;
             case 4:
-                ins = _e.sent();
-                ins.createSubinsurance({
-                    asset: 1,
-                    balance: 1000000,
-                    ondelta: left ? 1000000 : 0
-                });
-                _e.label = 5;
-            case 5:
                 _i++;
                 return [3 /*break*/, 2];
-            case 6:
+            case 5:
                 // distribute shares
                 K.validators[0].shares = 1;
                 K.validators[0].platform = 'Digital Ocean SGP1';
@@ -231,48 +191,7 @@ module.exports = function (datadir) { return __awaiter(_this, void 0, void 0, fu
                     createdAt: Date.now(),
                     handle: 'Firstbank'
                 });
-                // similar to https://en.wikipedia.org/wiki/Nostro_and_vostro_accounts
-                // in fairlayer both parties are equally non-custodial (no one "holds" an account in another party)
-                // we don't expect more than 1-10k of banks any time soon (there are about 10,000 traditional banks in the world)
-                // so in-JSON storage is fine
                 K.routes = [];
-                Router = require('../router');
-                // testing stubs to check dijkstra
-                if (argv.generate_airports) {
-                    addBank = function (data) {
-                        data.id = K.banks.length + 1000;
-                        data.fee_bps = Math.round(Math.random() * 500);
-                        data.pubkey = crypto.randomBytes(32);
-                        data.createdAt = Date.now();
-                        data.location = 'ws://127.0.0.1:8100';
-                        K.banks.push(data);
-                        return data;
-                    };
-                    data = fs.readFileSync('./tools/routes.csv', { encoding: 'utf8' });
-                    routes = data.split('\n').slice(0, 200);
-                    _loop_1 = function (route) {
-                        var parts = route.split(',');
-                        // direct flights only
-                        if (parts[7] != '0')
-                            return "continue";
-                        //from 2 to 4
-                        var from = K.banks.find(function (h) { return h.handle == parts[2]; });
-                        var to = K.banks.find(function (h) { return h.handle == parts[4]; });
-                        // if not exists, create stub-banks
-                        if (!from)
-                            from = addBank({ handle: parts[2] });
-                        if (!to)
-                            to = addBank({ handle: parts[4] });
-                        if (Router.getRouteIndex(from.id, to.id) == -1) {
-                            // only unique routes are saved
-                            K.routes.push([from.id, to.id]);
-                        }
-                    };
-                    for (_d = 0, routes_1 = routes; _d < routes_1.length; _d++) {
-                        route = routes_1[_d];
-                        _loop_1(route);
-                    }
-                }
                 return [4 /*yield*/, Asset.create({
                         ticker: 'FRD',
                         name: 'Fair dollar',
@@ -280,8 +199,8 @@ module.exports = function (datadir) { return __awaiter(_this, void 0, void 0, fu
                         issuerId: 1,
                         total_supply: 1000000000
                     })];
-            case 7:
-                _e.sent();
+            case 6:
+                _d.sent();
                 return [4 /*yield*/, Asset.create({
                         ticker: 'FRB',
                         name: 'Fair bet',
@@ -291,23 +210,18 @@ module.exports = function (datadir) { return __awaiter(_this, void 0, void 0, fu
                     })
                     // private config
                 ];
-            case 8:
-                _e.sent();
+            case 7:
+                _d.sent();
                 PK = {
                     username: 'root',
                     seed: bankSeed.toString('hex'),
-                    auth_code: toHex(crypto.randomBytes(32)),
-                    pendingBatchHex: null,
-                    usedBanks: [1],
-                    usedAssets: [1, 2]
+                    auth_code: toHex(crypto.randomBytes(32))
                 };
-                return [4 /*yield*/, writeGenesisOnchainConfig(K, datadir)];
-            case 9:
-                _e.sent();
-                return [4 /*yield*/, writeGenesisOffchainConfig(PK, datadir)];
-            case 10:
-                _e.sent();
-                l("Genesis done (" + datadir + "). Banks " + K.banks.length + ", routes " + K.routes.length + ", quitting");
+                return [4 /*yield*/, promise_writeFile('./' + datadir + '/offchain/pk.json', stringify(pk))
+                    // not graceful to not trigger hooks
+                ];
+            case 8:
+                _d.sent();
                 // not graceful to not trigger hooks
                 process.exit(0);
                 return [2 /*return*/];

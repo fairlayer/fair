@@ -1,4 +1,3 @@
-"use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
@@ -34,58 +33,48 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-Object.defineProperty(exports, "__esModule", { value: true });
-var context_1 = require("./context");
-var utils_1 = require("./utils");
-var Sequelize = require("sequelize");
-var onchain_db_1 = require("./db/onchain_db");
-var offchain_db_1 = require("./db/offchain_db");
-function startFairlayer() {
-    return __awaiter(this, void 0, void 0, function () {
-        var c, argv, repl;
-        return __generator(this, function (_a) {
-            c = new context_1.default;
-            console.log(process.argv);
-            argv = require('minimist')(process.argv.slice(2), {
-                string: ['username', 'password']
-            });
-            /*
-            c.setArgv(argv)
-          
-            try {
-              l('Setting up ' + datadir)
-              fs.mkdirSync('./' + datadir)
-              fs.mkdirSync('./' + datadir + '/onchain')
-              fs.mkdirSync('./' + datadir + '/offchain')
-            } catch(e){}*/
-            c.onchainDB = new Sequelize('db', 'username', 'password', {
-                dialect: 'sqlite',
-                storage: c.datadir + '/onchain/db.sqlite',
-                define: { timestamps: false },
-                operatorsAliases: false,
-                benchmark: true
-            });
-            onchain_db_1.default(c.onchainDB);
-            c.offchainDB = new Sequelize('data', 'root', '123123', {
-                dialect: 'sqlite',
-                storage: c.datadir + '/offchain/db.sqlite',
-                define: { timestamps: true },
-                operatorsAliases: false,
-                retry: {
-                    max: 20
-                },
-                pool: {
-                    max: 10,
-                    min: 0,
-                    acquire: 10000,
-                    idle: 10000
-                }
-            });
-            offchain_db_1.default(c.offchainDB);
-            repl = require('repl').start();
-            Object.assign(repl.context, { c: c, rlp: utils_1.rlp });
+var _this = this;
+module.exports = function (s, args) { return __awaiter(_this, void 0, void 0, function () {
+    var raw_ticker, raw_amount, raw_name, raw_desc, amount, ticker, exists, new_asset;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0: 
+            // not enabled yet
             return [2 /*return*/];
-        });
+            case 1:
+                exists = _a.sent();
+                if (!exists) return [3 /*break*/, 5];
+                if (!(exists.issuerId == s.signer.id)) return [3 /*break*/, 3];
+                //minting new tokens to issuer's onchain balance
+                exists.total_supply += amount;
+                userAsset(s.signer, exists.id, amount);
+                return [4 /*yield*/, exists.save()];
+            case 2:
+                _a.sent();
+                s.parsed_tx.events.push(['createAsset', ticker, amount]);
+                return [3 /*break*/, 4];
+            case 3:
+                l('Invalid issuer tries to mint');
+                _a.label = 4;
+            case 4: return [3 /*break*/, 7];
+            case 5: return [4 /*yield*/, Asset.create({
+                    issuerId: s.signer.id,
+                    ticker: ticker,
+                    total_supply: amount,
+                    name: raw_name ? raw_name.toString() : '',
+                    desc: raw_desc ? raw_desc.toString() : ''
+                })];
+            case 6:
+                new_asset = _a.sent();
+                K.assets_created++;
+                userAsset(s.signer, new_asset.id, amount);
+                s.parsed_tx.events.push([
+                    'createAsset',
+                    new_asset.ticker,
+                    new_asset.total_supply
+                ]);
+                _a.label = 7;
+            case 7: return [2 /*return*/];
+        }
     });
-}
-startFairlayer();
+}); };

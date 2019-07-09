@@ -187,8 +187,3 @@ snapshotHash = function () { return __awaiter(_this, void 0, void 0, function ()
         return [2 /*return*/];
     });
 }); };
-// TODO: Move from memory to persistent DB
-cached_result = {
-    history: [],
-    my_log: ''
-};

@@ -5,8 +5,7 @@ const createValidator = async (username, pw, loc, website) => {
 
 
   const seed = await derive(username, pw)
-  const me = new Me()
-  await me.init(username, seed)
+  
 
   const user = await User.create({
     pubkey: me.pubkey,
@@ -138,7 +137,6 @@ module.exports = async (datadir) => {
 
   // Defines global Byzantine tolerance parameter
   // 0 would require 1 validator, 1 - 4, 2 - 7.
-  // Long term goal is 3333 tolerance with 10,000 validators
   K.tolerance = 1
 
   K.total_shares = K.tolerance * 3 + 1
@@ -170,24 +168,11 @@ module.exports = async (datadir) => {
       `${base_web}:${i}`
     )
 
-    const left =
-      Buffer.compare(
-        fromHex(validator.pubkey),
-        fromHex(bankValidator.pubkey)
-      ) == -1
+
 
     K.validators.push(validator)
 
-    let ins = await Insurance.create({
-      leftId: left ? validator.id : 1,
-      rightId: left ? 1 : validator.id
-    })
-
-    ins.createSubinsurance({
-      asset: 1,
-      balance: 1000000,
-      ondelta: left ? 1000000 : 0
-    })
+    
   }
 
   // distribute shares
@@ -245,12 +230,8 @@ module.exports = async (datadir) => {
   const PK = {
     username: 'root',
     seed: bankSeed.toString('hex'),
-    auth_code: toHex(crypto.randomBytes(32)),
+    auth_code: toHex(crypto.randomBytes(32))
 
-    pendingBatchHex: null,
-
-    usedBanks: [1],
-    usedAssets: [1, 2]
   }
 
   await promise_writeFile('./' + datadir + '/offchain/pk.json', stringify(pk))

@@ -41,7 +41,11 @@ var rlp = require("../lib/rlp");
 exports.rlp = rlp;
 var fs = require("fs");
 exports.fs = fs;
+var minimist = require("minimist");
+exports.minimist = minimist;
 var digest = require('js-sha3').sha3_256.digest;
+var crypto = require("crypto");
+exports.crypto = crypto;
 // shorter way to find by an attribute
 Array.prototype['by'] = function (attr, val) {
     return this.find(function (obj) {
