@@ -11,8 +11,8 @@ derive = require('./utils/derive')
 
 require('./browser')
 
-const SegfaultHandler = require('segfault-handler')
-SegfaultHandler.registerHandler('crash.log')
+//const SegfaultHandler = require('segfault-handler')
+//SegfaultHandler.registerHandler('crash.log')
 
 argv = require('minimist')(process.argv.slice(2), {
   string: ['username', 'pw']
